@@ -43,6 +43,18 @@
             android:exported="false" />
 
         <activity
+            android:name=".LandActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".WordsActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".DateActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".MainActivity"
             android:exported="false" />
 

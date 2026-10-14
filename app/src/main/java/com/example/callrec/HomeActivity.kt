@@ -21,9 +21,9 @@ class HomeActivity : Activity() {
         Tile("✅", "করণীয়", "দিনের কাজের তালিকা", TodoActivity::class.java),
         Tile("📝", "দ্রুত নোট", "নোট, নম্বর, আইডিয়া", NotesActivity::class.java),
         Tile("🧮", "ক্যালকুলেটর", "হিসাব ও ইউনিট রূপান্তর", CalcActivity::class.java),
-        Tile("🌾", "জমির মাপ", "শতাংশ, কাঠা, বিঘা", null),
-        Tile("💬", "টাকা কথায়", "চেক ও রশিদের জন্য", null),
-        Tile("📅", "তারিখ ও বয়স", "বাংলা, হিজরি, বয়স", null),
+        Tile("🌾", "জমির মাপ", "শতাংশ, কাঠা, বিঘা", LandActivity::class.java),
+        Tile("💬", "টাকা কথায়", "চেক ও রশিদের জন্য", WordsActivity::class.java),
+        Tile("📅", "তারিখ ও বয়স", "বাংলা, হিজরি, বয়স", DateActivity::class.java),
         Tile("⏱️", "টাইমার", "পমোডোরো, স্টপওয়াচ", null),
         Tile("🔑", "পাসওয়ার্ড", "শক্তিশালী পাসওয়ার্ড", null),
         Tile("🎙️", "কল রেকর্ডিং", "টেস্ট স্ক্রিন", MainActivity::class.java)

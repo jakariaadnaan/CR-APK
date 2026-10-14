@@ -217,3 +217,28 @@ fun Context.dialogTabs(
     tb.setOnClickListener { style(true); onChange(true) }
     return row
 }
+
+// ---------- More shared helpers ----------
+
+fun android.widget.EditText.onChange(f: () -> Unit) {
+    addTextChangedListener(object : android.text.TextWatcher {
+        override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+        override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+        override fun afterTextChanged(s: android.text.Editable?) {
+            f()
+        }
+    })
+}
+
+/** Plain decimal text with trailing zeros removed, e.g. 2.50000 -> 2.5 */
+fun fmtNum(d: Double, scale: Int): String {
+    if (d.isNaN() || d.isInfinite()) return "—"
+    return java.math.BigDecimal.valueOf(d).setScale(scale, java.math.RoundingMode.HALF_UP)
+        .stripTrailingZeros().toPlainString()
+}
+
+fun Context.copyText(text: String) {
+    val cm = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+    cm.setPrimaryClip(android.content.ClipData.newPlainText("text", text))
+    android.widget.Toast.makeText(this, "কপি হয়েছে", android.widget.Toast.LENGTH_SHORT).show()
+}
