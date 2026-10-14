@@ -35,6 +35,14 @@
             android:exported="false" />
 
         <activity
+            android:name=".NotesActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".CalcActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".MainActivity"
             android:exported="false" />
 
