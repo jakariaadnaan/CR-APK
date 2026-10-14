@@ -4,6 +4,7 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
 
@@ -52,6 +53,18 @@
 
         <activity
             android:name=".DateActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".TimerActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".PasswordActivity"
+            android:exported="false" />
+
+        <receiver
+            android:name=".TimerReceiver"
             android:exported="false" />
 
         <activity

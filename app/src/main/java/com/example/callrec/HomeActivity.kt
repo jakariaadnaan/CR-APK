@@ -24,8 +24,8 @@ class HomeActivity : Activity() {
         Tile("🌾", "জমির মাপ", "শতাংশ, কাঠা, বিঘা", LandActivity::class.java),
         Tile("💬", "টাকা কথায়", "চেক ও রশিদের জন্য", WordsActivity::class.java),
         Tile("📅", "তারিখ ও বয়স", "বাংলা, হিজরি, বয়স", DateActivity::class.java),
-        Tile("⏱️", "টাইমার", "পমোডোরো, স্টপওয়াচ", null),
-        Tile("🔑", "পাসওয়ার্ড", "শক্তিশালী পাসওয়ার্ড", null),
+        Tile("⏱️", "টাইমার", "পমোডোরো, স্টপওয়াচ", TimerActivity::class.java),
+        Tile("🔑", "পাসওয়ার্ড", "শক্তিশালী পাসওয়ার্ড", PasswordActivity::class.java),
         Tile("🎙️", "কল রেকর্ডিং", "টেস্ট স্ক্রিন", MainActivity::class.java)
     )
 
