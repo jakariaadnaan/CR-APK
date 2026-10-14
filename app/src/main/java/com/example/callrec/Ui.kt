@@ -1,0 +1,175 @@
+package com.example.callrec
+
+import android.app.Activity
+import android.content.Context
+import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
+import android.view.Gravity
+import android.view.View
+import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.LinearLayout
+import android.widget.TextView
+import java.util.Locale
+
+/** Colours shared by every screen. */
+object Ui {
+    val PRIMARY: Int = Color.parseColor("#1E6B52")
+    val BG: Int = Color.parseColor("#F3F5F4")
+    val CARD: Int = Color.WHITE
+    val TEXT: Int = Color.parseColor("#1B1F1D")
+    val MUTED: Int = Color.parseColor("#6B7570")
+    val GREEN: Int = Color.parseColor("#2E8B57")
+    val RED: Int = Color.parseColor("#C0392B")
+    val LINE: Int = Color.parseColor("#E1E6E3")
+}
+
+fun Context.dp(v: Int): Int = (v * resources.displayMetrics.density + 0.5f).toInt()
+
+fun Context.bg(color: Int, radiusDp: Int = 14, strokeColor: Int = 0, strokeDp: Int = 0): GradientDrawable {
+    val d = GradientDrawable()
+    d.setColor(color)
+    d.cornerRadius = dp(radiusDp).toFloat()
+    if (strokeDp > 0) d.setStroke(dp(strokeDp), strokeColor)
+    return d
+}
+
+fun Context.label(text: String, sp: Float = 15f, color: Int = Ui.TEXT, bold: Boolean = false): TextView {
+    val t = TextView(this)
+    t.text = text
+    t.textSize = sp
+    t.setTextColor(color)
+    if (bold) t.typeface = Typeface.DEFAULT_BOLD
+    return t
+}
+
+fun Context.card(pad: Int = 16): LinearLayout {
+    val c = LinearLayout(this)
+    c.orientation = LinearLayout.VERTICAL
+    c.background = bg(Ui.CARD)
+    c.setPadding(dp(pad), dp(pad), dp(pad), dp(pad))
+    c.elevation = dp(1).toFloat()
+    return c
+}
+
+/** LinearLayout params with margins given in dp. */
+fun Context.lp(
+    width: Int = ViewGroup.LayoutParams.MATCH_PARENT,
+    height: Int = ViewGroup.LayoutParams.WRAP_CONTENT,
+    l: Int = 0, t: Int = 0, r: Int = 0, b: Int = 0
+): LinearLayout.LayoutParams {
+    val p = LinearLayout.LayoutParams(width, height)
+    p.setMargins(dp(l), dp(t), dp(r), dp(b))
+    return p
+}
+
+fun Context.pill(text: String, color: Int = Ui.PRIMARY, fg: Int = Color.WHITE, onClick: () -> Unit): TextView {
+    val t = label(text, 15f, fg, true)
+    t.gravity = Gravity.CENTER
+    t.background = bg(color, 22)
+    t.setPadding(dp(18), dp(11), dp(18), dp(11))
+    t.setOnClickListener { onClick() }
+    return t
+}
+
+fun Context.divider(): View {
+    val v = View(this)
+    v.setBackgroundColor(Ui.LINE)
+    v.layoutParams = lp(height = 1)
+    return v
+}
+
+/** Standard screen: green title bar, optional back arrow, content below, optional floating button. */
+fun Activity.setScreen(title: String, content: View, fab: View? = null, back: Boolean = true) {
+    window.statusBarColor = Ui.PRIMARY
+    val root = FrameLayout(this)
+    root.setBackgroundColor(Ui.BG)
+
+    val col = LinearLayout(this)
+    col.orientation = LinearLayout.VERTICAL
+
+    val bar = LinearLayout(this)
+    bar.orientation = LinearLayout.HORIZONTAL
+    bar.gravity = Gravity.CENTER_VERTICAL
+    bar.setBackgroundColor(Ui.PRIMARY)
+    bar.setPadding(dp(if (back) 4 else 20), dp(8), dp(16), dp(8))
+    bar.elevation = dp(3).toFloat()
+    if (back) {
+        val b = label("←", 24f, Color.WHITE, true)
+        b.setPadding(dp(14), dp(6), dp(14), dp(6))
+        b.setOnClickListener { finish() }
+        bar.addView(b)
+    }
+    bar.addView(label(title, 19f, Color.WHITE, true))
+    col.addView(bar, lp())
+
+    content.layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
+    col.addView(content)
+    root.addView(col, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+
+    if (fab != null) {
+        val fp = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        fp.gravity = Gravity.BOTTOM or Gravity.END
+        fp.setMargins(0, 0, dp(18), dp(22))
+        fab.elevation = dp(6).toFloat()
+        root.addView(fab, fp)
+    }
+    setContentView(root)
+}
+
+// ---------- Bangla number helpers ----------
+
+fun bn(s: String): String {
+    val sb = StringBuilder()
+    for (ch in s) sb.append(if (ch in '0'..'9') ('০' + (ch - '0')) else ch)
+    return sb.toString()
+}
+
+/** Turns Bangla digits typed on a Bangla keyboard back into ASCII digits for parsing. */
+fun asciiDigits(s: String): String {
+    val sb = StringBuilder()
+    for (ch in s) sb.append(if (ch in '০'..'৯') ('0' + (ch - '০')) else ch)
+    return sb.toString()
+}
+
+/** 1234567 -> 12,34,567 (lakh / crore grouping). */
+fun groupIndian(n: Long): String {
+    val neg = n < 0
+    val s = Math.abs(n).toString()
+    val out: String
+    if (s.length <= 3) {
+        out = s
+    } else {
+        val last3 = s.substring(s.length - 3)
+        var rest = s.substring(0, s.length - 3)
+        val parts = ArrayList<String>()
+        while (rest.length > 2) {
+            parts.add(0, rest.substring(rest.length - 2))
+            rest = rest.substring(0, rest.length - 2)
+        }
+        if (rest.isNotEmpty()) parts.add(0, rest)
+        out = parts.joinToString(",") + "," + last3
+    }
+    return (if (neg) "-" else "") + out
+}
+
+/** 12500.5 -> ৳১২,৫০০.৫০ */
+fun taka(d: Double): String {
+    val neg = d < 0
+    val a = Math.abs(d)
+    var whole = a.toLong()
+    var paisa = Math.round((a - whole) * 100).toInt()
+    if (paisa >= 100) {
+        whole += 1
+        paisa = 0
+    }
+    var s = groupIndian(whole)
+    if (paisa != 0) s += "." + String.format(Locale.US, "%02d", paisa)
+    return bn((if (neg) "-" else "") + "৳" + s)
+}
+
+val BN_MONTHS = listOf(
+    "জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন",
+    "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"
+)
