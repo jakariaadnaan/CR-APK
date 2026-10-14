@@ -17,8 +17,8 @@ class HomeActivity : Activity() {
 
     private val tiles = listOf(
         Tile("📒", "খরচের খাতা", "আয়-ব্যয় ও মাসিক হিসাব", LedgerActivity::class.java),
-        Tile("🧾", "বাকির খাতা", "কে কত দেবে / পাবে", null),
-        Tile("✅", "করণীয়", "দিনের কাজের তালিকা", null),
+        Tile("🧾", "বাকির খাতা", "কে কত দেবে / পাবে", DebtActivity::class.java),
+        Tile("✅", "করণীয়", "দিনের কাজের তালিকা", TodoActivity::class.java),
         Tile("📝", "দ্রুত নোট", "নোট, নম্বর, আইডিয়া", null),
         Tile("🧮", "ক্যালকুলেটর", "হিসাব ও ইউনিট রূপান্তর", null),
         Tile("🌾", "জমির মাপ", "শতাংশ, কাঠা, বিঘা", null),

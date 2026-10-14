@@ -41,22 +41,6 @@ class LedgerActivity : Activity() {
         render()
     }
 
-    private fun todayStart(): Long {
-        val c = Calendar.getInstance()
-        c.set(Calendar.HOUR_OF_DAY, 0)
-        c.set(Calendar.MINUTE, 0)
-        c.set(Calendar.SECOND, 0)
-        c.set(Calendar.MILLISECOND, 0)
-        return c.timeInMillis
-    }
-
-    private fun dateText(ms: Long): String {
-        val c = Calendar.getInstance()
-        c.timeInMillis = ms
-        return bn(c.get(Calendar.DAY_OF_MONTH).toString()) + " " + BN_MONTHS[c.get(Calendar.MONTH)] +
-            " " + bn(c.get(Calendar.YEAR).toString())
-    }
-
     private fun render() {
         box.removeAllViews()
 

@@ -173,3 +173,47 @@ val BN_MONTHS = listOf(
     "জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন",
     "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"
 )
+
+// ---------- Date helpers and small shared widgets ----------
+
+/** Local midnight of today, in epoch millis. */
+fun todayStart(): Long {
+    val c = java.util.Calendar.getInstance()
+    c.set(java.util.Calendar.HOUR_OF_DAY, 0)
+    c.set(java.util.Calendar.MINUTE, 0)
+    c.set(java.util.Calendar.SECOND, 0)
+    c.set(java.util.Calendar.MILLISECOND, 0)
+    return c.timeInMillis
+}
+
+/** 1697000000000 -> ১৪ অক্টোবর ২০২৬ */
+fun dateText(ms: Long): String {
+    val c = java.util.Calendar.getInstance()
+    c.timeInMillis = ms
+    return bn(c.get(java.util.Calendar.DAY_OF_MONTH).toString()) + " " +
+        BN_MONTHS[c.get(java.util.Calendar.MONTH)] + " " + bn(c.get(java.util.Calendar.YEAR).toString())
+}
+
+/** Two-way coloured switch used inside dialogs. onChange(true) means the second tab was picked. */
+fun Context.dialogTabs(
+    a: String, b: String, colorA: Int, colorB: Int, startB: Boolean, onChange: (Boolean) -> Unit
+): LinearLayout {
+    val row = LinearLayout(this)
+    row.orientation = LinearLayout.HORIZONTAL
+    val ta = label(a, 15f, Color.WHITE, true)
+    val tb = label(b, 15f, Color.WHITE, true)
+    val grey = Color.parseColor("#B8C0BC")
+    fun style(isB: Boolean) {
+        ta.background = bg(if (!isB) colorA else grey, 10)
+        tb.background = bg(if (isB) colorB else grey, 10)
+    }
+    for (t in listOf(ta, tb)) {
+        t.gravity = Gravity.CENTER
+        t.setPadding(0, dp(10), 0, dp(10))
+        row.addView(t, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+    }
+    style(startB)
+    ta.setOnClickListener { style(false); onChange(false) }
+    tb.setOnClickListener { style(true); onChange(true) }
+    return row
+}

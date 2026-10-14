@@ -27,6 +27,14 @@
             android:exported="false" />
 
         <activity
+            android:name=".DebtActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".TodoActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".MainActivity"
             android:exported="false" />
 
