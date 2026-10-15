@@ -152,7 +152,7 @@ abstract class ImageToolBase : GuardedActivity() {
         c.addView(row, lp(b = 10))
         preview = ImageView(this)
         preview.scaleType = ImageView.ScaleType.FIT_CENTER
-        preview.setBackgroundColor(Color.parseColor("#EEF1EF"))
+        preview.setBackgroundColor(Color.parseColor("#ECEEF1"))
         c.addView(preview, lp(height = previewDp))
         return c
     }

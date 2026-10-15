@@ -15,7 +15,7 @@ import java.util.Locale
 class ColorPickerActivity : ImageToolBase() {
 
     private val history = ArrayList<Int>()
-    private var current = Color.parseColor("#1F7A52")
+    private var current = Color.parseColor("#2D5BE3")
 
     private lateinit var swatch: View
     private lateinit var hexV: TextView

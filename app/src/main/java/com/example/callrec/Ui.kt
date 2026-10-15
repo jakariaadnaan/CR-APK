@@ -16,14 +16,15 @@ import java.util.Locale
 
 /** Colours shared by every screen. */
 object Ui {
-    val PRIMARY: Int = Color.parseColor("#1E6B52")
-    val BG: Int = Color.parseColor("#F3F5F4")
+    val PRIMARY: Int = Color.parseColor("#2D5BE3")
+    val BG: Int = Color.parseColor("#F1F2F4")
     val CARD: Int = Color.WHITE
-    val TEXT: Int = Color.parseColor("#1B1F1D")
-    val MUTED: Int = Color.parseColor("#6B7570")
+    val TEXT: Int = Color.parseColor("#14161A")
+    val MUTED: Int = Color.parseColor("#6E737A")
     val GREEN: Int = Color.parseColor("#2E8B57")
     val RED: Int = Color.parseColor("#C0392B")
-    val LINE: Int = Color.parseColor("#E1E6E3")
+    val LINE: Int = Color.parseColor("#E4E6EA")
+    val ICON: Int = Color.parseColor("#3A3F46")
 }
 
 fun Context.dp(v: Int): Int = (v * resources.displayMetrics.density + 0.5f).toInt()
@@ -48,9 +49,8 @@ fun Context.label(text: String, sp: Float = 15f, color: Int = Ui.TEXT, bold: Boo
 fun Context.card(pad: Int = 16): LinearLayout {
     val c = LinearLayout(this)
     c.orientation = LinearLayout.VERTICAL
-    c.background = bg(Ui.CARD)
+    c.background = bg(Ui.CARD, 20, Ui.LINE, 1)
     c.setPadding(dp(pad), dp(pad), dp(pad), dp(pad))
-    c.elevation = dp(1).toFloat()
     return c
 }
 
@@ -68,7 +68,7 @@ fun Context.lp(
 fun Context.pill(text: String, color: Int = Ui.PRIMARY, fg: Int = Color.WHITE, onClick: () -> Unit): TextView {
     val t = label(text, 15f, fg, true)
     t.gravity = Gravity.CENTER
-    t.background = bg(color, 22)
+    t.background = bg(color, 16)
     t.setPadding(dp(18), dp(11), dp(18), dp(11))
     t.setOnClickListener { onClick() }
     return t
@@ -81,9 +81,12 @@ fun Context.divider(): View {
     return v
 }
 
-/** Standard screen: green title bar, optional back arrow, content below, optional floating button. */
+/** Standard screen: plain large title on the grey background, optional back arrow, content below, optional floating button. */
+@Suppress("DEPRECATION")
 fun Activity.setScreen(title: String, content: View, fab: View? = null, back: Boolean = true, bottom: View? = null) {
-    window.statusBarColor = Ui.PRIMARY
+    window.statusBarColor = Ui.BG
+    window.navigationBarColor = Color.WHITE
+    window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
     val root = FrameLayout(this)
     root.setBackgroundColor(Ui.BG)
 
@@ -93,16 +96,18 @@ fun Activity.setScreen(title: String, content: View, fab: View? = null, back: Bo
     val bar = LinearLayout(this)
     bar.orientation = LinearLayout.HORIZONTAL
     bar.gravity = Gravity.CENTER_VERTICAL
-    bar.setBackgroundColor(Ui.PRIMARY)
-    bar.setPadding(dp(if (back) 4 else 20), dp(8), dp(16), dp(8))
-    bar.elevation = dp(3).toFloat()
+    bar.setPadding(dp(if (back) 8 else 20), dp(if (back) 10 else 22), dp(16), dp(if (back) 6 else 10))
     if (back) {
-        val b = label("←", 24f, Color.WHITE, true)
-        b.setPadding(dp(14), dp(6), dp(14), dp(6))
-        b.setOnClickListener { finish() }
-        bar.addView(b)
+        val box = LinearLayout(this)
+        box.gravity = Gravity.CENTER
+        box.addView(iconView(R.drawable.ic_back, 24, Ui.TEXT))
+        box.setOnClickListener { finish() }
+        bar.addView(box, LinearLayout.LayoutParams(dp(44), dp(44)))
     }
-    bar.addView(label(title, 19f, Color.WHITE, true))
+    val tv = label(title, if (back) 22f else 32f, Ui.TEXT, true)
+    tv.maxLines = 1
+    tv.ellipsize = android.text.TextUtils.TruncateAt.END
+    bar.addView(tv)
     col.addView(bar, lp())
 
     content.layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
@@ -204,7 +209,7 @@ fun Context.dialogTabs(
     row.orientation = LinearLayout.HORIZONTAL
     val ta = label(a, 15f, Color.WHITE, true)
     val tb = label(b, 15f, Color.WHITE, true)
-    val grey = Color.parseColor("#B8C0BC")
+    val grey = Color.parseColor("#B9BEC6")
     fun style(isB: Boolean) {
         ta.background = bg(if (!isB) colorA else grey, 10)
         tb.background = bg(if (isB) colorB else grey, 10)
@@ -328,22 +333,29 @@ fun Context.resultCard(title: String): Pair<LinearLayout, TextView> {
 
 /** Bottom menu: 0 = হোম, 1 = সব টুল, 2 = সেটিংস. */
 fun Activity.navBar(selected: Int): View {
+    val wrap = LinearLayout(this)
+    wrap.orientation = LinearLayout.VERTICAL
+    wrap.setBackgroundColor(Color.WHITE)
+    val line = View(this)
+    line.setBackgroundColor(Ui.LINE)
+    wrap.addView(line, lp(height = 1))
     val bar = LinearLayout(this)
     bar.orientation = LinearLayout.HORIZONTAL
-    bar.setBackgroundColor(Color.WHITE)
-    bar.elevation = dp(8).toFloat()
-    bar.setPadding(dp(8), dp(6), dp(8), dp(8))
+    bar.setPadding(dp(8), dp(8), dp(8), dp(8))
+    wrap.addView(bar, lp())
     val names = listOf("হোম", "সব টুল", "সেটিংস")
     val icons = listOf(R.drawable.ic_home, R.drawable.ic_grid, R.drawable.ic_lock)
     for (i in 0..2) {
         val item = LinearLayout(this)
         item.orientation = LinearLayout.VERTICAL
         item.gravity = Gravity.CENTER
-        item.minimumHeight = dp(48)
+        item.minimumHeight = dp(52)
         val on = i == selected
         val color = if (on) Ui.PRIMARY else Ui.MUTED
-        item.addView(iconView(icons[i], 24, color))
-        item.addView(label(names[i], 12f, color, on))
+        item.addView(iconView(icons[i], 26, color))
+        val tv = label(names[i], 13f, color)
+        if (on) tv.typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+        item.addView(tv, lp(t = 2))
         item.setOnClickListener {
             if (!on) {
                 val intent = when (i) {
@@ -356,5 +368,5 @@ fun Activity.navBar(selected: Int): View {
         }
         bar.addView(item, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
     }
-    return bar
+    return wrap
 }

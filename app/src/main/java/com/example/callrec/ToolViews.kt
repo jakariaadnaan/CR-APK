@@ -3,9 +3,7 @@ package com.example.callrec
 import android.app.Activity
 import android.content.Intent
 import android.graphics.Color
-import android.view.Gravity
 import android.view.View
-import android.widget.LinearLayout
 import android.widget.Toast
 
 private val STAR = Color.parseColor("#E0A100")
@@ -23,36 +21,17 @@ fun Activity.openTool(t: Tool) {
 fun Activity.toolRow(t: Tool, onFavChanged: () -> Unit): View {
     val cat = Registry.cat(t.cat)
     val ready = t.target != null
-    val c = card(12)
-    c.orientation = LinearLayout.HORIZONTAL
-    c.gravity = Gravity.CENTER_VERTICAL
-
-    c.addView(iconBox(cat.icon, cat.tint, cat.fg, 44, 24, 14, 12))
-
-    val mid = LinearLayout(this)
-    mid.orientation = LinearLayout.VERTICAL
-    mid.addView(label(t.title, 16f, if (ready) Ui.TEXT else Ui.MUTED, true))
     val sub = if (t.online) t.sub + " · ইন্টারনেট লাগে" else t.sub
-    mid.addView(label(sub, 13f, Ui.MUTED))
-    c.addView(mid, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-
+    var extra: View? = null
     if (Registry.isFav(this, t.id)) {
-        val star = iconView(R.drawable.ic_star, 18, STAR)
-        c.addView(star)
-    }
-    if (ready) {
-        val ch = iconView(R.drawable.ic_chevron, 20, Ui.MUTED)
-        val p = LinearLayout.LayoutParams(dp(20), dp(20))
-        p.setMargins(dp(8), 0, 0, 0)
-        ch.layoutParams = p
-        c.addView(ch)
-    } else {
+        extra = iconView(R.drawable.ic_star, 18, STAR)
+    } else if (!ready) {
         val soon = label("শীঘ্রই", 11f, Ui.MUTED, true)
         soon.background = bg(Ui.BG, 10)
         soon.setPadding(dp(8), dp(3), dp(8), dp(3))
-        c.addView(soon)
+        extra = soon
     }
-
+    val c = listRow(cat.icon, t.title, sub, if (ready) Ui.TEXT else Ui.MUTED, extra, ready)
     c.setOnClickListener { openTool(t) }
     c.setOnLongClickListener {
         if (!ready) {

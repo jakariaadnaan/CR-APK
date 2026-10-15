@@ -262,7 +262,7 @@ class SettingsActivity : GuardedActivity() {
 
     private fun patternView(): PatternView {
         val pv = PatternView(this)
-        pv.baseColor = Color.parseColor("#B8C0BC")
+        pv.baseColor = Color.parseColor("#B9BEC6")
         pv.activeColor = Ui.PRIMARY
         return pv
     }

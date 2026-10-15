@@ -28,7 +28,7 @@ class ToolListActivity : GuardedActivity() {
             s.setTextColor(Ui.TEXT)
             s.inputType = InputType.TYPE_CLASS_TEXT
             s.isSingleLine = true
-            s.background = bg(Ui.CARD, 12)
+            s.background = bg(Ui.CARD, 16, Ui.LINE, 1)
             s.setPadding(dp(14), dp(10), dp(14), dp(10))
             s.onChange { render() }
             search = s
@@ -62,9 +62,9 @@ class ToolListActivity : GuardedActivity() {
             if (list.isEmpty()) continue
             any = true
             if (catId == "all") {
-                box.addView(label(c.name + " (" + bn(list.size.toString()) + ")", 14f, Ui.MUTED, true), lp(l = 4, t = 8, b = 6))
+                box.addView(label(c.name + " (" + bn(list.size.toString()) + ")", 14f, Ui.MUTED, true), lp(l = 6, t = 6, b = 8))
             }
-            for (t in list) box.addView(toolRow(t) { render() }, lp(b = 8))
+            box.addView(groupCard(list.map { toolRow(it) { render() } }), lp(b = 10))
         }
         if (!any) {
             val e = label("কিছু পাওয়া যায়নি।", 14f, Ui.MUTED)

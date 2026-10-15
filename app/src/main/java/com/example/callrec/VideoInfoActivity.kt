@@ -35,7 +35,7 @@ class VideoInfoActivity : GuardedActivity() {
         }, lp(b = 10))
         thumb = ImageView(this)
         thumb.scaleType = ImageView.ScaleType.FIT_CENTER
-        thumb.setBackgroundColor(Color.parseColor("#EEF1EF"))
+        thumb.setBackgroundColor(Color.parseColor("#ECEEF1"))
         c.addView(thumb, lp(height = 200))
         box.addView(c, lp(b = 12))
 

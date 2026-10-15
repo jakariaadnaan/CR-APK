@@ -49,13 +49,13 @@ class LockActivity : Activity() {
 
         dots = label("", 30f, Color.WHITE, true)
         dots.gravity = Gravity.CENTER
-        msg = label(if (isPattern) "প্যাটার্ন আঁকুন" else "পিন দিন", 14f, Color.parseColor("#CFE8DC"))
+        msg = label(if (isPattern) "প্যাটার্ন আঁকুন" else "পিন দিন", 14f, Color.parseColor("#D6E0FB"))
         msg.gravity = Gravity.CENTER
 
         if (isPattern) {
             root.addView(msg, lp(t = 16, b = 16))
             val pv = PatternView(this)
-            pv.baseColor = Color.parseColor("#9CCFB8")
+            pv.baseColor = Color.parseColor("#A9BDF5")
             pv.activeColor = Color.WHITE
             pv.errorColor = Color.parseColor("#FF8A80")
             pv.onComplete = { s -> onPattern(pv, s) }
@@ -86,7 +86,7 @@ class LockActivity : Activity() {
                     val isBioKey = k == "👆"
                     val b = label(if (isBioKey) (if (bioReady()) k else "") else bn(k), 26f, Color.WHITE, true)
                     b.gravity = Gravity.CENTER
-                    if (!isBioKey || bioReady()) b.background = bg(Color.parseColor("#2C7F63"), 40)
+                    if (!isBioKey || bioReady()) b.background = bg(Color.parseColor("#4A74EC"), 40)
                     b.setOnClickListener {
                         when (k) {
                             "👆" -> if (bioReady()) showBiometric()

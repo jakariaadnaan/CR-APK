@@ -25,7 +25,7 @@ object Registry {
         Cat("pdf", "PDF", R.drawable.ic_pdf, Color.parseColor("#F9E6E3"), Color.parseColor("#9A3028")),
         Cat("media", "অডিও ও ভিডিও", R.drawable.ic_media, Color.parseColor("#FBEFD9"), Color.parseColor("#8A5200")),
         Cat("text", "টেক্সট ও ভাষা", R.drawable.ic_text, Color.parseColor("#DFF1F2"), Color.parseColor("#0B6870")),
-        Cat("qr", "QR ও বারকোড", R.drawable.ic_qr, Color.parseColor("#E6E9E7"), Color.parseColor("#2F3A34")),
+        Cat("qr", "QR ও বারকোড", R.drawable.ic_qr, Color.parseColor("#E8EAEE"), Color.parseColor("#2F3A34")),
         Cat("net", "নেটওয়ার্ক ও ডিভাইস", R.drawable.ic_globe, Color.parseColor("#F1E4F6"), Color.parseColor("#6E2F82"))
     )
 
