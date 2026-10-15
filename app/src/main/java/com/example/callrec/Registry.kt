@@ -46,8 +46,8 @@ object Registry {
         // ছবি
         Tool("imgfmt", "ফরম্যাট কনভার্টার", "PNG, JPG, WebP", "image", ImageFormatActivity::class.java, false, "image format converter png jpg webp"),
         Tool("imgcomp", "ফাইল সাইজ কমানো", "ছবির আকার ছোট করুন", "image", ImageCompressActivity::class.java, false, "compress file size reduce"),
-        Tool("upscale", "ইমেজ আপস্কেলার", "ছবি বড় করুন", "image", null, false, "image upscaler enlarge resize"),
-        Tool("transp", "ট্রান্সপারেন্ট PNG মেকার", "ব্যাকগ্রাউন্ড মুছুন", "image", null, false, "transparent png background remove"),
+        Tool("upscale", "ইমেজ আপস্কেলার", "ছবি বড় করুন", "image", UpscaleActivity::class.java, false, "image upscaler enlarge resize"),
+        Tool("transp", "ট্রান্সপারেন্ট PNG মেকার", "ব্যাকগ্রাউন্ড মুছুন", "image", TransparentActivity::class.java, false, "transparent png background remove"),
         Tool("color", "কালার পিকার", "ছবি থেকে রঙের কোড", "image", ColorPickerActivity::class.java, false, "color picker hex rgb"),
         // PDF
         Tool("img2pdf", "ছবি → PDF", "একাধিক ছবি একটি PDF-এ", "pdf", null, false, "image to pdf images to pdf"),
