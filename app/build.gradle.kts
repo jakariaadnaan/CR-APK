@@ -11,8 +11,8 @@ android {
         applicationId = "com.example.callrec"
         minSdk = 26
         targetSdk = 34
-        versionCode = 11
-        versionName = "0.11"
+        versionCode = 12
+        versionName = "0.12"
     }
 
     // A fixed key is used for every build so a new APK installs over the old one and keeps the data.
@@ -39,4 +39,9 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+}
+
+dependencies {
+    // PDF split / extract / lock / unlock
+    implementation("com.tom-roush:pdfbox-android:2.0.27.0")
 }

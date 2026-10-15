@@ -86,6 +86,9 @@
         <activity android:name=".TransparentActivity" android:exported="false" />
         <activity android:name=".ImagesToPdfActivity" android:exported="false" />
         <activity android:name=".PdfToImagesActivity" android:exported="false" />
+        <activity android:name=".PdfSplitActivity" android:exported="false" />
+        <activity android:name=".PdfExtractActivity" android:exported="false" />
+        <activity android:name=".PdfLockActivity" android:exported="false" />
         <activity android:name=".ToolListActivity" android:exported="false" />
         <activity android:name=".TextCaseActivity" android:exported="false" />
         <activity android:name=".CounterActivity" android:exported="false" />
