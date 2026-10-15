@@ -56,10 +56,10 @@ object Registry {
         Tool("pdf2img", "PDF → ছবি", "প্রতিটি পেজ ছবি হিসেবে", "pdf", PdfToImagesActivity::class.java, false, "pdf to images"),
         Tool("pdflock", "PDF লক / আনলক", "পাসওয়ার্ড দিয়ে সুরক্ষা", "pdf", PdfLockActivity::class.java, false, "pdf lock unlock password protect"),
         // অডিও ও ভিডিও
-        Tool("aconv", "অডিও কনভার্টার", "MP3, WAV", "media", null, false, "audio converter mp3 wav"),
-        Tool("v2mp3", "ভিডিও → MP3", "ভিডিও থেকে অডিও", "media", null, false, "video to mp3 extract audio"),
+        Tool("aconv", "অডিও কনভার্টার", "WAV, M4A (AAC)", "media", AudioConvertActivity::class.java, false, "audio converter mp3 wav"),
+        Tool("v2mp3", "ভিডিও → অডিও", "ভিডিও থেকে M4A বা WAV", "media", VideoToAudioActivity::class.java, false, "video to mp3 extract audio"),
         Tool("gif", "GIF মেকার", "ছবি বা ভিডিও থেকে GIF", "media", null, false, "gif maker"),
-        Tool("vmeta", "ভিডিও মেটাডেটা", "ভিডিওর খুঁটিনাটি তথ্য", "media", null, false, "video metadata viewer info"),
+        Tool("vmeta", "ভিডিও মেটাডেটা", "ভিডিওর খুঁটিনাটি তথ্য", "media", VideoInfoActivity::class.java, false, "video metadata viewer info"),
         Tool("rec", "কল রেকর্ডিং", "টেস্ট স্ক্রিন", "media", MainActivity::class.java, keywords = "call recording record"),
         // টেক্সট ও ভাষা
         Tool("textcase", "টেক্সট কেস কনভার্টার", "বড়-ছোট হাতের, camelCase, snake_case", "text", TextCaseActivity::class.java, keywords = "text case converter uppercase lowercase title"),
