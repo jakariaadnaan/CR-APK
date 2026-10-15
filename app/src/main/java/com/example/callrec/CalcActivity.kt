@@ -94,6 +94,12 @@ class CalcActivity : GuardedActivity() {
             chip.setOnClickListener { showTab(i) }
             tabRow.addView(chip, lp(r = 8))
         }
+        val sci = label("সায়েন্টিফিক ↗", 14f, Ui.PRIMARY, true)
+        sci.gravity = Gravity.CENTER
+        sci.background = bg(Ui.CARD, 20, Ui.PRIMARY, 1)
+        sci.setPadding(dp(18), dp(8), dp(18), dp(8))
+        sci.setOnClickListener { startActivity(android.content.Intent(this, SciCalcActivity::class.java)) }
+        tabRow.addView(sci, lp(r = 8))
         body.removeAllViews()
         if (tab == 0) buildCalc() else buildConverter()
     }

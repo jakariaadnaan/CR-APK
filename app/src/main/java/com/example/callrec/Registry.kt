@@ -34,6 +34,7 @@ object Registry {
         Tool("ledger", "খরচের খাতা", "আয়-ব্যয় ও মাসিক হিসাব", "khata", LedgerActivity::class.java, keywords = "expense income খরচ আয় হিসাব"),
         Tool("debt", "বাকির খাতা", "কে কত দেবে / পাবে", "khata", DebtActivity::class.java, keywords = "baki due বাকি ধার"),
         Tool("calc", "ক্যালকুলেটর", "হিসাব ও ইউনিট রূপান্তর", "khata", CalcActivity::class.java, keywords = "calculator unit converter length weight"),
+        Tool("sci", "সায়েন্টিফিক ক্যালকুলেটর", "sin, cos, log, পাওয়ার", "khata", SciCalcActivity::class.java, false, "scientific calculator sin cos tan log"),
         Tool("land", "জমির মাপ", "শতাংশ, কাঠা, বিঘা", "khata", LandActivity::class.java, keywords = "land katha bigha decimal জমি"),
         Tool("words", "টাকা কথায়", "চেক ও রশিদের জন্য", "khata", WordsActivity::class.java, keywords = "taka in words cheque amount"),
         Tool("currency", "কারেন্সি কনভার্টার", "টাকা, ডলার ও অন্যান্য মুদ্রা", "khata", CurrencyActivity::class.java, true, "currency exchange dollar rate"),
