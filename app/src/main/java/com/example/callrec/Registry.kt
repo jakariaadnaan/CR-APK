@@ -50,10 +50,10 @@ object Registry {
         Tool("transp", "ট্রান্সপারেন্ট PNG মেকার", "ব্যাকগ্রাউন্ড মুছুন", "image", TransparentActivity::class.java, false, "transparent png background remove"),
         Tool("color", "কালার পিকার", "ছবি থেকে রঙের কোড", "image", ColorPickerActivity::class.java, false, "color picker hex rgb"),
         // PDF
-        Tool("img2pdf", "ছবি → PDF", "একাধিক ছবি একটি PDF-এ", "pdf", null, false, "image to pdf images to pdf"),
+        Tool("img2pdf", "ছবি → PDF", "একাধিক ছবি একটি PDF-এ", "pdf", ImagesToPdfActivity::class.java, false, "image to pdf images to pdf"),
         Tool("pdfsplit", "PDF ভাগ", "পেজ রেঞ্জ ধরে আলাদা ফাইল", "pdf", null, false, "pdf splitter split"),
         Tool("pdfextract", "পেজ এক্সট্র্যাক্টর", "দরকারি পেজ বেছে নতুন PDF", "pdf", null, false, "pdf page extractor"),
-        Tool("pdf2img", "PDF → ছবি", "প্রতিটি পেজ ছবি হিসেবে", "pdf", null, false, "pdf to images"),
+        Tool("pdf2img", "PDF → ছবি", "প্রতিটি পেজ ছবি হিসেবে", "pdf", PdfToImagesActivity::class.java, false, "pdf to images"),
         Tool("pdflock", "PDF লক / আনলক", "পাসওয়ার্ড দিয়ে সুরক্ষা", "pdf", null, false, "pdf lock unlock password protect"),
         // অডিও ও ভিডিও
         Tool("aconv", "অডিও কনভার্টার", "MP3, WAV", "media", null, false, "audio converter mp3 wav"),

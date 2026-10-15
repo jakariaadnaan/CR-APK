@@ -84,6 +84,8 @@
         <activity android:name=".ColorPickerActivity" android:exported="false" />
         <activity android:name=".UpscaleActivity" android:exported="false" />
         <activity android:name=".TransparentActivity" android:exported="false" />
+        <activity android:name=".ImagesToPdfActivity" android:exported="false" />
+        <activity android:name=".PdfToImagesActivity" android:exported="false" />
         <activity android:name=".ToolListActivity" android:exported="false" />
         <activity android:name=".TextCaseActivity" android:exported="false" />
         <activity android:name=".CounterActivity" android:exported="false" />
