@@ -79,6 +79,10 @@
         <activity
             android:name=".MainActivity"
             android:exported="false" />
+        <activity android:name=".ToolListActivity" android:exported="false" />
+        <activity android:name=".TextCaseActivity" android:exported="false" />
+        <activity android:name=".CounterActivity" android:exported="false" />
+        <activity android:name=".UnicodeActivity" android:exported="false" />
 
         <service
             android:name=".RecorderService"

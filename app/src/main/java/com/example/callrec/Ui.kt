@@ -2,6 +2,7 @@ package com.example.callrec
 
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -81,7 +82,7 @@ fun Context.divider(): View {
 }
 
 /** Standard screen: green title bar, optional back arrow, content below, optional floating button. */
-fun Activity.setScreen(title: String, content: View, fab: View? = null, back: Boolean = true) {
+fun Activity.setScreen(title: String, content: View, fab: View? = null, back: Boolean = true, bottom: View? = null) {
     window.statusBarColor = Ui.PRIMARY
     val root = FrameLayout(this)
     root.setBackgroundColor(Ui.BG)
@@ -106,6 +107,7 @@ fun Activity.setScreen(title: String, content: View, fab: View? = null, back: Bo
 
     content.layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
     col.addView(content)
+    if (bottom != null) col.addView(bottom, lp())
     root.addView(col, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
 
     if (fab != null) {
@@ -241,4 +243,118 @@ fun Context.copyText(text: String) {
     val cm = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
     cm.setPrimaryClip(android.content.ClipData.newPlainText("text", text))
     android.widget.Toast.makeText(this, "কপি হয়েছে", android.widget.Toast.LENGTH_SHORT).show()
+}
+
+// ---------- Icons, wrapping layout, result card, bottom navigation ----------
+
+fun Context.iconView(res: Int, sizeDp: Int, tint: Int): android.widget.ImageView {
+    val v = android.widget.ImageView(this)
+    v.setImageResource(res)
+    v.imageTintList = android.content.res.ColorStateList.valueOf(tint)
+    v.layoutParams = LinearLayout.LayoutParams(dp(sizeDp), dp(sizeDp))
+    return v
+}
+
+/** A rounded tinted square holding one icon. */
+fun Context.iconBox(res: Int, tint: Int, fg: Int, boxDp: Int, iconDp: Int, radiusDp: Int = 12, endMarginDp: Int = 0): LinearLayout {
+    val b = LinearLayout(this)
+    b.gravity = Gravity.CENTER
+    b.background = bg(tint, radiusDp)
+    b.addView(iconView(res, iconDp, fg))
+    val p = LinearLayout.LayoutParams(dp(boxDp), dp(boxDp))
+    p.setMargins(0, 0, dp(endMarginDp), 0)
+    b.layoutParams = p
+    return b
+}
+
+/** Children flow left to right and wrap onto new lines. */
+class FlowLayout(ctx: Context) : ViewGroup(ctx) {
+    private val gap = ctx.dp(8)
+
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        val maxW = MeasureSpec.getSize(widthMeasureSpec) - paddingLeft - paddingRight
+        var x = 0
+        var y = 0
+        var rowH = 0
+        for (i in 0 until childCount) {
+            val c = getChildAt(i)
+            if (c.visibility == GONE) continue
+            c.measure(MeasureSpec.makeMeasureSpec(maxW, MeasureSpec.AT_MOST), MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED))
+            val w = c.measuredWidth
+            val h = c.measuredHeight
+            if (x > 0 && x + w > maxW) {
+                x = 0
+                y += rowH + gap
+                rowH = 0
+            }
+            x += w + gap
+            rowH = maxOf(rowH, h)
+        }
+        setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), y + rowH + paddingTop + paddingBottom)
+    }
+
+    override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+        val maxW = r - l - paddingLeft - paddingRight
+        var x = 0
+        var y = 0
+        var rowH = 0
+        for (i in 0 until childCount) {
+            val c = getChildAt(i)
+            if (c.visibility == GONE) continue
+            val w = c.measuredWidth
+            val h = c.measuredHeight
+            if (x > 0 && x + w > maxW) {
+                x = 0
+                y += rowH + gap
+                rowH = 0
+            }
+            c.layout(paddingLeft + x, paddingTop + y, paddingLeft + x + w, paddingTop + y + h)
+            x += w + gap
+            rowH = maxOf(rowH, h)
+        }
+    }
+}
+
+/** A card with a small title, a selectable value and a copy button. Returns the card and the value view. */
+fun Context.resultCard(title: String): Pair<LinearLayout, TextView> {
+    val c = card(14)
+    c.addView(label(title, 12f, Ui.MUTED, true))
+    val v = label("", 15f, Ui.TEXT)
+    v.setTextIsSelectable(true)
+    c.addView(v, lp(t = 4, b = 8))
+    c.addView(pill("কপি", Ui.BG, Ui.PRIMARY) { copyText(v.text.toString()) })
+    return Pair(c, v)
+}
+
+/** Bottom menu: 0 = হোম, 1 = সব টুল, 2 = সেটিংস. */
+fun Activity.navBar(selected: Int): View {
+    val bar = LinearLayout(this)
+    bar.orientation = LinearLayout.HORIZONTAL
+    bar.setBackgroundColor(Color.WHITE)
+    bar.elevation = dp(8).toFloat()
+    bar.setPadding(dp(8), dp(6), dp(8), dp(8))
+    val names = listOf("হোম", "সব টুল", "সেটিংস")
+    val icons = listOf(R.drawable.ic_home, R.drawable.ic_grid, R.drawable.ic_lock)
+    for (i in 0..2) {
+        val item = LinearLayout(this)
+        item.orientation = LinearLayout.VERTICAL
+        item.gravity = Gravity.CENTER
+        item.minimumHeight = dp(48)
+        val on = i == selected
+        val color = if (on) Ui.PRIMARY else Ui.MUTED
+        item.addView(iconView(icons[i], 24, color))
+        item.addView(label(names[i], 12f, color, on))
+        item.setOnClickListener {
+            if (!on) {
+                val intent = when (i) {
+                    0 -> Intent(this, HomeActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                    1 -> Intent(this, ToolListActivity::class.java).putExtra("cat", "all")
+                    else -> Intent(this, SettingsActivity::class.java)
+                }
+                startActivity(intent)
+            }
+        }
+        bar.addView(item, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+    }
+    return bar
 }
