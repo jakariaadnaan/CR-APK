@@ -36,7 +36,7 @@ object Registry {
         Tool("calc", "ক্যালকুলেটর", "হিসাব ও ইউনিট রূপান্তর", "khata", CalcActivity::class.java, keywords = "calculator unit converter length weight"),
         Tool("land", "জমির মাপ", "শতাংশ, কাঠা, বিঘা", "khata", LandActivity::class.java, keywords = "land katha bigha decimal জমি"),
         Tool("words", "টাকা কথায়", "চেক ও রশিদের জন্য", "khata", WordsActivity::class.java, keywords = "taka in words cheque amount"),
-        Tool("currency", "কারেন্সি কনভার্টার", "টাকা, ডলার ও অন্যান্য মুদ্রা", "khata", null, true, "currency exchange dollar rate"),
+        Tool("currency", "কারেন্সি কনভার্টার", "টাকা, ডলার ও অন্যান্য মুদ্রা", "khata", CurrencyActivity::class.java, true, "currency exchange dollar rate"),
         // সময় ও নোট
         Tool("todo", "করণীয়", "দিনের কাজের তালিকা", "time", TodoActivity::class.java, keywords = "todo task কাজ"),
         Tool("notes", "দ্রুত নোট", "নোট, নম্বর, আইডিয়া", "time", NotesActivity::class.java, keywords = "note memo"),
@@ -65,15 +65,15 @@ object Registry {
         Tool("textcase", "টেক্সট কেস কনভার্টার", "বড়-ছোট হাতের, camelCase, snake_case", "text", TextCaseActivity::class.java, keywords = "text case converter uppercase lowercase title"),
         Tool("counter", "শব্দ ও অক্ষর গণনা", "শব্দ, অক্ষর, লাইন, পড়ার সময়", "text", CounterActivity::class.java, keywords = "word character counter count"),
         Tool("unicode", "ইউনিকোড কনভার্টার", "টেক্সট ↔ কোড পয়েন্ট, UTF-8, HTML", "text", UnicodeActivity::class.java, keywords = "unicode utf-8 code point html entity"),
-        Tool("dict", "অভিধান", "শব্দের অর্থ খুঁজুন", "text", null, true, "dictionary meaning"),
+        Tool("dict", "অভিধান", "শব্দের অর্থ খুঁজুন", "text", DictionaryActivity::class.java, true, "dictionary meaning"),
         // QR ও বারকোড
         Tool("qrgen", "QR কোড তৈরি", "লেখা বা লিংক থেকে QR", "qr", QrGenActivity::class.java, false, "qr code generator"),
         Tool("barcode", "বারকোড তৈরি", "বিভিন্ন ধরনের বারকোড", "qr", BarcodeGenActivity::class.java, false, "barcode generator"),
         Tool("scan", "স্ক্যানার", "ক্যামেরা দিয়ে QR ও বারকোড পড়ুন", "qr", ScannerActivity::class.java, false, "qr scanner barcode scanner"),
         // নেটওয়ার্ক ও ডিভাইস
-        Tool("speed", "ইন্টারনেট স্পিড টেস্ট", "ডাউনলোড ও আপলোড গতি", "net", null, true, "internet speed test"),
-        Tool("ip", "আমার IP ও IP তথ্য", "পাবলিক IP ও অবস্থান", "net", null, true, "ip address checker public ip information"),
-        Tool("whois", "WHOIS লুকআপ", "ডোমেইনের মালিকানা তথ্য", "net", null, true, "whois domain lookup"),
+        Tool("speed", "ইন্টারনেট স্পিড টেস্ট", "ডাউনলোড ও আপলোড গতি", "net", SpeedTestActivity::class.java, true, "internet speed test"),
+        Tool("ip", "আমার IP ও IP তথ্য", "পাবলিক IP ও অবস্থান", "net", IpActivity::class.java, true, "ip address checker public ip information"),
+        Tool("whois", "WHOIS লুকআপ", "ডোমেইনের মালিকানা তথ্য", "net", WhoisActivity::class.java, true, "whois domain lookup"),
         Tool("webcam", "ওয়েবক্যাম টেস্টার", "ক্যামেরা ঠিকমতো চলছে কি না", "net", null, false, "webcam camera tester")
     )
 

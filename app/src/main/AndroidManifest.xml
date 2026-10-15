@@ -4,6 +4,7 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-permission android:name="android.permission.VIBRATE" />
@@ -97,6 +98,11 @@
         <activity android:name=".QrGenActivity" android:exported="false" />
         <activity android:name=".BarcodeGenActivity" android:exported="false" />
         <activity android:name=".ScannerActivity" android:exported="false" />
+        <activity android:name=".CurrencyActivity" android:exported="false" />
+        <activity android:name=".DictionaryActivity" android:exported="false" />
+        <activity android:name=".SpeedTestActivity" android:exported="false" />
+        <activity android:name=".IpActivity" android:exported="false" />
+        <activity android:name=".WhoisActivity" android:exported="false" />
         <activity android:name=".ToolListActivity" android:exported="false" />
         <activity android:name=".TextCaseActivity" android:exported="false" />
         <activity android:name=".CounterActivity" android:exported="false" />
