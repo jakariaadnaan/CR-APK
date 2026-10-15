@@ -67,9 +67,9 @@ object Registry {
         Tool("unicode", "ইউনিকোড কনভার্টার", "টেক্সট ↔ কোড পয়েন্ট, UTF-8, HTML", "text", UnicodeActivity::class.java, keywords = "unicode utf-8 code point html entity"),
         Tool("dict", "অভিধান", "শব্দের অর্থ খুঁজুন", "text", null, true, "dictionary meaning"),
         // QR ও বারকোড
-        Tool("qrgen", "QR কোড তৈরি", "লেখা বা লিংক থেকে QR", "qr", null, false, "qr code generator"),
-        Tool("barcode", "বারকোড তৈরি", "বিভিন্ন ধরনের বারকোড", "qr", null, false, "barcode generator"),
-        Tool("scan", "স্ক্যানার", "ক্যামেরা দিয়ে QR ও বারকোড পড়ুন", "qr", null, false, "qr scanner barcode scanner"),
+        Tool("qrgen", "QR কোড তৈরি", "লেখা বা লিংক থেকে QR", "qr", QrGenActivity::class.java, false, "qr code generator"),
+        Tool("barcode", "বারকোড তৈরি", "বিভিন্ন ধরনের বারকোড", "qr", BarcodeGenActivity::class.java, false, "barcode generator"),
+        Tool("scan", "স্ক্যানার", "ক্যামেরা দিয়ে QR ও বারকোড পড়ুন", "qr", ScannerActivity::class.java, false, "qr scanner barcode scanner"),
         // নেটওয়ার্ক ও ডিভাইস
         Tool("speed", "ইন্টারনেট স্পিড টেস্ট", "ডাউনলোড ও আপলোড গতি", "net", null, true, "internet speed test"),
         Tool("ip", "আমার IP ও IP তথ্য", "পাবলিক IP ও অবস্থান", "net", null, true, "ip address checker public ip information"),

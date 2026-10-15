@@ -4,6 +4,8 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -92,6 +94,9 @@
         <activity android:name=".AudioConvertActivity" android:exported="false" />
         <activity android:name=".VideoToAudioActivity" android:exported="false" />
         <activity android:name=".VideoInfoActivity" android:exported="false" />
+        <activity android:name=".QrGenActivity" android:exported="false" />
+        <activity android:name=".BarcodeGenActivity" android:exported="false" />
+        <activity android:name=".ScannerActivity" android:exported="false" />
         <activity android:name=".ToolListActivity" android:exported="false" />
         <activity android:name=".TextCaseActivity" android:exported="false" />
         <activity android:name=".CounterActivity" android:exported="false" />
