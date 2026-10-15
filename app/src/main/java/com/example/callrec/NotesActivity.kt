@@ -15,7 +15,7 @@ import android.widget.ScrollView
 import android.widget.Toast
 
 /** দ্রুত নোট: short notes, phone numbers, ideas, with search and pinning. */
-class NotesActivity : Activity() {
+class NotesActivity : GuardedActivity() {
 
     private lateinit var listBox: LinearLayout
     private lateinit var search: EditText

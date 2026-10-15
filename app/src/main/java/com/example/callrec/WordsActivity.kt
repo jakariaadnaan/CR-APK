@@ -11,7 +11,7 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 
 /** টাকা কথায়: চেক, রশিদ বা ভাউচারের জন্য অঙ্ককে বাংলা কথায় লেখা। */
-class WordsActivity : Activity() {
+class WordsActivity : GuardedActivity() {
 
     private var words = ""
 

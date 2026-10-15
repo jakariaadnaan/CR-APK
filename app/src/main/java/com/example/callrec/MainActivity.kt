@@ -21,7 +21,7 @@ import android.widget.Toast
 import java.io.File
 
 /** Step 1 test screen: record, watch call events, and see what each audio source captures. */
-class MainActivity : Activity() {
+class MainActivity : GuardedActivity() {
 
     private lateinit var logView: TextView
     private lateinit var listBox: LinearLayout

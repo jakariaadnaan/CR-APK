@@ -21,7 +21,7 @@ import java.math.RoundingMode
 import java.util.Locale
 
 /** ক্যালকুলেটর with a second tab for unit conversion (length, weight, temperature, volume). */
-class CalcActivity : Activity() {
+class CalcActivity : GuardedActivity() {
 
     private class UnitDef(val name: String, val factor: Double)
 

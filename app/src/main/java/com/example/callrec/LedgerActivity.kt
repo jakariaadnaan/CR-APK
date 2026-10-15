@@ -18,7 +18,7 @@ import android.widget.Toast
 import java.util.Calendar
 
 /** খরচের খাতা: daily income / expense, monthly totals and a per-category summary. */
-class LedgerActivity : Activity() {
+class LedgerActivity : GuardedActivity() {
 
     private lateinit var box: LinearLayout
     private var year = 0

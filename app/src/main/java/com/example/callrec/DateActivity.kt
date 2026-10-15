@@ -21,7 +21,7 @@ import java.time.temporal.ChronoField
 import java.time.temporal.ChronoUnit
 
 /** তারিখ ও বয়স: ইংরেজি ↔ বাংলা ↔ হিজরি তারিখ এবং জন্মতারিখ থেকে বয়স। */
-class DateActivity : Activity() {
+class DateActivity : GuardedActivity() {
 
     private val hijriMonths = listOf(
         "মুহাররম", "সফর", "রবিউল আউয়াল", "রবিউস সানি", "জমাদিউল আউয়াল", "জমাদিউস সানি",

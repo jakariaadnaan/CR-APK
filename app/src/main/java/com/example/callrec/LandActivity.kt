@@ -15,7 +15,7 @@ import android.widget.TextView
 import android.widget.Toast
 
 /** জমির মাপ: শতাংশ, কাঠা, বিঘা, একর, বর্গফুট ইত্যাদির মধ্যে রূপান্তর। কাঠা ও বিঘার মান বদলানো যায়। */
-class LandActivity : Activity() {
+class LandActivity : GuardedActivity() {
 
     private val prefs by lazy { getSharedPreferences("land_prefs", MODE_PRIVATE) }
     private var katha = 720.0 // square feet in one কাঠা

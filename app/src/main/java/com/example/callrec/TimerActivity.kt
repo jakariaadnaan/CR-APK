@@ -25,7 +25,7 @@ import android.widget.TextView
 import android.widget.Toast
 
 /** টাইমার: countdown, stopwatch with laps, and a pomodoro timer. Alerts even when the app is closed. */
-class TimerActivity : Activity() {
+class TimerActivity : GuardedActivity() {
 
     private val handler = Handler(Looper.getMainLooper())
     private val sp by lazy { getSharedPreferences("timers", MODE_PRIVATE) }

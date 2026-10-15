@@ -11,7 +11,7 @@ import android.widget.ScrollView
 import android.widget.Toast
 
 /** Home screen: a grid of tools. Tools that are not built yet say "শীঘ্রই". */
-class HomeActivity : Activity() {
+class HomeActivity : GuardedActivity() {
 
     private class Tile(val icon: String, val title: String, val sub: String, val target: Class<*>?)
 
@@ -26,6 +26,7 @@ class HomeActivity : Activity() {
         Tile("📅", "তারিখ ও বয়স", "বাংলা, হিজরি, বয়স", DateActivity::class.java),
         Tile("⏱️", "টাইমার", "পমোডোরো, স্টপওয়াচ", TimerActivity::class.java),
         Tile("🔑", "পাসওয়ার্ড", "শক্তিশালী পাসওয়ার্ড", PasswordActivity::class.java),
+        Tile("🔒", "সেটিংস", "অ্যাপ লক ও ব্যাকআপ", SettingsActivity::class.java),
         Tile("🎙️", "কল রেকর্ডিং", "টেস্ট স্ক্রিন", MainActivity::class.java)
     )
 

@@ -17,7 +17,7 @@ import android.widget.Toast
 import java.security.SecureRandom
 
 /** পাসওয়ার্ড জেনারেটর: শক্তিশালী পাসওয়ার্ড তৈরি ও এক ট্যাপে কপি। */
-class PasswordActivity : Activity() {
+class PasswordActivity : GuardedActivity() {
 
     private val rnd = SecureRandom()
     private var password = ""

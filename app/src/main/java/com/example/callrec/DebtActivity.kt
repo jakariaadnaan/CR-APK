@@ -17,7 +17,7 @@ import android.widget.Toast
 import java.util.Calendar
 
 /** বাকির খাতা: who owes me and whom I owe. Paid-off lines are removed. */
-class DebtActivity : Activity() {
+class DebtActivity : GuardedActivity() {
 
     private lateinit var box: LinearLayout
     private var filter = 0 // 0 = all, 1 = I will receive, 2 = I have to pay

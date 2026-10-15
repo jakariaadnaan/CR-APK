@@ -16,7 +16,7 @@ import android.widget.Toast
 import java.util.Calendar
 
 /** করণীয়: day-to-day tasks with tick-off, an urgent flag and an optional due date. */
-class TodoActivity : Activity() {
+class TodoActivity : GuardedActivity() {
 
     private lateinit var box: LinearLayout
 
