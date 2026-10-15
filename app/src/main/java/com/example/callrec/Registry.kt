@@ -58,7 +58,7 @@ object Registry {
         // অডিও ও ভিডিও
         Tool("aconv", "অডিও কনভার্টার", "WAV, M4A (AAC)", "media", AudioConvertActivity::class.java, false, "audio converter mp3 wav"),
         Tool("v2mp3", "ভিডিও → অডিও", "ভিডিও থেকে M4A বা WAV", "media", VideoToAudioActivity::class.java, false, "video to mp3 extract audio"),
-        Tool("gif", "GIF মেকার", "ছবি বা ভিডিও থেকে GIF", "media", null, false, "gif maker"),
+        Tool("gif", "GIF মেকার", "ছবি বা ভিডিও থেকে GIF", "media", GifMakerActivity::class.java, false, "gif maker"),
         Tool("vmeta", "ভিডিও মেটাডেটা", "ভিডিওর খুঁটিনাটি তথ্য", "media", VideoInfoActivity::class.java, false, "video metadata viewer info"),
         Tool("rec", "কল রেকর্ডিং", "টেস্ট স্ক্রিন", "media", MainActivity::class.java, keywords = "call recording record"),
         // টেক্সট ও ভাষা
@@ -74,7 +74,7 @@ object Registry {
         Tool("speed", "ইন্টারনেট স্পিড টেস্ট", "ডাউনলোড ও আপলোড গতি", "net", SpeedTestActivity::class.java, true, "internet speed test"),
         Tool("ip", "আমার IP ও IP তথ্য", "পাবলিক IP ও অবস্থান", "net", IpActivity::class.java, true, "ip address checker public ip information"),
         Tool("whois", "WHOIS লুকআপ", "ডোমেইনের মালিকানা তথ্য", "net", WhoisActivity::class.java, true, "whois domain lookup"),
-        Tool("webcam", "ওয়েবক্যাম টেস্টার", "ক্যামেরা ঠিকমতো চলছে কি না", "net", null, false, "webcam camera tester")
+        Tool("webcam", "ওয়েবক্যাম টেস্টার", "ক্যামেরা ঠিকমতো চলছে কি না", "net", WebcamActivity::class.java, false, "webcam camera tester")
     )
 
     fun cat(id: String): Cat = cats.first { it.id == id }

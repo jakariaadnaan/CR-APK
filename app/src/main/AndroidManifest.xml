@@ -103,6 +103,8 @@
         <activity android:name=".SpeedTestActivity" android:exported="false" />
         <activity android:name=".IpActivity" android:exported="false" />
         <activity android:name=".WhoisActivity" android:exported="false" />
+        <activity android:name=".GifMakerActivity" android:exported="false" />
+        <activity android:name=".WebcamActivity" android:exported="false" />
         <activity android:name=".ToolListActivity" android:exported="false" />
         <activity android:name=".TextCaseActivity" android:exported="false" />
         <activity android:name=".CounterActivity" android:exported="false" />
