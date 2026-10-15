@@ -44,11 +44,11 @@ object Registry {
         Tool("timer", "টাইমার", "কাউন্টডাউন, স্টপওয়াচ, পমোডোরো", "time", TimerActivity::class.java, keywords = "timer stopwatch pomodoro countdown"),
         Tool("pass", "পাসওয়ার্ড জেনারেটর", "শক্তিশালী পাসওয়ার্ড", "time", PasswordActivity::class.java, keywords = "password generator"),
         // ছবি
-        Tool("imgfmt", "ফরম্যাট কনভার্টার", "PNG, JPG, WebP", "image", null, false, "image format converter png jpg webp"),
-        Tool("imgcomp", "ফাইল সাইজ কমানো", "ছবির আকার ছোট করুন", "image", null, false, "compress file size reduce"),
+        Tool("imgfmt", "ফরম্যাট কনভার্টার", "PNG, JPG, WebP", "image", ImageFormatActivity::class.java, false, "image format converter png jpg webp"),
+        Tool("imgcomp", "ফাইল সাইজ কমানো", "ছবির আকার ছোট করুন", "image", ImageCompressActivity::class.java, false, "compress file size reduce"),
         Tool("upscale", "ইমেজ আপস্কেলার", "ছবি বড় করুন", "image", null, false, "image upscaler enlarge resize"),
         Tool("transp", "ট্রান্সপারেন্ট PNG মেকার", "ব্যাকগ্রাউন্ড মুছুন", "image", null, false, "transparent png background remove"),
-        Tool("color", "কালার পিকার", "ছবি থেকে রঙের কোড", "image", null, false, "color picker hex rgb"),
+        Tool("color", "কালার পিকার", "ছবি থেকে রঙের কোড", "image", ColorPickerActivity::class.java, false, "color picker hex rgb"),
         // PDF
         Tool("img2pdf", "ছবি → PDF", "একাধিক ছবি একটি PDF-এ", "pdf", null, false, "image to pdf images to pdf"),
         Tool("pdfsplit", "PDF ভাগ", "পেজ রেঞ্জ ধরে আলাদা ফাইল", "pdf", null, false, "pdf splitter split"),
