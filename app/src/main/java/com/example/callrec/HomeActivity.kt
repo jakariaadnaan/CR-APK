@@ -30,14 +30,28 @@ class HomeActivity : GuardedActivity() {
         val header = LinearLayout(this)
         header.orientation = LinearLayout.VERTICAL
         header.setPadding(dp(20), dp(22), dp(20), dp(6))
-        header.addView(label(tr("আমার খাতা"), 32f, Ui.TEXT, true))
-        header.addView(label(tr("সব দরকারি টুল এক জায়গায়"), 15f, Ui.MUTED), lp(b = 14))
+
+        val top = LinearLayout(this)
+        top.orientation = LinearLayout.HORIZONTAL
+        top.gravity = Gravity.CENTER_VERTICAL
+        val titles = LinearLayout(this)
+        titles.orientation = LinearLayout.VERTICAL
+        titles.addView(label(tr("আমার খাতা"), 32f, Ui.TEXT, true))
+        titles.addView(label(tr("সব দরকারি টুল এক জায়গায়"), 15f, Ui.MUTED), lp(b = 4))
+        top.addView(titles, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        val sBtn = LinearLayout(this)
+        sBtn.gravity = Gravity.CENTER
+        sBtn.background = bg(Ui.CARD, 24, Ui.LINE, 1)
+        sBtn.addView(iconView(R.drawable.ic_search, 22, Ui.TEXT))
+        top.addView(sBtn, lp(width = dp(48), height = dp(48), l = 12))
+        header.addView(top, lp())
 
         val box = LinearLayout(this)
         box.orientation = LinearLayout.HORIZONTAL
         box.gravity = Gravity.CENTER_VERTICAL
         box.background = bg(Ui.CARD, 18, Ui.LINE, 1)
         box.setPadding(dp(16), 0, dp(16), 0)
+        box.visibility = View.GONE
         box.addView(iconView(R.drawable.ic_search, 22, Ui.MUTED))
         search = EditText(this)
         search.hint = tr("টুল খুঁজুন, যেমন: PDF, QR, ছবি")
@@ -49,7 +63,19 @@ class HomeActivity : GuardedActivity() {
         search.setPadding(dp(12), 0, 0, 0)
         search.onChange { render() }
         box.addView(search, LinearLayout.LayoutParams(0, dp(52), 1f))
-        header.addView(box, lp(height = 52))
+        header.addView(box, lp(height = dp(52), t = 10))
+        sBtn.setOnClickListener {
+            val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+            if (box.visibility == View.GONE) {
+                box.visibility = View.VISIBLE
+                search.requestFocus()
+                imm.showSoftInput(search, 0)
+            } else {
+                search.setText("")
+                box.visibility = View.GONE
+                imm.hideSoftInputFromWindow(search.windowToken, 0)
+            }
+        }
         root.addView(header, lp())
 
         val scroll = ScrollView(this)

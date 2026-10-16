@@ -398,21 +398,26 @@ fun Activity.navBar(selected: Int): View {
     wrap.addView(line, lp(height = 1))
     val bar = LinearLayout(this)
     bar.orientation = LinearLayout.HORIZONTAL
-    bar.setPadding(dp(8), dp(8), dp(8), dp(8))
+    bar.setPadding(dp(8), dp(8), dp(8), dp(10))
     wrap.addView(bar, lp())
     val names = listOf(tr("হোম"), tr("সব টুল"), tr("সেটিংস"))
     val icons = listOf(R.drawable.ic_home, R.drawable.ic_grid, R.drawable.ic_lock)
     for (i in 0..2) {
         val item = LinearLayout(this)
         item.orientation = LinearLayout.VERTICAL
-        item.gravity = Gravity.CENTER
-        item.minimumHeight = dp(52)
+        item.gravity = Gravity.CENTER_HORIZONTAL
         val on = i == selected
         val color = if (on) Ui.PRIMARY else Ui.MUTED
-        item.addView(iconView(icons[i], 26, color))
-        val tv = label(names[i], 13f, color)
-        if (on) tv.typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
-        item.addView(tv, lp(t = 2))
+        val pillBox = LinearLayout(this)
+        pillBox.gravity = Gravity.CENTER
+        if (on) pillBox.background = bg(Ui.KEY_OP, 16)
+        pillBox.addView(iconView(icons[i], 24, color))
+        item.addView(pillBox, LinearLayout.LayoutParams(dp(64), dp(32)))
+        val tv = label(names[i], 12f, color)
+        tv.gravity = Gravity.CENTER
+        tv.maxLines = 1
+        tv.typeface = if (on) Typeface.DEFAULT_BOLD else Typeface.create("sans-serif-medium", Typeface.NORMAL)
+        item.addView(tv, lp(width = ViewGroup.LayoutParams.WRAP_CONTENT, t = 4))
         item.setOnClickListener {
             if (!on) {
                 val intent = when (i) {
