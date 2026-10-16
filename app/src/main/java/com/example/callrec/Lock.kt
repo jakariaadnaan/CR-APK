@@ -111,7 +111,7 @@ open class GuardedActivity : Activity() {
         stamp = Ui.stamp
         setTheme(if (Ui.dark) android.R.style.Theme_Material_NoActionBar else android.R.style.Theme_Material_Light_NoActionBar)
         super.onCreate(savedInstanceState)
-        if (Lock.enabled(this)) {
+        if (Lock.enabled(this) && screenHidden(this)) {
             window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
         }
     }
@@ -132,3 +132,7 @@ open class GuardedActivity : Activity() {
         Lock.lastActive = System.currentTimeMillis()
     }
 }
+
+/** True when the person chose to block screenshots and the recents preview (off by default). */
+fun screenHidden(c: Context): Boolean =
+    c.getSharedPreferences("settings", Context.MODE_PRIVATE).getBoolean("secure", false)

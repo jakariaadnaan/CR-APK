@@ -32,7 +32,7 @@ class LockActivity : Activity() {
         super.onCreate(savedInstanceState)
         Ui.apply(this)
         Lock.showing = true
-        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+        if (screenHidden(this)) window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
         window.statusBarColor = Ui.PRIMARY
 
         val root = LinearLayout(this)
