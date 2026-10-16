@@ -370,3 +370,47 @@ fun Activity.navBar(selected: Int): View {
     }
     return wrap
 }
+
+/** One tappable row: icon on the left, title with a grey line below it, optional extra view, chevron on the right. */
+fun Context.listRow(
+    icon: Int,
+    title: String,
+    sub: String = "",
+    titleColor: Int = Ui.TEXT,
+    extra: View? = null,
+    chevron: Boolean = true
+): LinearLayout {
+    val r = LinearLayout(this)
+    r.orientation = LinearLayout.HORIZONTAL
+    r.gravity = Gravity.CENTER_VERTICAL
+    r.setPadding(dp(18), dp(15), dp(16), dp(15))
+    r.addView(iconView(icon, 26, Ui.ICON), lp(width = dp(26), height = dp(26), r = 16))
+    val mid = LinearLayout(this)
+    mid.orientation = LinearLayout.VERTICAL
+    val t = label(title, 17f, titleColor, true)
+    t.typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+    mid.addView(t)
+    if (sub.isNotEmpty()) mid.addView(label(sub, 14f, Ui.MUTED), lp(t = 2))
+    r.addView(mid, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+    if (extra != null) r.addView(extra, lp(width = ViewGroup.LayoutParams.WRAP_CONTENT, l = 8))
+    if (chevron) r.addView(iconView(R.drawable.ic_chevron, 20, Color.parseColor("#B3B8C0")), lp(width = dp(20), height = dp(20), l = 8))
+    return r
+}
+
+/** A white rounded card holding several rows, with a thin line between them. */
+fun Context.groupCard(rows: List<View>): LinearLayout {
+    val c = LinearLayout(this)
+    c.orientation = LinearLayout.VERTICAL
+    c.background = bg(Ui.CARD, 20, Ui.LINE, 1)
+    for ((i, v) in rows.withIndex()) {
+        if (i > 0) {
+            val d = View(this)
+            d.setBackgroundColor(Ui.LINE)
+            val p = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1)
+            p.setMargins(dp(60), 0, 0, 0)
+            c.addView(d, p)
+        }
+        c.addView(v, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+    }
+    return c
+}
