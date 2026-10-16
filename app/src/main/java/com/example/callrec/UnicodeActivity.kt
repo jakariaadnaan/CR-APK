@@ -34,7 +34,7 @@ class UnicodeActivity : GuardedActivity() {
         box.addView(tabs, lp(b = 12))
 
         val inCard = card(14)
-        inCard.addView(label("ইনপুট", 12f, Ui.MUTED, true))
+        inCard.addView(label(tr("ইনপুট"), 12f, Ui.MUTED, true))
         input = EditText(this)
         input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
         input.minLines = 3
@@ -47,14 +47,14 @@ class UnicodeActivity : GuardedActivity() {
         results.orientation = LinearLayout.VERTICAL
         box.addView(results, lp())
 
-        setScreen("ইউনিকোড কনভার্টার", scroll)
+        setScreen(tr("ইউনিকোড কনভার্টার"), scroll)
         buildTabs()
         update()
     }
 
     private fun buildTabs() {
         tabs.removeAllViews()
-        val names = listOf("টেক্সট → কোড", "কোড → টেক্সট")
+        val names = listOf(tr("টেক্সট → কোড"), tr("কোড → টেক্সট"))
         for (i in names.indices) {
             val on = (i == 1) == decode
             val chip = label(names[i], 14f, if (on) Color.WHITE else Ui.PRIMARY, true)
@@ -64,12 +64,12 @@ class UnicodeActivity : GuardedActivity() {
             chip.setOnClickListener {
                 decode = i == 1
                 buildTabs()
-                input.hint = if (decode) "যেমন: U+0985 U+09AE  বা  \\u0985  বা  &#2437;  বা  %E0%A6%85" else "এখানে লিখুন, যেমন: অমর"
+                input.hint = if (decode) tr("যেমন: U+0985 U+09AE  বা  \\u0985  বা  &#2437;  বা  %E0%A6%85") else tr("এখানে লিখুন, যেমন: অমর")
                 update()
             }
             tabs.addView(chip, lp(r = 8))
         }
-        input.hint = if (decode) "যেমন: U+0985 U+09AE  বা  \\u0985  বা  &#2437;  বা  %E0%A6%85" else "এখানে লিখুন, যেমন: অমর"
+        input.hint = if (decode) tr("যেমন: U+0985 U+09AE  বা  \\u0985  বা  &#2437;  বা  %E0%A6%85") else tr("এখানে লিখুন, যেমন: অমর")
     }
 
     private fun hex(n: Int, width: Int): String = String.format(Locale.US, "%0" + width + "X", n)
@@ -79,7 +79,7 @@ class UnicodeActivity : GuardedActivity() {
         val s = input.text.toString()
         if (s.isEmpty()) return
         if (decode) {
-            addResult("টেক্সট", decodeText(s))
+            addResult(tr("টেক্সট"), decodeText(s))
             return
         }
         val cps = ArrayList<Int>()
@@ -89,11 +89,11 @@ class UnicodeActivity : GuardedActivity() {
             cps.add(cp)
             i += Character.charCount(cp)
         }
-        addResult("কোড পয়েন্ট", cps.joinToString(" ") { "U+" + hex(it, 4) })
-        addResult("UTF-8 (হেক্স বাইট)", s.toByteArray(Charsets.UTF_8).joinToString(" ") { hex(it.toInt() and 0xFF, 2) })
-        addResult("\\uXXXX (জাভা / জাভাস্ক্রিপ্ট)", s.map { "\\u" + hex(it.code, 4) }.joinToString(""))
+        addResult(tr("কোড পয়েন্ট"), cps.joinToString(" ") { "U+" + hex(it, 4) })
+        addResult(tr("UTF-8 (হেক্স বাইট)"), s.toByteArray(Charsets.UTF_8).joinToString(" ") { hex(it.toInt() and 0xFF, 2) })
+        addResult(tr("\\uXXXX (জাভা / জাভাস্ক্রিপ্ট)"), s.map { "\\u" + hex(it.code, 4) }.joinToString(""))
         addResult("HTML (&#...;)", cps.joinToString("") { "&#" + it + ";" })
-        addResult("URL এনকোড", URLEncoder.encode(s, "UTF-8"))
+        addResult(tr("URL এনকোড"), URLEncoder.encode(s, "UTF-8"))
     }
 
     private fun addResult(title: String, value: String) {

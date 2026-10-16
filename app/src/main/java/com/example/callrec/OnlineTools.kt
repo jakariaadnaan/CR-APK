@@ -83,9 +83,9 @@ abstract class OnlineBase : GuardedActivity() {
             try {
                 body = NetUtil.get(url)
             } catch (e: HttpErr) {
-                err = if (e.code == 404) "404" else "সার্ভার সাড়া দিচ্ছে না (" + bn(e.code.toString()) + ")"
+                err = if (e.code == 404) "404" else tr("সার্ভার সাড়া দিচ্ছে না (") + bn(e.code.toString()) + ")"
             } catch (e: Throwable) {
-                err = "ইন্টারনেট সংযোগ নেই বা সার্ভারে পৌঁছানো যায়নি"
+                err = tr("ইন্টারনেট সংযোগ নেই বা সার্ভারে পৌঁছানো যায়নি")
             }
             val b = body
             runOnUiThread { if (b != null) onOk(b) else onErr(err) }
@@ -107,10 +107,10 @@ class CurrencyActivity : OnlineBase() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        build("কারেন্সি কনভার্টার")
+        build(tr("কারেন্সি কনভার্টার"))
         val c = card(14)
-        c.addView(label("পরিমাণ", 12f, Ui.MUTED, true))
-        amount = field("যেমন: ১০০", InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL)
+        c.addView(label(tr("পরিমাণ"), 12f, Ui.MUTED, true))
+        amount = field(tr("যেমন: ১০০"), InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL)
         amount.setText("1")
         amount.onChange { calc() }
         c.addView(amount, lp(b = 8))
@@ -130,11 +130,11 @@ class CurrencyActivity : OnlineBase() {
         box.addView(c, lp(b = 12))
 
         val r = card(14)
-        result = label("রেট আনা হচ্ছে…", 20f, Ui.PRIMARY, true)
+        result = label(tr("রেট আনা হচ্ছে…"), 20f, Ui.PRIMARY, true)
         r.addView(result)
         note = label("", 12f, Ui.MUTED)
         r.addView(note, lp(t = 6, b = 8))
-        r.addView(pill("রেট নতুন করে আনুন", Ui.BG, Ui.PRIMARY) { load() })
+        r.addView(pill(tr("রেট নতুন করে আনুন"), Ui.BG, Ui.PRIMARY) { load() })
         box.addView(r, lp())
 
         val prefs = getSharedPreferences("currency", 0)
@@ -146,7 +146,7 @@ class CurrencyActivity : OnlineBase() {
     }
 
     private fun load() {
-        note.text = "রেট আনা হচ্ছে…"
+        note.text = tr("রেট আনা হচ্ছে…")
         fetch("https://open.er-api.com/v6/latest/USD", { body ->
             try {
                 val j = JSONObject(body)
@@ -155,11 +155,11 @@ class CurrencyActivity : OnlineBase() {
                 getSharedPreferences("currency", 0).edit().putString("rates", r.toString()).putLong("time", now).apply()
                 setRates(r, now, false)
             } catch (e: Throwable) {
-                note.text = "রেট পড়া যায়নি"
+                note.text = tr("রেট পড়া যায়নি")
             }
         }, { err ->
-            note.text = if (rates.length() > 0) "অফলাইন: সর্বশেষ সংরক্ষিত রেট দেখানো হচ্ছে" else err
-            if (rates.length() == 0) result.text = "রেট পাওয়া যায়নি"
+            note.text = if (rates.length() > 0) tr("অফলাইন: সর্বশেষ সংরক্ষিত রেট দেখানো হচ্ছে") else err
+            if (rates.length() == 0) result.text = tr("রেট পাওয়া যায়নি")
         })
     }
 
@@ -186,14 +186,14 @@ class CurrencyActivity : OnlineBase() {
         }
         from.onItemSelectedListener = l
         to.onItemSelectedListener = l
-        note.text = (if (cached) "সংরক্ষিত রেট · " else "আপডেট: ") + dateText(time)
+        note.text = (if (cached) tr("সংরক্ষিত রেট · ") else tr("আপডেট: ")) + dateText(time)
         calc()
     }
 
     private fun calc() {
         if (codes.isEmpty() || rates.length() == 0) return
         val a = asciiDigits(amount.text.toString()).toDoubleOrNull()
-        if (a == null) { result.text = "পরিমাণ লিখুন"; return }
+        if (a == null) { result.text = tr("পরিমাণ লিখুন"); return }
         val f = from.selectedItem as String
         val t = to.selectedItem as String
         val v = a / rates.getDouble(f) * rates.getDouble(t)
@@ -211,35 +211,35 @@ class DictionaryActivity : OnlineBase() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        build("অভিধান")
+        build(tr("অভিধান"))
         val c = card(14)
-        input = field("ইংরেজি শব্দ লিখুন, যেমন: book")
+        input = field(tr("ইংরেজি শব্দ লিখুন, যেমন: book"))
         input.imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH
         input.setOnEditorActionListener { _, _, _ -> search(); true }
         c.addView(input, lp(b = 8))
-        c.addView(pill("খুঁজুন") { search() })
+        c.addView(pill(tr("খুঁজুন")) { search() })
         box.addView(c, lp(b = 12))
         out = LinearLayout(this)
         out.orientation = LinearLayout.VERTICAL
         box.addView(out, lp())
-        box.addView(label("ইংরেজি শব্দের ইংরেজি অর্থ ও উদাহরণ দেখায়; বাংলা অর্থ নেই।", 12f, Ui.MUTED), lp(l = 4, t = 8))
+        box.addView(label(tr("ইংরেজি শব্দের ইংরেজি অর্থ ও উদাহরণ দেখায়; বাংলা অর্থ নেই।"), 12f, Ui.MUTED), lp(l = 4, t = 8))
     }
 
     private fun search() {
         val w = input.text.toString().trim().lowercase()
         if (w.isEmpty()) return
         out.removeAllViews()
-        out.addView(label("খোঁজা হচ্ছে…", 13f, Ui.MUTED))
+        out.addView(label(tr("খোঁজা হচ্ছে…"), 13f, Ui.MUTED))
         fetch("https://api.dictionaryapi.dev/api/v2/entries/en/" + NetUtil.enc(w), { body ->
             out.removeAllViews()
             try {
                 show(JSONArray(body))
             } catch (e: Throwable) {
-                out.addView(label("ফলাফল পড়া যায়নি", 13f, Ui.MUTED))
+                out.addView(label(tr("ফলাফল পড়া যায়নি"), 13f, Ui.MUTED))
             }
         }, { err ->
             out.removeAllViews()
-            out.addView(label(if (err == "404") "শব্দটি পাওয়া যায়নি" else err, 14f, Ui.MUTED))
+            out.addView(label(if (err == "404") tr("শব্দটি পাওয়া যায়নি") else err, 14f, Ui.MUTED))
         })
     }
 
@@ -269,7 +269,7 @@ class DictionaryActivity : OnlineBase() {
                 if (syn != null && syn.length() > 0) {
                     val l = ArrayList<String>()
                     for (s in 0 until Math.min(6, syn.length())) l.add(syn.getString(s))
-                    c.addView(label("সমার্থক: " + l.joinToString(", "), 13f, Ui.MUTED), lp(t = 8))
+                    c.addView(label(tr("সমার্থক: ") + l.joinToString(", "), 13f, Ui.MUTED), lp(t = 8))
                 }
                 out.addView(c, lp(b = 10))
             }

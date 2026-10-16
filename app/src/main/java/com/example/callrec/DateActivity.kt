@@ -24,10 +24,10 @@ import java.time.temporal.ChronoUnit
 class DateActivity : GuardedActivity() {
 
     private val hijriMonths = listOf(
-        "মুহাররম", "সফর", "রবিউল আউয়াল", "রবিউস সানি", "জমাদিউল আউয়াল", "জমাদিউস সানি",
-        "রজব", "শাবান", "রমজান", "শাওয়াল", "জিলকদ", "জিলহজ"
+        tr("মুহাররম"), tr("সফর"), tr("রবিউল আউয়াল"), tr("রবিউস সানি"), tr("জমাদিউল আউয়াল"), tr("জমাদিউস সানি"),
+        tr("রজব"), tr("শাবান"), tr("রমজান"), tr("শাওয়াল"), tr("জিলকদ"), tr("জিলহজ")
     )
-    private val weekdays = listOf("রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার", "শুক্রবার", "শনিবার")
+    private val weekdays = listOf(tr("রবিবার"), tr("সোমবার"), tr("মঙ্গলবার"), tr("বুধবার"), tr("বৃহস্পতিবার"), tr("শুক্রবার"), tr("শনিবার"))
 
     private val prefs by lazy { getSharedPreferences("date_prefs", MODE_PRIVATE) }
 
@@ -48,14 +48,14 @@ class DateActivity : GuardedActivity() {
         root.addView(tabRow, lp(l = 14, t = 12, r = 14, b = 6))
         body = FrameLayout(this)
         root.addView(body, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
-        setScreen("তারিখ ও বয়স", root)
+        setScreen(tr("তারিখ ও বয়স"), root)
         showTab(0)
     }
 
     private fun showTab(t: Int) {
         tab = t
         tabRow.removeAllViews()
-        val names = listOf("তারিখ রূপান্তর", "বয়স")
+        val names = listOf(tr("তারিখ রূপান্তর"), tr("বয়স"))
         for (i in names.indices) {
             val on = tab == i
             val chip = label(names[i], 14f, if (on) Color.WHITE else Ui.PRIMARY, true)
@@ -93,28 +93,28 @@ class DateActivity : GuardedActivity() {
         try {
             val h = HijrahDate.from(d.plusDays(adj.toLong()))
             bn(h.get(ChronoField.DAY_OF_MONTH).toString()) + " " + hijriMonths[h.get(ChronoField.MONTH_OF_YEAR) - 1] +
-                " " + bn(h.get(ChronoField.YEAR).toString()) + " হিজরি"
+                " " + bn(h.get(ChronoField.YEAR).toString()) + tr(" হিজরি")
         } catch (e: Exception) {
-            "এই তারিখের হিজরি মান পাওয়া যায়নি"
+            tr("এই তারিখের হিজরি মান পাওয়া যায়নি")
         }
 
     private fun banglaText(d: LocalDate): String {
         val b = BanglaCal.fromGregorian(d)
-        return bn(b.day.toString()) + " " + BanglaCal.MONTHS[b.month] + " " + bn(b.year.toString()) + " বঙ্গাব্দ"
+        return bn(b.day.toString()) + " " + BanglaCal.MONTHS[b.month] + " " + bn(b.year.toString()) + tr(" বঙ্গাব্দ")
     }
 
     private fun buildConverter(col: LinearLayout) {
         // ---- Gregorian -> Bangla / Hijri
         val c = card(16)
-        c.addView(label("ইংরেজি তারিখ", 13f, Ui.MUTED))
+        c.addView(label(tr("ইংরেজি তারিখ"), 13f, Ui.MUTED))
         val dateBtn = pill(ldText(gDate), Ui.BG, Ui.PRIMARY) {}
         c.addView(dateBtn, lp(t = 6, b = 12))
 
         val bnLine: TextView = label("", 17f, Ui.PRIMARY, true)
         val hjLine: TextView = label("", 17f, Ui.PRIMARY, true)
-        c.addView(label("বাংলা", 12f, Ui.MUTED))
+        c.addView(label(tr("বাংলা"), 12f, Ui.MUTED))
         c.addView(bnLine, lp(b = 8))
-        c.addView(label("হিজরি", 12f, Ui.MUTED))
+        c.addView(label(tr("হিজরি"), 12f, Ui.MUTED))
         c.addView(hjLine, lp(b = 8))
 
         val adjRow = LinearLayout(this)
@@ -123,14 +123,14 @@ class DateActivity : GuardedActivity() {
         val adjLabel = label("", 13f, Ui.MUTED)
         val minus = pill("−", Ui.BG, Ui.PRIMARY) {}
         val plus = pill("+", Ui.BG, Ui.PRIMARY) {}
-        adjRow.addView(label("হিজরি সমন্বয়", 13f, Ui.MUTED), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        adjRow.addView(label(tr("হিজরি সমন্বয়"), 13f, Ui.MUTED), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         adjRow.addView(minus)
         adjRow.addView(adjLabel, lp(l = 12, r = 12))
         adjRow.addView(plus)
         c.addView(adjRow, lp(t = 4))
         c.addView(
             label(
-                "হিজরি তারিখ উম্মুল কুরা (সৌদি) পঞ্জিকা অনুযায়ী। বাংলাদেশে চাঁদ দেখার কারণে ১-২ দিনের ব্যবধান হতে পারে, তাই প্রয়োজনে সমন্বয় করুন।",
+                tr("হিজরি তারিখ উম্মুল কুরা (সৌদি) পঞ্জিকা অনুযায়ী। বাংলাদেশে চাঁদ দেখার কারণে ১-২ দিনের ব্যবধান হতে পারে, তাই প্রয়োজনে সমন্বয় করুন।"),
                 11f, Ui.MUTED
             ),
             lp(t = 8)
@@ -142,7 +142,7 @@ class DateActivity : GuardedActivity() {
             dateBtn.text = ldText(gDate)
             bnLine.text = banglaText(gDate)
             hjLine.text = hijriText(gDate, adj)
-            adjLabel.text = bn((if (adj > 0) "+" else "") + adj.toString()) + " দিন"
+            adjLabel.text = bn((if (adj > 0) "+" else "") + adj.toString()) + tr(" দিন")
         }
         dateBtn.setOnClickListener {
             pickDate(gDate) {
@@ -162,21 +162,21 @@ class DateActivity : GuardedActivity() {
 
         // ---- Bangla -> Gregorian
         val r = card(16)
-        r.addView(label("বাংলা তারিখ থেকে ইংরেজি", 15f, Ui.TEXT, true), lp(b = 8))
+        r.addView(label(tr("বাংলা তারিখ থেকে ইংরেজি"), 15f, Ui.TEXT, true), lp(b = 8))
         val today = BanglaCal.fromGregorian(LocalDate.now())
 
         val row = LinearLayout(this)
         row.orientation = LinearLayout.HORIZONTAL
         row.gravity = Gravity.CENTER_VERTICAL
         val day = EditText(this)
-        day.hint = "দিন"
+        day.hint = tr("দিন")
         day.inputType = InputType.TYPE_CLASS_NUMBER
         day.setText(today.day.toString())
         val month = Spinner(this)
         month.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, BanglaCal.MONTHS)
         month.setSelection(today.month)
         val year = EditText(this)
-        year.hint = "সাল"
+        year.hint = tr("সাল")
         year.inputType = InputType.TYPE_CLASS_NUMBER
         year.setText(today.year.toString())
         row.addView(day, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.7f))
@@ -196,7 +196,7 @@ class DateActivity : GuardedActivity() {
                 return
             }
             val g = BanglaCal.toGregorian(y, month.selectedItemPosition, d)
-            out.text = if (g == null) "এই তারিখটি সঠিক নয়" else ldText(g)
+            out.text = if (g == null) tr("এই তারিখটি সঠিক নয়") else ldText(g)
         }
         day.onChange { update() }
         year.onChange { update() }
@@ -214,10 +214,10 @@ class DateActivity : GuardedActivity() {
 
     private fun buildAge(col: LinearLayout) {
         val c = card(16)
-        c.addView(label("জন্মতারিখ", 13f, Ui.MUTED))
-        val birthBtn = pill(birth?.let { ldText(it) } ?: "জন্মতারিখ বেছে নিন", Ui.BG, Ui.PRIMARY) {}
+        c.addView(label(tr("জন্মতারিখ"), 13f, Ui.MUTED))
+        val birthBtn = pill(birth?.let { ldText(it) } ?: tr("জন্মতারিখ বেছে নিন"), Ui.BG, Ui.PRIMARY) {}
         c.addView(birthBtn, lp(t = 6, b = 12))
-        c.addView(label("যে তারিখ পর্যন্ত (ডিফল্ট আজ)", 13f, Ui.MUTED))
+        c.addView(label(tr("যে তারিখ পর্যন্ত (ডিফল্ট আজ)"), 13f, Ui.MUTED))
         val asOfBtn = pill(ldText(asOf), Ui.BG, Ui.PRIMARY) {}
         c.addView(asOfBtn, lp(t = 6))
         col.addView(c, lp(b = 12))
@@ -230,14 +230,14 @@ class DateActivity : GuardedActivity() {
 
         fun refresh() {
             val b = birth
-            birthBtn.text = if (b == null) "জন্মতারিখ বেছে নিন" else ldText(b)
+            birthBtn.text = if (b == null) tr("জন্মতারিখ বেছে নিন") else ldText(b)
             asOfBtn.text = ldText(asOf)
             if (b == null) {
-                out.text = "জন্মতারিখ বেছে নিলে বয়স দেখাবে।"
+                out.text = tr("জন্মতারিখ বেছে নিলে বয়স দেখাবে।")
                 return
             }
             if (b.isAfter(asOf)) {
-                out.text = "জন্মতারিখ নির্ধারিত তারিখের পরে হতে পারে না।"
+                out.text = tr("জন্মতারিখ নির্ধারিত তারিখের পরে হতে পারে না।")
                 return
             }
             val p = Period.between(b, asOf)
@@ -247,16 +247,16 @@ class DateActivity : GuardedActivity() {
             if (next.isBefore(asOf)) next = b.withYear(asOf.year + 1)
             val left = ChronoUnit.DAYS.between(asOf, next)
             val sb = StringBuilder()
-            sb.append("বয়স: ").append(bn(p.years.toString())).append(" বছর ")
-                .append(bn(p.months.toString())).append(" মাস ")
-                .append(bn(p.days.toString())).append(" দিন\n")
-            sb.append("মোট: ").append(bn(months.toString())).append(" মাস, ")
-                .append(bn((days / 7).toString())).append(" সপ্তাহ, ")
-                .append(bn(days.toString())).append(" দিন\n")
+            sb.append(tr("বয়স: ")).append(bn(p.years.toString())).append(tr(" বছর "))
+                .append(bn(p.months.toString())).append(tr(" মাস "))
+                .append(bn(p.days.toString())).append(tr(" দিন\n"))
+            sb.append(tr("মোট: ")).append(bn(months.toString())).append(tr(" মাস, "))
+                .append(bn((days / 7).toString())).append(tr(" সপ্তাহ, "))
+                .append(bn(days.toString())).append(tr(" দিন\n"))
             if (left == 0L) {
-                sb.append("🎂 আজই জন্মদিন!")
+                sb.append(tr("🎂 আজই জন্মদিন!"))
             } else {
-                sb.append("পরবর্তী জন্মদিন: ").append(ldText(next)).append(" (").append(bn(left.toString())).append(" দিন বাকি)")
+                sb.append(tr("পরবর্তী জন্মদিন: ")).append(ldText(next)).append(" (").append(bn(left.toString())).append(tr(" দিন বাকি)"))
             }
             out.text = sb.toString()
         }

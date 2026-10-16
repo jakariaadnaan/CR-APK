@@ -36,7 +36,7 @@ class SettingsActivity : GuardedActivity() {
         box.orientation = LinearLayout.VERTICAL
         box.setPadding(dp(14), dp(14), dp(14), dp(24))
         scroll.addView(box)
-        setScreen("সেটিংস ও ব্যাকআপ", scroll)
+        setScreen(tr("সেটিংস ও ব্যাকআপ"), scroll)
         render()
     }
 
@@ -71,20 +71,20 @@ class SettingsActivity : GuardedActivity() {
         return s
     }
 
-    private val dataNames = listOf("খরচের খাতা", "বাকির খাতা", "করণীয় তালিকা", "দ্রুত নোট")
+    private val dataNames = listOf(tr("খরচের খাতা"), tr("বাকির খাতা"), tr("করণীয় তালিকা"), tr("দ্রুত নোট"))
 
     private fun askDelete() {
-        val items = (dataNames + "সব ডেটা").toTypedArray()
-        AlertDialog.Builder(this).setTitle("কী মুছবেন?").setItems(items) { _, i ->
+        val items = (dataNames + tr("সব ডেটা")).toTypedArray()
+        AlertDialog.Builder(this).setTitle(tr("কী মুছবেন?")).setItems(items) { _, i ->
             val keys = if (i < 4) listOf(dataKeys[i]) else dataKeys
             AlertDialog.Builder(this)
-                .setTitle(items[i] + " মুছে ফেলবেন?")
-                .setMessage("এটি আর ফেরানো যাবে না। আগে ব্যাকআপ নেওয়া থাকলে ভালো।")
-                .setPositiveButton("মুছুন") { _, _ ->
+                .setTitle(items[i] + tr(" মুছে ফেলবেন?"))
+                .setMessage(tr("এটি আর ফেরানো যাবে না। আগে ব্যাকআপ নেওয়া থাকলে ভালো।"))
+                .setPositiveButton(tr("মুছুন")) { _, _ ->
                     for (k in keys) Store.write(this, k, org.json.JSONArray())
-                    Toast.makeText(this, "মুছে ফেলা হয়েছে", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, tr("মুছে ফেলা হয়েছে"), Toast.LENGTH_SHORT).show()
                 }
-                .setNegativeButton("থাক", null)
+                .setNegativeButton(tr("থাক"), null)
                 .show()
         }.show()
     }
@@ -92,18 +92,18 @@ class SettingsActivity : GuardedActivity() {
     private fun showAbout() {
         val ver = try { packageManager.getPackageInfo(packageName, 0).versionName } catch (e: Throwable) { "?" }
         val sb = StringBuilder()
-        sb.append("সংস্করণ: ").append(bn(ver ?: "?")).append("\n\n")
+        sb.append(tr("সংস্করণ: ")).append(bn(ver ?: "?")).append("\n\n")
         var total = 0
         for (i in dataKeys.indices) {
             val n = Store.read(this, dataKeys[i]).length()
             total += n
-            sb.append(dataNames[i]).append(": ").append(bn(n.toString())).append("টি\n")
+            sb.append(dataNames[i]).append(": ").append(bn(n.toString())).append(tr("টি\n"))
         }
         val size = try { java.io.File(applicationInfo.dataDir, "shared_prefs/appdata.xml").length() } catch (e: Throwable) { 0L }
-        sb.append("\nমোট এন্ট্রি: ").append(bn(total.toString()))
-        sb.append("\nজমানো ডেটার আকার: ").append(Img.human(size))
-        sb.append("\n\nডেটা শুধু এই ফোনেই থাকে। ব্যাকআপ না নিলে অ্যাপ মুছলে ডেটাও যাবে।")
-        AlertDialog.Builder(this).setTitle("আমার খাতা").setMessage(sb.toString()).setPositiveButton("ঠিক আছে", null).show()
+        sb.append(tr("\nমোট এন্ট্রি: ")).append(bn(total.toString()))
+        sb.append(tr("\nজমানো ডেটার আকার: ")).append(Img.human(size))
+        sb.append(tr("\n\nডেটা শুধু এই ফোনেই থাকে। ব্যাকআপ না নিলে অ্যাপ মুছলে ডেটাও যাবে।"))
+        AlertDialog.Builder(this).setTitle(tr("আমার খাতা")).setMessage(sb.toString()).setPositiveButton(tr("ঠিক আছে"), null).show()
     }
 
     private fun section(title: String) {
@@ -113,52 +113,22 @@ class SettingsActivity : GuardedActivity() {
     private fun render() {
         box.removeAllViews()
 
-        // ---- Appearance
-        section("চেহারা")
-        val themeNames = arrayOf("ফোনের সেটিং অনুযায়ী", "হালকা", "গাঢ় (ডার্ক)")
+        // ---- Appearance and language
+        section(tr("চেহারা ও ভাষা"))
+        val themeNames = arrayOf(tr("ফোনের সেটিং অনুযায়ী"), tr("হালকা"), tr("গাঢ় (ডার্ক)"))
         box.addView(
-            row("থিম", themeNames[prefs.getInt("theme", 0).coerceIn(0, 2)], null) {
-                AlertDialog.Builder(this).setTitle("থিম").setItems(themeNames) { _, i ->
-                    prefs.edit().putInt("theme", i).apply()
-                    Ui.stamp++
-                    recreate()
-                }.show()
-            },
-            lp(b = 8)
-        )
-        val digitNames = arrayOf("বাংলা (১২৩)", "ইংরেজি (123)")
-        box.addView(
-            row("সংখ্যার ধরন", if (prefs.getBoolean("digitsBn", true)) digitNames[0] else digitNames[1], null) {
-                AlertDialog.Builder(this).setTitle("সংখ্যার ধরন").setItems(digitNames) { _, i ->
-                    prefs.edit().putBoolean("digitsBn", i == 0).apply()
-                    Ui.stamp++
-                    recreate()
-                }.show()
-            },
-            lp(b = 8)
-        )
-        val sizeNames = arrayOf("ছোট", "মাঝারি", "বড়", "অনেক বড়")
-        val sizeVals = floatArrayOf(0.9f, 1f, 1.15f, 1.3f)
-        val curSize = prefs.getFloat("fontScale", 1f)
-        var curIdx = 1
-        for (i in sizeVals.indices) if (Math.abs(sizeVals[i] - curSize) < 0.01f) curIdx = i
-        box.addView(
-            row("লেখার আকার", sizeNames[curIdx], null) {
-                AlertDialog.Builder(this).setTitle("লেখার আকার").setItems(sizeNames) { _, i ->
-                    prefs.edit().putFloat("fontScale", sizeVals[i]).apply()
-                    Ui.stamp++
-                    recreate()
-                }.show()
+            row(tr("চেহারা ও ভাষা"), themeNames[prefs.getInt("theme", 0).coerceIn(0, 2)] + " · " + (if (Lang.en) "English" else "বাংলা"), null) {
+                startActivity(Intent(this, AppearanceActivity::class.java))
             },
             lp(b = 8)
         )
 
         // ---- App lock
-        section("অ্যাপ লক")
+        section(tr("অ্যাপ লক"))
         val on = Lock.enabled(this)
         box.addView(
-            row("অ্যাপ লক", if (on) "চালু আছে (" + (if (Lock.type(this) == "pattern") "প্যাটার্ন" else "পিন") + ")" else "বন্ধ আছে (পিন বা প্যাটার্ন)", switchView(on)) {
-                if (on) askCurrent("লক বন্ধ করতে বর্তমান লক দিন") {
+            row(tr("অ্যাপ লক"), if (on) tr("চালু আছে (") + (if (Lock.type(this) == "pattern") tr("প্যাটার্ন") else tr("পিন")) + ")" else tr("বন্ধ আছে (পিন বা প্যাটার্ন)"), switchView(on)) {
+                if (on) askCurrent(tr("লক বন্ধ করতে বর্তমান লক দিন")) {
                     Lock.disable(this)
                     render()
                 } else chooseType {
@@ -170,18 +140,18 @@ class SettingsActivity : GuardedActivity() {
         if (on) {
             box.addView(
                 row(
-                    "লক বদলান",
-                    "বর্তমান: " + (if (Lock.type(this) == "pattern") "প্যাটার্ন" else "পিন"),
+                    tr("লক বদলান"),
+                    tr("বর্তমান: ") + (if (Lock.type(this) == "pattern") tr("প্যাটার্ন") else tr("পিন")),
                     null
                 ) {
-                    askCurrent("বর্তমান লক দিন") { chooseType { render() } }
+                    askCurrent(tr("বর্তমান লক দিন")) { chooseType { render() } }
                 },
                 lp(b = 8)
             )
             if (Lock.biometricAvailable(this)) {
                 val bio = Lock.bioEnabled(this)
                 box.addView(
-                    row("ফিঙ্গারপ্রিন্ট দিয়ে খুলুন", if (bio) "চালু" else "বন্ধ", switchView(bio)) {
+                    row(tr("ফিঙ্গারপ্রিন্ট দিয়ে খুলুন"), if (bio) tr("চালু") else tr("বন্ধ"), switchView(bio)) {
                         Lock.setBio(this, !bio)
                         render()
                     },
@@ -190,17 +160,17 @@ class SettingsActivity : GuardedActivity() {
             }
             val g = Lock.graceMs(this)
             val gText = when (g) {
-                30_000L -> "৩০ সেকেন্ড"
-                60_000L -> "১ মিনিট"
-                300_000L -> "৫ মিনিট"
-                else -> "১৫ মিনিট"
+                30_000L -> tr("৩০ সেকেন্ড")
+                60_000L -> tr("১ মিনিট")
+                300_000L -> tr("৫ মিনিট")
+                else -> tr("১৫ মিনিট")
             }
             box.addView(
-                row("কতক্ষণ পরে আবার লক হবে", "অ্যাপ থেকে বের হওয়ার পর: " + gText, null) {
-                    val names = arrayOf("৩০ সেকেন্ড", "১ মিনিট", "৫ মিনিট", "১৫ মিনিট")
+                row(tr("কতক্ষণ পরে আবার লক হবে"), tr("অ্যাপ থেকে বের হওয়ার পর: ") + gText, null) {
+                    val names = arrayOf(tr("৩০ সেকেন্ড"), tr("১ মিনিট"), tr("৫ মিনিট"), tr("১৫ মিনিট"))
                     val vals = longArrayOf(30_000L, 60_000L, 300_000L, 900_000L)
                     AlertDialog.Builder(this)
-                        .setTitle("আবার লক হবে")
+                        .setTitle(tr("আবার লক হবে"))
                         .setItems(names) { _, i ->
                             Lock.setGrace(this, vals[i])
                             render()
@@ -211,7 +181,7 @@ class SettingsActivity : GuardedActivity() {
             )
             val hide = screenHidden(this)
             box.addView(
-                row("স্ক্রিনশট ও রিসেন্ট প্রিভিউ লুকান", if (hide) "চালু: স্ক্রিনশট নেওয়া যায় না" else "বন্ধ: স্ক্রিনশট নেওয়া যায়", switchView(hide)) {
+                row(tr("স্ক্রিনশট ও রিসেন্ট প্রিভিউ লুকান"), if (hide) tr("চালু: স্ক্রিনশট নেওয়া যায় না") else tr("বন্ধ: স্ক্রিনশট নেওয়া যায়"), switchView(hide)) {
                     prefs.edit().putBoolean("secure", !hide).apply()
                     Ui.stamp++
                     recreate()
@@ -220,7 +190,7 @@ class SettingsActivity : GuardedActivity() {
             )
             box.addView(
                 label(
-                    "পিন বা প্যাটার্ন ভুলে গেলে অ্যাপের ডেটা মুছে নতুন করে ইনস্টল ছাড়া উপায় নেই, তাই আগে ব্যাকআপ রাখুন।",
+                    tr("পিন বা প্যাটার্ন ভুলে গেলে অ্যাপের ডেটা মুছে নতুন করে ইনস্টল ছাড়া উপায় নেই, তাই আগে ব্যাকআপ রাখুন।"),
                     12f, Ui.MUTED
                 ),
                 lp(l = 4, b = 4)
@@ -228,38 +198,38 @@ class SettingsActivity : GuardedActivity() {
         }
 
         // ---- Backup
-        section("হোম")
+        section(tr("হোম"))
         box.addView(
-            row("টুল দেখানো বা লুকানো", "যে টুল লাগে না সেটি লুকিয়ে রাখুন", null) {
+            row(tr("টুল দেখানো বা লুকানো"), tr("যে টুল লাগে না সেটি লুকিয়ে রাখুন"), null) {
                 startActivity(Intent(this, HiddenToolsActivity::class.java))
             },
             lp(b = 8)
         )
 
-        section("ব্যাকআপ")
+        section(tr("ব্যাকআপ"))
         val last = prefs.getLong("lastBackup", 0L)
-        val lastText = if (last == 0L) "এখনো ব্যাকআপ নেওয়া হয়নি" else "সর্বশেষ: " + bn(SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US).format(Date(last)))
-        box.addView(row("ব্যাকআপ তৈরি করুন", lastText, null) { startBackup() }, lp(b = 8))
-        box.addView(row("ব্যাকআপ থেকে ফিরিয়ে আনুন", "আগের ব্যাকআপ ফাইল বেছে নিন", null) { startRestore() }, lp(b = 8))
+        val lastText = if (last == 0L) tr("এখনো ব্যাকআপ নেওয়া হয়নি") else tr("সর্বশেষ: ") + bn(SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US).format(Date(last)))
+        box.addView(row(tr("ব্যাকআপ তৈরি করুন"), lastText, null) { startBackup() }, lp(b = 8))
+        box.addView(row(tr("ব্যাকআপ থেকে ফিরিয়ে আনুন"), tr("আগের ব্যাকআপ ফাইল বেছে নিন"), null) { startRestore() }, lp(b = 8))
 
-        section("ডেটা ও অ্যাপ")
-        box.addView(row("ডেটা মুছুন", "খাতা, নোট ইত্যাদি মুছে ফেলুন", null) { askDelete() }, lp(b = 8))
-        box.addView(row("অ্যাপ সম্পর্কে", "সংস্করণ ও জমানো ডেটা", null) { showAbout() }, lp(b = 8))
+        section(tr("ডেটা ও অ্যাপ"))
+        box.addView(row(tr("ডেটা মুছুন"), tr("খাতা, নোট ইত্যাদি মুছে ফেলুন"), null) { askDelete() }, lp(b = 8))
+        box.addView(row(tr("অ্যাপ সম্পর্কে"), tr("সংস্করণ ও জমানো ডেটা"), null) { showAbout() }, lp(b = 8))
         box.addView(
             label(
-                "ব্যাকআপে খরচের খাতা, বাকির খাতা, করণীয় ও নোট থাকে। ফাইল সেভ করার সময় তালিকা থেকে “Drive” বেছে নিলে সরাসরি Google Drive-এ জমা হবে। ফাইলটি সাধারণ লেখা হিসেবে থাকে, তাই নিরাপদ জায়গায় রাখুন।",
+                tr("ব্যাকআপে খরচের খাতা, বাকির খাতা, করণীয় ও নোট থাকে। ফাইল সেভ করার সময় তালিকা থেকে “Drive” বেছে নিলে সরাসরি Google Drive-এ জমা হবে। ফাইলটি সাধারণ লেখা হিসেবে থাকে, তাই নিরাপদ জায়গায় রাখুন।"),
                 12f, Ui.MUTED
             ),
             lp(l = 4, b = 4)
         )
 
-        section("অ্যাপ সম্পর্কে")
+        section(tr("অ্যাপ সম্পর্কে"))
         val ver = try {
             packageManager.getPackageInfo(packageName, 0).versionName ?: ""
         } catch (e: Exception) {
             ""
         }
-        box.addView(label("আমার খাতা · সংস্করণ " + bn(ver), 13f, Ui.MUTED), lp(l = 4))
+        box.addView(label(tr("আমার খাতা · সংস্করণ ") + bn(ver), 13f, Ui.MUTED), lp(l = 4))
     }
 
     // ------------------------------------------------------------------ PIN dialogs
@@ -273,15 +243,15 @@ class SettingsActivity : GuardedActivity() {
 
     /** Asks for the current PIN and runs [onOk] when it is right. */
     private fun askPin(title: String, onOk: () -> Unit) {
-        val f = pinField("পিন")
+        val f = pinField(tr("পিন"))
         val wrap = LinearLayout(this)
         wrap.setPadding(dp(20), dp(10), dp(20), 0)
         wrap.addView(f, lp())
         val dlg = AlertDialog.Builder(this)
             .setTitle(title)
             .setView(wrap)
-            .setPositiveButton("ঠিক আছে", null)
-            .setNegativeButton("বাতিল", null)
+            .setPositiveButton(tr("ঠিক আছে"), null)
+            .setNegativeButton(tr("বাতিল"), null)
             .create()
         dlg.setOnShowListener {
             dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
@@ -289,7 +259,7 @@ class SettingsActivity : GuardedActivity() {
                     dlg.dismiss()
                     onOk()
                 } else {
-                    Toast.makeText(this, "ভুল পিন", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, tr("ভুল পিন"), Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -299,27 +269,27 @@ class SettingsActivity : GuardedActivity() {
 
     /** Sets a new 4 to 8 digit PIN (typed twice). */
     private fun showSetPin(onDone: () -> Unit) {
-        val a = pinField("নতুন পিন (৪ থেকে ৮ সংখ্যা)")
-        val b = pinField("আবার লিখুন")
+        val a = pinField(tr("নতুন পিন (৪ থেকে ৮ সংখ্যা)"))
+        val b = pinField(tr("আবার লিখুন"))
         val wrap = LinearLayout(this)
         wrap.orientation = LinearLayout.VERTICAL
         wrap.setPadding(dp(20), dp(10), dp(20), 0)
         wrap.addView(a, lp())
         wrap.addView(b, lp(t = 4))
         val dlg = AlertDialog.Builder(this)
-            .setTitle("নতুন পিন")
+            .setTitle(tr("নতুন পিন"))
             .setView(wrap)
-            .setPositiveButton("সংরক্ষণ", null)
-            .setNegativeButton("বাতিল", null)
+            .setPositiveButton(tr("সংরক্ষণ"), null)
+            .setNegativeButton(tr("বাতিল"), null)
             .create()
         dlg.setOnShowListener {
             dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 val p1 = asciiDigits(a.text.toString())
                 val p2 = asciiDigits(b.text.toString())
                 if (p1.length < 4 || p1.length > 8 || !p1.all { it in '0'..'9' }) {
-                    Toast.makeText(this, "৪ থেকে ৮ সংখ্যার পিন দিন", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, tr("৪ থেকে ৮ সংখ্যার পিন দিন"), Toast.LENGTH_SHORT).show()
                 } else if (p1 != p2) {
-                    Toast.makeText(this, "দুটো পিন মেলেনি", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, tr("দুটো পিন মেলেনি"), Toast.LENGTH_SHORT).show()
                 } else {
                     Lock.setPin(this, p1)
                     dlg.dismiss()
@@ -335,11 +305,11 @@ class SettingsActivity : GuardedActivity() {
 
     private fun chooseType(onDone: () -> Unit) {
         AlertDialog.Builder(this)
-            .setTitle("লকের ধরন")
-            .setItems(arrayOf("পিন (৪ থেকে ৮ সংখ্যা)", "প্যাটার্ন")) { _, i ->
+            .setTitle(tr("লকের ধরন"))
+            .setItems(arrayOf(tr("পিন (৪ থেকে ৮ সংখ্যা)"), tr("প্যাটার্ন"))) { _, i ->
                 if (i == 0) showSetPin(onDone) else showSetPattern(onDone)
             }
-            .setNegativeButton("বাতিল", null)
+            .setNegativeButton(tr("বাতিল"), null)
             .show()
     }
 
@@ -353,7 +323,7 @@ class SettingsActivity : GuardedActivity() {
         val dlg = AlertDialog.Builder(this)
             .setTitle(title)
             .setView(wrapPattern(pv, null))
-            .setNegativeButton("বাতিল", null)
+            .setNegativeButton(tr("বাতিল"), null)
             .create()
         pv.onComplete = { s ->
             if (Lock.check(this, s)) {
@@ -361,7 +331,7 @@ class SettingsActivity : GuardedActivity() {
                 onOk()
             } else {
                 pv.flashError()
-                Toast.makeText(this, "ভুল প্যাটার্ন", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, tr("ভুল প্যাটার্ন"), Toast.LENGTH_SHORT).show()
             }
         }
         dlg.show()
@@ -387,22 +357,22 @@ class SettingsActivity : GuardedActivity() {
     /** Draw a pattern of at least 4 dots, then draw it again to confirm. */
     private fun showSetPattern(onDone: () -> Unit) {
         val pv = patternView()
-        val hint = label("কমপক্ষে ৪টি বিন্দু যোগ করে প্যাটার্ন আঁকুন", 13f, Ui.MUTED)
+        val hint = label(tr("কমপক্ষে ৪টি বিন্দু যোগ করে প্যাটার্ন আঁকুন"), 13f, Ui.MUTED)
         var first: String? = null
         val dlg = AlertDialog.Builder(this)
-            .setTitle("নতুন প্যাটার্ন")
+            .setTitle(tr("নতুন প্যাটার্ন"))
             .setView(wrapPattern(pv, hint))
-            .setNegativeButton("বাতিল", null)
+            .setNegativeButton(tr("বাতিল"), null)
             .create()
         pv.onComplete = { s ->
             val f = first
             if (f == null) {
                 if (s.length < 4) {
-                    hint.text = "কমপক্ষে ৪টি বিন্দু লাগবে, আবার আঁকুন"
+                    hint.text = tr("কমপক্ষে ৪টি বিন্দু লাগবে, আবার আঁকুন")
                     pv.flashError()
                 } else {
                     first = s
-                    hint.text = "নিশ্চিত করতে আবার আঁকুন"
+                    hint.text = tr("নিশ্চিত করতে আবার আঁকুন")
                     pv.postDelayed({ pv.reset() }, 400)
                 }
             } else if (f == s) {
@@ -411,7 +381,7 @@ class SettingsActivity : GuardedActivity() {
                 onDone()
             } else {
                 first = null
-                hint.text = "মেলেনি, প্রথম থেকে আঁকুন"
+                hint.text = tr("মেলেনি, প্রথম থেকে আঁকুন")
                 pv.flashError()
             }
         }
@@ -429,7 +399,7 @@ class SettingsActivity : GuardedActivity() {
         try {
             startActivityForResult(i, reqSave)
         } catch (e: Exception) {
-            Toast.makeText(this, "ফাইল বেছে নেওয়ার অ্যাপ পাওয়া যায়নি", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, tr("ফাইল বেছে নেওয়ার অ্যাপ পাওয়া যায়নি"), Toast.LENGTH_LONG).show()
         }
     }
 
@@ -440,7 +410,7 @@ class SettingsActivity : GuardedActivity() {
         try {
             startActivityForResult(i, reqOpen)
         } catch (e: Exception) {
-            Toast.makeText(this, "ফাইল বেছে নেওয়ার অ্যাপ পাওয়া যায়নি", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, tr("ফাইল বেছে নেওয়ার অ্যাপ পাওয়া যায়নি"), Toast.LENGTH_LONG).show()
         }
     }
 
@@ -473,10 +443,10 @@ class SettingsActivity : GuardedActivity() {
                 if (out == null) throw IllegalStateException()
                 out.use { it.write(bytes) }
                 prefs.edit().putLong("lastBackup", System.currentTimeMillis()).apply()
-                Toast.makeText(this, "ব্যাকআপ সংরক্ষিত হয়েছে", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, tr("ব্যাকআপ সংরক্ষিত হয়েছে"), Toast.LENGTH_LONG).show()
                 render()
             } catch (e: Exception) {
-                Toast.makeText(this, "ব্যাকআপ সংরক্ষণ করা যায়নি", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, tr("ব্যাকআপ সংরক্ষণ করা যায়নি"), Toast.LENGTH_LONG).show()
             }
         } else if (requestCode == reqOpen) {
             val text = try {
@@ -496,19 +466,19 @@ class SettingsActivity : GuardedActivity() {
         }
         val data = parsed?.optJSONObject("data")
         if (parsed == null || parsed.optString("app") != "amar-khata" || data == null) {
-            Toast.makeText(this, "এটি সঠিক ব্যাকআপ ফাইল নয়", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, tr("এটি সঠিক ব্যাকআপ ফাইল নয়"), Toast.LENGTH_LONG).show()
             return
         }
-        val msg = "ব্যাকআপে আছে:\n" +
-            "• খরচের লেনদেন: " + bn((data.optJSONArray("ledger")?.length() ?: 0).toString()) + "\n" +
-            "• বাকি: " + bn((data.optJSONArray("debts")?.length() ?: 0).toString()) + "\n" +
-            "• করণীয়: " + bn((data.optJSONArray("todos")?.length() ?: 0).toString()) + "\n" +
-            "• নোট: " + bn((data.optJSONArray("notes")?.length() ?: 0).toString()) +
-            "\n\nএখনকার সব তথ্য মুছে এগুলো বসবে। এগিয়ে যাবেন?"
+        val msg = tr("ব্যাকআপে আছে:\n") +
+            tr("• খরচের লেনদেন: ") + bn((data.optJSONArray("ledger")?.length() ?: 0).toString()) + "\n" +
+            tr("• বাকি: ") + bn((data.optJSONArray("debts")?.length() ?: 0).toString()) + "\n" +
+            tr("• করণীয়: ") + bn((data.optJSONArray("todos")?.length() ?: 0).toString()) + "\n" +
+            tr("• নোট: ") + bn((data.optJSONArray("notes")?.length() ?: 0).toString()) +
+            tr("\n\nএখনকার সব তথ্য মুছে এগুলো বসবে। এগিয়ে যাবেন?")
         AlertDialog.Builder(this)
-            .setTitle("ফিরিয়ে আনুন")
+            .setTitle(tr("ফিরিয়ে আনুন"))
             .setMessage(msg)
-            .setPositiveButton("হ্যাঁ, ফিরিয়ে আনুন") { _, _ ->
+            .setPositiveButton(tr("হ্যাঁ, ফিরিয়ে আনুন")) { _, _ ->
                 for (k in dataKeys) {
                     val arr = data.optJSONArray(k) ?: org.json.JSONArray()
                     Store.write(this, k, arr)
@@ -523,9 +493,9 @@ class SettingsActivity : GuardedActivity() {
                         .putInt("hijriAdj", p.optInt("hijriAdj", 0))
                         .apply()
                 }
-                Toast.makeText(this, "ফিরিয়ে আনা হয়েছে", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, tr("ফিরিয়ে আনা হয়েছে"), Toast.LENGTH_LONG).show()
             }
-            .setNegativeButton("না", null)
+            .setNegativeButton(tr("না"), null)
             .show()
     }
 }

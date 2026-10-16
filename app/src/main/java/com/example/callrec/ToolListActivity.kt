@@ -23,7 +23,7 @@ class ToolListActivity : GuardedActivity() {
 
         if (catId == "all") {
             val s = EditText(this)
-            s.hint = "টুল খুঁজুন"
+            s.hint = tr("টুল খুঁজুন")
             s.textSize = 15f
             s.setTextColor(Ui.TEXT)
             s.inputType = InputType.TYPE_CLASS_TEXT
@@ -42,7 +42,7 @@ class ToolListActivity : GuardedActivity() {
         scroll.addView(box)
         col.addView(scroll, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
 
-        val title = if (catId == "all") "সব টুল" else Registry.cat(catId).name
+        val title = if (catId == "all") tr("সব টুল") else Registry.cat(catId).name
         setScreen(title, col, null, true, navBar(1))
         render()
     }
@@ -67,11 +67,11 @@ class ToolListActivity : GuardedActivity() {
             box.addView(groupCard(list.map { toolRow(it) { render() } }), lp(b = 10))
         }
         if (!any) {
-            val e = label("কিছু পাওয়া যায়নি।", 14f, Ui.MUTED)
+            val e = label(tr("কিছু পাওয়া যায়নি।"), 14f, Ui.MUTED)
             e.gravity = Gravity.CENTER
             e.setPadding(0, dp(30), 0, dp(30))
             box.addView(e, lp())
         }
-        box.addView(label("প্রিয় করতে বা সরাতে টুলে চেপে ধরে রাখুন।", 12f, Ui.MUTED), lp(l = 4, t = 4))
+        box.addView(label(tr("প্রিয় করতে বা সরাতে টুলে চেপে ধরে রাখুন।"), 12f, Ui.MUTED), lp(l = 4, t = 4))
     }
 }

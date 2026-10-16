@@ -23,7 +23,7 @@ class LandActivity : GuardedActivity() {
 
     private lateinit var box: LinearLayout
 
-    private val names = listOf("শতাংশ", "কাঠা", "বিঘা", "একর", "বর্গফুট", "বর্গমিটার", "বর্গহাত")
+    private val names = listOf(tr("শতাংশ"), tr("কাঠা"), tr("বিঘা"), tr("একর"), tr("বর্গফুট"), tr("বর্গমিটার"), tr("বর্গহাত"))
 
     /** Square feet in one of each unit, in the same order as [names]. */
     private fun factors(): DoubleArray =
@@ -39,7 +39,7 @@ class LandActivity : GuardedActivity() {
         box.orientation = LinearLayout.VERTICAL
         box.setPadding(dp(14), dp(14), dp(14), dp(24))
         scroll.addView(box)
-        setScreen("জমির মাপ", scroll)
+        setScreen(tr("জমির মাপ"), scroll)
         build()
     }
 
@@ -48,7 +48,7 @@ class LandActivity : GuardedActivity() {
 
         val c = card(16)
         val input = EditText(this)
-        input.hint = "পরিমাণ লিখুন"
+        input.hint = tr("পরিমাণ লিখুন")
         input.textSize = 22f
         input.inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
         c.addView(input, lp())
@@ -78,7 +78,7 @@ class LandActivity : GuardedActivity() {
 
         // All units at once
         val all = card(16)
-        all.addView(label("সব এককে", 15f, Ui.TEXT, true), lp(b = 6))
+        all.addView(label(tr("সব এককে"), 15f, Ui.TEXT, true), lp(b = 6))
         val vals = ArrayList<TextView>()
         for (n in names) {
             val row = LinearLayout(this)
@@ -93,16 +93,16 @@ class LandActivity : GuardedActivity() {
 
         // Current definitions + edit
         val defs = card(16)
-        defs.addView(label("ব্যবহৃত মান", 15f, Ui.TEXT, true))
+        defs.addView(label(tr("ব্যবহৃত মান"), 15f, Ui.TEXT, true))
         defs.addView(
             label(
-                "১ শতাংশ = ৪৩৫.৬ বর্গফুট\n১ কাঠা = " + bn(fmtNum(katha, 4)) + " বর্গফুট\n১ বিঘা = " +
-                    bn(fmtNum(bigha, 4)) + " কাঠা\n১ একর = ১০০ শতাংশ",
+                tr("১ শতাংশ = ৪৩৫.৬ বর্গফুট\n১ কাঠা = ") + bn(fmtNum(katha, 4)) + tr(" বর্গফুট\n১ বিঘা = ") +
+                    bn(fmtNum(bigha, 4)) + tr(" কাঠা\n১ একর = ১০০ শতাংশ"),
                 13f, Ui.MUTED
             ),
             lp(t = 4, b = 10)
         )
-        defs.addView(pill("কাঠা ও বিঘার মান বদলান", Ui.BG, Ui.PRIMARY) { showSettings() })
+        defs.addView(pill(tr("কাঠা ও বিঘার মান বদলান"), Ui.BG, Ui.PRIMARY) { showSettings() })
         box.addView(defs, lp())
 
         fun update() {
@@ -141,31 +141,31 @@ class LandActivity : GuardedActivity() {
         form.orientation = LinearLayout.VERTICAL
         form.setPadding(dp(20), dp(10), dp(20), 0)
 
-        form.addView(label("১ কাঠা = কত বর্গফুট", 13f, Ui.MUTED))
+        form.addView(label(tr("১ কাঠা = কত বর্গফুট"), 13f, Ui.MUTED))
         val k = EditText(this)
         k.inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
         k.setText(fmtNum(katha, 4))
         form.addView(k, lp())
 
-        form.addView(label("১ বিঘা = কত কাঠা", 13f, Ui.MUTED), lp(t = 10))
+        form.addView(label(tr("১ বিঘা = কত কাঠা"), 13f, Ui.MUTED), lp(t = 10))
         val b = EditText(this)
         b.inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
         b.setText(fmtNum(bigha, 4))
         form.addView(b, lp())
 
         val dlg = AlertDialog.Builder(this)
-            .setTitle("কাঠা ও বিঘার মান")
+            .setTitle(tr("কাঠা ও বিঘার মান"))
             .setView(form)
-            .setPositiveButton("সংরক্ষণ", null)
-            .setNegativeButton("বাতিল", null)
-            .setNeutralButton("ডিফল্ট (৭২০, ২০)", null)
+            .setPositiveButton(tr("সংরক্ষণ"), null)
+            .setNegativeButton(tr("বাতিল"), null)
+            .setNeutralButton(tr("ডিফল্ট (৭২০, ২০)"), null)
             .create()
         dlg.setOnShowListener {
             dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 val kv = asciiDigits(k.text.toString()).trim().toDoubleOrNull()
                 val bv = asciiDigits(b.text.toString()).trim().toDoubleOrNull()
                 if (kv == null || bv == null || kv <= 0.0 || bv <= 0.0) {
-                    Toast.makeText(this, "সঠিক সংখ্যা লিখুন", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, tr("সঠিক সংখ্যা লিখুন"), Toast.LENGTH_SHORT).show()
                 } else {
                     katha = kv
                     bigha = bv

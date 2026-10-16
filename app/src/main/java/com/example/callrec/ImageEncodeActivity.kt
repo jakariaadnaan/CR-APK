@@ -35,7 +35,7 @@ abstract class ImageEncodeActivity(private val compress: Boolean) : ImageToolBas
         box.addView(pickCard(), lp(b = 12))
 
         val opt = card(14)
-        opt.addView(label("আউটপুট ফরম্যাট", 12f, Ui.MUTED, true))
+        opt.addView(label(tr("আউটপুট ফরম্যাট"), 12f, Ui.MUTED, true))
         fmtRow = LinearLayout(this)
         fmtRow.orientation = LinearLayout.HORIZONTAL
         opt.addView(fmtRow, lp(t = 6, b = 10))
@@ -56,7 +56,7 @@ abstract class ImageEncodeActivity(private val compress: Boolean) : ImageToolBas
         opt.addView(qBar, lp(b = 6))
 
         if (compress) {
-            opt.addView(label("ছবির মাপ", 12f, Ui.MUTED, true), lp(t = 6))
+            opt.addView(label(tr("ছবির মাপ"), 12f, Ui.MUTED, true), lp(t = 6))
             scaleRow = LinearLayout(this)
             scaleRow.orientation = LinearLayout.HORIZONTAL
             opt.addView(scaleRow, lp(t = 6))
@@ -64,13 +64,13 @@ abstract class ImageEncodeActivity(private val compress: Boolean) : ImageToolBas
         box.addView(opt, lp(b = 12))
 
         val res = card(14)
-        res.addView(label("ফলাফল", 12f, Ui.MUTED, true))
-        result = label("আগে একটি ছবি বাছুন", 15f, Ui.TEXT)
+        res.addView(label(tr("ফলাফল"), 12f, Ui.MUTED, true))
+        result = label(tr("আগে একটি ছবি বাছুন"), 15f, Ui.TEXT)
         res.addView(result, lp(t = 4, b = 10))
-        res.addView(pill("সংরক্ষণ করুন") { save() })
+        res.addView(pill(tr("সংরক্ষণ করুন")) { save() })
         box.addView(res, lp())
 
-        setScreen(if (compress) "ফাইল সাইজ কমানো" else "ফরম্যাট কনভার্টার", scroll)
+        setScreen(if (compress) tr("ফাইল সাইজ কমানো") else tr("ফরম্যাট কনভার্টার"), scroll)
         buildChips()
         updateLabels()
     }
@@ -104,7 +104,7 @@ abstract class ImageEncodeActivity(private val compress: Boolean) : ImageToolBas
         val lossy = fmt != 0
         qBar.isEnabled = lossy
         qBar.alpha = if (lossy) 1f else 0.4f
-        qLabel.text = if (lossy) "মান: " + bn(quality.toString()) + "% (কম মান = ছোট ফাইল)" else "PNG-তে মান কমানো যায় না (লসলেস)"
+        qLabel.text = if (lossy) tr("মান: ") + bn(quality.toString()) + tr("% (কম মান = ছোট ফাইল)") else tr("PNG-তে মান কমানো যায় না (লসলেস)")
     }
 
     override fun onImageLoaded() {
@@ -115,7 +115,7 @@ abstract class ImageEncodeActivity(private val compress: Boolean) : ImageToolBas
     private fun recompute() {
         val src: Bitmap = bmp ?: return
         val my = ++gen
-        result.text = "হিসাব চলছে…"
+        result.text = tr("হিসাব চলছে…")
         val f = fmt
         val q = quality
         val s = scalePct
@@ -131,13 +131,13 @@ abstract class ImageEncodeActivity(private val compress: Boolean) : ImageToolBas
                 if (my != gen) return@runOnUiThread
                 out = bytes
                 if (bytes == null) {
-                    result.text = "ছবিটি রূপান্তর করা যায়নি"
+                    result.text = tr("ছবিটি রূপান্তর করা যায়নি")
                 } else {
-                    var t = "নতুন ফাইল: " + fmtName(f) + " · " + Img.human(bytes.size.toLong())
+                    var t = tr("নতুন ফাইল: ") + fmtName(f) + " · " + Img.human(bytes.size.toLong())
                     if (srcSize > 0) {
                         val pct = (bytes.size * 100.0 / srcSize)
-                        t += if (pct <= 100) "\nমূলের " + bn(Math.round(pct).toString()) + "% (" + bn(Math.round(100 - pct).toString()) + "% কম)"
-                        else "\nমূলের চেয়ে বড় (" + bn(Math.round(pct).toString()) + "%)"
+                        t += if (pct <= 100) tr("\nমূলের ") + bn(Math.round(pct).toString()) + "% (" + bn(Math.round(100 - pct).toString()) + tr("% কম)")
+                        else tr("\nমূলের চেয়ে বড় (") + bn(Math.round(pct).toString()) + "%)"
                     }
                     result.text = t
                 }
@@ -148,7 +148,7 @@ abstract class ImageEncodeActivity(private val compress: Boolean) : ImageToolBas
     private fun save() {
         val b = out
         if (b == null) {
-            Toast.makeText(this, "আগে একটি ছবি বাছুন", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, tr("আগে একটি ছবি বাছুন"), Toast.LENGTH_SHORT).show()
             return
         }
         askSave(b, baseName() + (if (compress) "_small" else "_converted") + ext(fmt), mime(fmt))

@@ -29,7 +29,7 @@ class DebtActivity : GuardedActivity() {
         box.orientation = LinearLayout.VERTICAL
         box.setPadding(dp(14), dp(14), dp(14), dp(96))
         scroll.addView(box)
-        setScreen("বাকির খাতা", scroll, pill("+ নতুন বাকি") { showEditor(null) })
+        setScreen(tr("বাকির খাতা"), scroll, pill(tr("+ নতুন বাকি")) { showEditor(null) })
         render()
     }
 
@@ -46,10 +46,10 @@ class DebtActivity : GuardedActivity() {
         val sum = card()
         val row = LinearLayout(this)
         row.orientation = LinearLayout.HORIZONTAL
-        row.addView(stat("আমি পাবো", taka(get), Ui.GREEN), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        row.addView(stat("আমি দেবো", taka(pay), Ui.RED), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        row.addView(stat(tr("আমি পাবো"), taka(get), Ui.GREEN), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        row.addView(stat(tr("আমি দেবো"), taka(pay), Ui.RED), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         row.addView(
-            stat("নিট", taka(net), if (net >= 0) Ui.GREEN else Ui.RED),
+            stat(tr("নিট"), taka(net), if (net >= 0) Ui.GREEN else Ui.RED),
             LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         )
         sum.addView(row)
@@ -58,7 +58,7 @@ class DebtActivity : GuardedActivity() {
         // Filter chips
         val chips = LinearLayout(this)
         chips.orientation = LinearLayout.HORIZONTAL
-        val names = listOf("সব", "পাবো", "দেবো")
+        val names = listOf(tr("সব"), tr("পাবো"), tr("দেবো"))
         for (i in names.indices) {
             val on = filter == i
             val chip = label(names[i], 14f, if (on) Color.WHITE else Ui.PRIMARY, true)
@@ -78,7 +78,7 @@ class DebtActivity : GuardedActivity() {
             .sortedWith(compareByDescending<Debt> { it.date }.thenByDescending { it.id })
 
         if (items.isEmpty()) {
-            val empty = label("কোনো বাকি নেই।\nনিচের “+ নতুন বাকি” চেপে যোগ করুন।", 14f, Ui.MUTED)
+            val empty = label(tr("কোনো বাকি নেই।\nনিচের “+ নতুন বাকি” চেপে যোগ করুন।"), 14f, Ui.MUTED)
             empty.gravity = Gravity.CENTER
             empty.setPadding(0, dp(30), 0, dp(30))
             box.addView(empty, lp())
@@ -99,7 +99,7 @@ class DebtActivity : GuardedActivity() {
             right.orientation = LinearLayout.VERTICAL
             right.gravity = Gravity.END
             right.addView(label(taka(d.amount), 16f, if (d.owe) Ui.RED else Ui.GREEN, true))
-            right.addView(label(if (d.owe) "আমি দেবো" else "আমি পাবো", 12f, Ui.MUTED))
+            right.addView(label(if (d.owe) tr("আমি দেবো") else tr("আমি পাবো"), 12f, Ui.MUTED))
             c.addView(right)
 
             c.setOnClickListener { showActions(d) }
@@ -119,7 +119,7 @@ class DebtActivity : GuardedActivity() {
     }
 
     private fun showActions(d: Debt) {
-        val options = arrayOf("আংশিক পরিশোধ", "পুরো পরিশোধ হয়েছে (মুছে ফেলুন)", "সম্পাদনা")
+        val options = arrayOf(tr("আংশিক পরিশোধ"), tr("পুরো পরিশোধ হয়েছে (মুছে ফেলুন)"), tr("সম্পাদনা"))
         AlertDialog.Builder(this)
             .setTitle(d.name + " · " + taka(d.amount))
             .setItems(options) { _, which ->
@@ -129,45 +129,45 @@ class DebtActivity : GuardedActivity() {
                     else -> showEditor(d)
                 }
             }
-            .setNegativeButton("বন্ধ", null)
+            .setNegativeButton(tr("বন্ধ"), null)
             .show()
     }
 
     private fun confirmPaid(d: Debt) {
         AlertDialog.Builder(this)
-            .setMessage(d.name + " এর " + taka(d.amount) + " পরিশোধ হয়েছে? তালিকা থেকে মুছে যাবে।")
-            .setPositiveButton("হ্যাঁ, মুছুন") { _, _ ->
+            .setMessage(d.name + tr(" এর ") + taka(d.amount) + tr(" পরিশোধ হয়েছে? তালিকা থেকে মুছে যাবে।"))
+            .setPositiveButton(tr("হ্যাঁ, মুছুন")) { _, _ ->
                 DebtStore.delete(this, d.id)
                 render()
             }
-            .setNegativeButton("না", null)
+            .setNegativeButton(tr("না"), null)
             .show()
     }
 
     private fun showPartial(d: Debt) {
         val input = EditText(this)
-        input.hint = "কত টাকা পরিশোধ হলো"
+        input.hint = tr("কত টাকা পরিশোধ হলো")
         input.inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
         val wrap = LinearLayout(this)
         wrap.setPadding(dp(20), dp(10), dp(20), 0)
         wrap.addView(input, lp())
         val dlg = AlertDialog.Builder(this)
-            .setTitle("আংশিক পরিশোধ")
-            .setMessage("বাকি আছে " + taka(d.amount))
+            .setTitle(tr("আংশিক পরিশোধ"))
+            .setMessage(tr("বাকি আছে ") + taka(d.amount))
             .setView(wrap)
-            .setPositiveButton("সংরক্ষণ", null)
-            .setNegativeButton("বাতিল", null)
+            .setPositiveButton(tr("সংরক্ষণ"), null)
+            .setNegativeButton(tr("বাতিল"), null)
             .create()
         dlg.setOnShowListener {
             dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 val v = parseAmount(input.text.toString())
                 if (v == null) {
-                    Toast.makeText(this, "সঠিক টাকার পরিমাণ লিখুন", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, tr("সঠিক টাকার পরিমাণ লিখুন"), Toast.LENGTH_SHORT).show()
                 } else {
                     val left = d.amount - v
                     if (left <= 0.005) {
                         DebtStore.delete(this, d.id)
-                        Toast.makeText(this, "পুরো পরিশোধ হয়েছে, তালিকা থেকে মুছে গেছে", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, tr("পুরো পরিশোধ হয়েছে, তালিকা থেকে মুছে গেছে"), Toast.LENGTH_SHORT).show()
                     } else {
                         DebtStore.upsert(this, d.copy(amount = Math.round(left * 100) / 100.0))
                     }
@@ -189,12 +189,12 @@ class DebtActivity : GuardedActivity() {
         form.setPadding(dp(20), dp(10), dp(20), 0)
 
         form.addView(
-            dialogTabs("আমি পাবো", "আমি দেবো", Ui.GREEN, Ui.RED, owe) { owe = it },
+            dialogTabs(tr("আমি পাবো"), tr("আমি দেবো"), Ui.GREEN, Ui.RED, owe) { owe = it },
             lp(b = 12)
         )
 
         val name = AutoCompleteTextView(this)
-        name.hint = "কার সাথে (নাম)"
+        name.hint = tr("কার সাথে (নাম)")
         name.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_WORDS
         name.threshold = 1
         name.setAdapter(ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, DebtStore.names(this)))
@@ -202,7 +202,7 @@ class DebtActivity : GuardedActivity() {
         form.addView(name, lp())
 
         val amount = EditText(this)
-        amount.hint = "টাকার পরিমাণ"
+        amount.hint = tr("টাকার পরিমাণ")
         amount.inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
         if (old != null) {
             val a = old.amount
@@ -211,7 +211,7 @@ class DebtActivity : GuardedActivity() {
         form.addView(amount, lp(t = 4))
 
         val note = EditText(this)
-        note.hint = "নোট (ঐচ্ছিক)"
+        note.hint = tr("নোট (ঐচ্ছিক)")
         note.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
         note.setText(old?.note ?: "")
         form.addView(note, lp(t = 4))
@@ -235,19 +235,19 @@ class DebtActivity : GuardedActivity() {
         form.addView(dateBtn, lp(t = 12, b = 4))
 
         val dlg = AlertDialog.Builder(this)
-            .setTitle(if (old == null) "নতুন বাকি" else "বাকি সম্পাদনা")
+            .setTitle(if (old == null) tr("নতুন বাকি") else tr("বাকি সম্পাদনা"))
             .setView(form)
-            .setPositiveButton("সংরক্ষণ", null)
-            .setNegativeButton("বাতিল", null)
+            .setPositiveButton(tr("সংরক্ষণ"), null)
+            .setNegativeButton(tr("বাতিল"), null)
             .create()
         dlg.setOnShowListener {
             dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 val who = name.text.toString().trim()
                 val v = parseAmount(amount.text.toString())
                 if (who.isEmpty()) {
-                    Toast.makeText(this, "নাম লিখুন", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, tr("নাম লিখুন"), Toast.LENGTH_SHORT).show()
                 } else if (v == null) {
-                    Toast.makeText(this, "সঠিক টাকার পরিমাণ লিখুন", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, tr("সঠিক টাকার পরিমাণ লিখুন"), Toast.LENGTH_SHORT).show()
                 } else {
                     DebtStore.upsert(
                         this,

@@ -30,8 +30,8 @@ class HomeActivity : GuardedActivity() {
         val header = LinearLayout(this)
         header.orientation = LinearLayout.VERTICAL
         header.setPadding(dp(20), dp(22), dp(20), dp(6))
-        header.addView(label("আমার খাতা", 32f, Ui.TEXT, true))
-        header.addView(label("সব দরকারি টুল এক জায়গায়", 15f, Ui.MUTED), lp(b = 14))
+        header.addView(label(tr("আমার খাতা"), 32f, Ui.TEXT, true))
+        header.addView(label(tr("সব দরকারি টুল এক জায়গায়"), 15f, Ui.MUTED), lp(b = 14))
 
         val box = LinearLayout(this)
         box.orientation = LinearLayout.HORIZONTAL
@@ -40,7 +40,7 @@ class HomeActivity : GuardedActivity() {
         box.setPadding(dp(16), 0, dp(16), 0)
         box.addView(iconView(R.drawable.ic_search, 22, Ui.MUTED))
         search = EditText(this)
-        search.hint = "টুল খুঁজুন, যেমন: PDF, QR, ছবি"
+        search.hint = tr("টুল খুঁজুন, যেমন: PDF, QR, ছবি")
         search.textSize = 16f
         search.setTextColor(Ui.TEXT)
         search.inputType = InputType.TYPE_CLASS_TEXT
@@ -74,9 +74,9 @@ class HomeActivity : GuardedActivity() {
         val q = search.text.toString()
         if (q.isNotBlank()) {
             val found = Registry.tools.filter { Registry.matches(it, q) }
-            content.addView(label("ফলাফল (" + bn(found.size.toString()) + ")", 14f, Ui.MUTED, true), lp(l = 6, b = 8))
+            content.addView(label(tr("ফলাফল (") + bn(found.size.toString()) + ")", 14f, Ui.MUTED, true), lp(l = 6, b = 8))
             if (found.isEmpty()) {
-                val e = label("কিছু পাওয়া যায়নি।", 14f, Ui.MUTED)
+                val e = label(tr("কিছু পাওয়া যায়নি।"), 14f, Ui.MUTED)
                 e.gravity = Gravity.CENTER
                 e.setPadding(0, dp(30), 0, dp(30))
                 content.addView(e, lp())
@@ -87,9 +87,9 @@ class HomeActivity : GuardedActivity() {
         }
 
         val favs = Registry.favIds(this).mapNotNull { id -> Registry.tools.firstOrNull { it.id == id && it.id !in Registry.hidden } }
-        content.addView(label("প্রিয় টুল", 14f, Ui.MUTED, true), lp(l = 6, b = 8))
+        content.addView(label(tr("প্রিয় টুল"), 14f, Ui.MUTED, true), lp(l = 6, b = 8))
         if (favs.isEmpty()) {
-            content.addView(label("কোনো টুলে চেপে ধরে রাখলে সেটি এখানে যোগ হবে।", 13f, Ui.MUTED), lp(l = 6, b = 6))
+            content.addView(label(tr("কোনো টুলে চেপে ধরে রাখলে সেটি এখানে যোগ হবে।"), 13f, Ui.MUTED), lp(l = 6, b = 6))
         } else {
             val grid = LinearLayout(this)
             grid.orientation = LinearLayout.HORIZONTAL
@@ -107,16 +107,16 @@ class HomeActivity : GuardedActivity() {
             content.addView(grid, lp(b = 6))
         }
 
-        content.addView(label("ক্যাটাগরি", 14f, Ui.MUTED, true), lp(l = 6, t = 14, b = 8))
+        content.addView(label(tr("ক্যাটাগরি"), 14f, Ui.MUTED, true), lp(l = 6, t = 14, b = 8))
         val rows = Registry.cats.filter { Registry.inCat(it.id).isNotEmpty() }.map { c ->
-            val r = listRow(c.icon, c.name, bn(Registry.inCat(c.id).size.toString()) + "টি টুল")
+            val r = listRow(c.icon, c.name, bn(Registry.inCat(c.id).size.toString()) + tr("টি টুল"))
             r.setOnClickListener {
                 startActivity(Intent(this, ToolListActivity::class.java).putExtra("cat", c.id))
             }
             r as View
         }
         content.addView(groupCard(rows), lp())
-        content.addView(label("প্রিয় করতে বা সরাতে যেকোনো টুলে চেপে ধরে রাখুন।", 12f, Ui.MUTED), lp(l = 6, t = 10))
+        content.addView(label(tr("প্রিয় করতে বা সরাতে যেকোনো টুলে চেপে ধরে রাখুন।"), 12f, Ui.MUTED), lp(l = 6, t = 10))
     }
 
     private fun favTile(t: Tool): View {

@@ -25,9 +25,9 @@ class WordsActivity : GuardedActivity() {
         scroll.addView(box)
 
         val c = card(16)
-        c.addView(label("টাকার অঙ্ক", 13f, Ui.MUTED))
+        c.addView(label(tr("টাকার অঙ্ক"), 13f, Ui.MUTED))
         val input = EditText(this)
-        input.hint = "যেমন: 12500 বা 12500.50"
+        input.hint = tr("যেমন: 12500 বা 12500.50")
         input.textSize = 24f
         input.inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
         c.addView(input, lp())
@@ -36,15 +36,15 @@ class WordsActivity : GuardedActivity() {
         box.addView(c, lp(b = 12))
 
         val out = card(16)
-        out.addView(label("কথায়", 13f, Ui.MUTED))
+        out.addView(label(tr("কথায়"), 13f, Ui.MUTED))
         val result = label("", 20f, Ui.PRIMARY, true)
         result.setLineSpacing(0f, 1.2f)
         out.addView(result, lp(t = 6, b = 12))
-        out.addView(pill("কপি করুন") { if (words.isNotEmpty()) copyText(words) }, lp())
+        out.addView(pill(tr("কপি করুন")) { if (words.isNotEmpty()) copyText(words) }, lp())
         box.addView(out, lp(b = 12))
 
         val note = label(
-            "চেক বা আইনি কাগজে ব্যবহারের আগে বানান ও অঙ্ক একবার মিলিয়ে নিন।",
+            tr("চেক বা আইনি কাগজে ব্যবহারের আগে বানান ও অঙ্ক একবার মিলিয়ে নিন।"),
             12f, Ui.MUTED
         )
         note.gravity = Gravity.START
@@ -62,9 +62,9 @@ class WordsActivity : GuardedActivity() {
                     null
                 }
                 if (d == null || d.signum() < 0) {
-                    result.text = "সঠিক অঙ্ক লিখুন"
+                    result.text = tr("সঠিক অঙ্ক লিখুন")
                 } else if (d > BigDecimal("999999999999.99")) {
-                    result.text = "সংখ্যাটি অনেক বড়"
+                    result.text = tr("সংখ্যাটি অনেক বড়")
                 } else {
                     val paisa = d.setScale(2, RoundingMode.HALF_UP).movePointRight(2).toLong()
                     words = BanglaWords.amount(paisa)
@@ -74,6 +74,6 @@ class WordsActivity : GuardedActivity() {
             }
         }
 
-        setScreen("টাকা কথায়", scroll)
+        setScreen(tr("টাকা কথায়"), scroll)
     }
 }

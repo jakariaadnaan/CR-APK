@@ -49,32 +49,32 @@ abstract class AudioConvertBase(private val video: Boolean) : GuardedActivity() 
         val row = LinearLayout(this)
         row.orientation = LinearLayout.HORIZONTAL
         row.gravity = android.view.Gravity.CENTER_VERTICAL
-        row.addView(pill(if (video) "ভিডিও বাছুন" else "অডিও বাছুন") {
+        row.addView(pill(if (video) tr("ভিডিও বাছুন") else tr("অডিও বাছুন")) {
             val i = Intent(Intent.ACTION_OPEN_DOCUMENT)
             i.addCategory(Intent.CATEGORY_OPENABLE)
             i.type = if (video) "video/*" else "audio/*"
             startActivityForResult(i, 91)
         }, lp(r = 12))
-        info = label("কোনো ফাইল বাছা হয়নি", 13f, Ui.MUTED)
+        info = label(tr("কোনো ফাইল বাছা হয়নি"), 13f, Ui.MUTED)
         row.addView(info, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         c.addView(row, lp())
         box.addView(c, lp(b = 12))
 
         val opt = card(14)
-        opt.addView(label("আউটপুট ফরম্যাট", 12f, Ui.MUTED, true))
+        opt.addView(label(tr("আউটপুট ফরম্যাট"), 12f, Ui.MUTED, true))
         fmtRow = LinearLayout(this)
         fmtRow.orientation = LinearLayout.HORIZONTAL
         opt.addView(fmtRow, lp(t = 6, b = 8))
-        opt.addView(label("M4A (AAC) ছোট ফাইল, প্রায় সব প্লেয়ারে চলে। WAV অসংকুচিত, ফাইল অনেক বড়। MP3 এই সংস্করণে নেই।", 12f, Ui.MUTED))
+        opt.addView(label(tr("M4A (AAC) ছোট ফাইল, প্রায় সব প্লেয়ারে চলে। WAV অসংকুচিত, ফাইল অনেক বড়। MP3 এই সংস্করণে নেই।"), 12f, Ui.MUTED))
         box.addView(opt, lp(b = 12))
 
         val res = card(14)
         status = label("", 14f, Ui.TEXT)
         res.addView(status, lp(b = 10))
-        res.addView(pill("কনভার্ট ও সংরক্ষণ") { go() })
+        res.addView(pill(tr("কনভার্ট ও সংরক্ষণ")) { go() })
         box.addView(res, lp())
 
-        setScreen(if (video) "ভিডিও → অডিও" else "অডিও কনভার্টার", scroll)
+        setScreen(if (video) tr("ভিডিও → অডিও") else tr("অডিও কনভার্টার"), scroll)
         chips()
     }
 
@@ -96,7 +96,7 @@ abstract class AudioConvertBase(private val video: Boolean) : GuardedActivity() 
     private fun go() {
         if (busy) return
         if (src == null) {
-            Toast.makeText(this, "আগে একটি ফাইল বাছুন", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, tr("আগে একটি ফাইল বাছুন"), Toast.LENGTH_SHORT).show()
             return
         }
         val base = if (name.contains('.')) name.substring(0, name.lastIndexOf('.')) else name
@@ -122,14 +122,14 @@ abstract class AudioConvertBase(private val video: Boolean) : GuardedActivity() 
     }
 
     private fun progress(p: Int) {
-        runOnUiThread { status.text = "কনভার্ট হচ্ছে… " + bn(p.toString()) + "%" }
+        runOnUiThread { status.text = tr("কনভার্ট হচ্ছে… ") + bn(p.toString()) + "%" }
     }
 
     private fun run(out: Uri) {
         val inUri = src ?: return
         val toWav = wav
         busy = true
-        status.text = "কনভার্ট হচ্ছে…"
+        status.text = tr("কনভার্ট হচ্ছে…")
         Thread {
             var msg: String
             val tmp = File(cacheDir, "conv_out.tmp")
@@ -145,11 +145,11 @@ abstract class AudioConvertBase(private val video: Boolean) : GuardedActivity() 
                     encodeAac(pcm, tmp, fmt.first, fmt.second)
                 }
                 contentResolver.openOutputStream(out)?.use { os -> FileInputStream(tmp).use { it.copyTo(os) } }
-                msg = "সংরক্ষিত হয়েছে (" + Img.human(tmp.length()) + ")"
+                msg = tr("সংরক্ষিত হয়েছে (") + Img.human(tmp.length()) + ")"
             } catch (e: NoAudio) {
-                msg = "এই ফাইলে কোনো অডিও ট্র্যাক নেই"
+                msg = tr("এই ফাইলে কোনো অডিও ট্র্যাক নেই")
             } catch (e: Throwable) {
-                msg = "কনভার্ট করা যায়নি"
+                msg = tr("কনভার্ট করা যায়নি")
             } finally {
                 tmp.delete()
                 pcm.delete()

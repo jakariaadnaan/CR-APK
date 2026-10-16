@@ -63,7 +63,7 @@ class TransparentActivity : ImageToolBase() {
             }
             b != null
         }
-        box.addView(label("ছবিতে যে রঙ মুছতে চান সেখানে ছুঁয়ে দিন", 12f, Ui.MUTED), lp(l = 4, b = 10))
+        box.addView(label(tr("ছবিতে যে রঙ মুছতে চান সেখানে ছুঁয়ে দিন"), 12f, Ui.MUTED), lp(l = 4, b = 10))
 
         val opt = card(14)
         val top = LinearLayout(this)
@@ -72,7 +72,7 @@ class TransparentActivity : ImageToolBase() {
         swatch = View(this)
         swatch.setBackgroundColor(key)
         top.addView(swatch, lp(width = dp(36), height = dp(36), r = 12))
-        top.addView(label("মুছে ফেলার রঙ", 14f, Ui.TEXT, true))
+        top.addView(label(tr("মুছে ফেলার রঙ"), 14f, Ui.TEXT, true))
         opt.addView(top, lp(b = 10))
         tolLabel = label("", 13f, Ui.MUTED, true)
         opt.addView(tolLabel)
@@ -82,23 +82,23 @@ class TransparentActivity : ImageToolBase() {
         bar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(s: SeekBar?, p: Int, fromUser: Boolean) {
                 tol = p
-                tolLabel.text = "সহনশীলতা: " + bn(p.toString()) + " (বেশি হলে কাছাকাছি রঙও মুছবে)"
+                tolLabel.text = tr("সহনশীলতা: ") + bn(p.toString()) + tr(" (বেশি হলে কাছাকাছি রঙও মুছবে)")
             }
             override fun onStartTrackingTouch(s: SeekBar?) {}
             override fun onStopTrackingTouch(s: SeekBar?) { recompute() }
         })
         opt.addView(bar, lp(b = 4))
-        tolLabel.text = "সহনশীলতা: " + bn(tol.toString()) + " (বেশি হলে কাছাকাছি রঙও মুছবে)"
+        tolLabel.text = tr("সহনশীলতা: ") + bn(tol.toString()) + tr(" (বেশি হলে কাছাকাছি রঙও মুছবে)")
         box.addView(opt, lp(b = 12))
 
         val res = card(14)
-        result = label("আগে একটি ছবি বাছুন", 15f, Ui.TEXT)
+        result = label(tr("আগে একটি ছবি বাছুন"), 15f, Ui.TEXT)
         res.addView(result, lp(b = 10))
-        res.addView(pill("PNG সংরক্ষণ") { save() })
-        res.addView(label("একরঙা ব্যাকগ্রাউন্ডে ভালো কাজ করে; জটিল ছবিতে নিখুঁত হবে না।", 12f, Ui.MUTED), lp(t = 8))
+        res.addView(pill(tr("PNG সংরক্ষণ")) { save() })
+        res.addView(label(tr("একরঙা ব্যাকগ্রাউন্ডে ভালো কাজ করে; জটিল ছবিতে নিখুঁত হবে না।"), 12f, Ui.MUTED), lp(t = 8))
         box.addView(res, lp())
 
-        setScreen("ট্রান্সপারেন্ট PNG মেকার", scroll)
+        setScreen(tr("ট্রান্সপারেন্ট PNG মেকার"), scroll)
     }
 
     private fun checker(): BitmapDrawable {
@@ -126,7 +126,7 @@ class TransparentActivity : ImageToolBase() {
     private fun recompute() {
         val src = bmp ?: return
         val my = ++gen
-        result.text = "হিসাব চলছে…"
+        result.text = tr("হিসাব চলছে…")
         val k = key
         val t = tol
         Thread {
@@ -162,10 +162,10 @@ class TransparentActivity : ImageToolBase() {
                 if (my != gen) return@runOnUiThread
                 out = res
                 if (res == null) {
-                    result.text = "প্রক্রিয়া করা যায়নি"
+                    result.text = tr("প্রক্রিয়া করা যায়নি")
                 } else {
                     preview.setImageBitmap(res)
-                    result.text = "প্রস্তুত। চাইলে অন্য রঙে ছুঁয়ে আবার দেখুন।"
+                    result.text = tr("প্রস্তুত। চাইলে অন্য রঙে ছুঁয়ে আবার দেখুন।")
                 }
             }
         }.start()
@@ -174,13 +174,13 @@ class TransparentActivity : ImageToolBase() {
     private fun save() {
         val b = out
         if (b == null) {
-            Toast.makeText(this, "আগে একটি ছবি বাছুন", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, tr("আগে একটি ছবি বাছুন"), Toast.LENGTH_SHORT).show()
             return
         }
         Thread {
             val bytes = try { Img.encode(b, 0, 100) } catch (e: Throwable) { null }
             runOnUiThread {
-                if (bytes == null) Toast.makeText(this, "সংরক্ষণ করা যায়নি", Toast.LENGTH_LONG).show()
+                if (bytes == null) Toast.makeText(this, tr("সংরক্ষণ করা যায়নি"), Toast.LENGTH_LONG).show()
                 else askSave(bytes, baseName() + "_transparent.png", "image/png")
             }
         }.start()

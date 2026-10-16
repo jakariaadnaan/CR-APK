@@ -24,11 +24,11 @@ abstract class CodeGenBase(private val barcode: Boolean) : GuardedActivity() {
     private class Kind(val name: String, val f: BarcodeFormat, val hint: String)
 
     private val kinds = listOf(
-        Kind("Code 128", BarcodeFormat.CODE_128, "যেকোনো অক্ষর ও সংখ্যা"),
-        Kind("Code 39", BarcodeFormat.CODE_39, "বড় হাতের A–Z, সংখ্যা, - . $ / + % স্পেস"),
-        Kind("EAN-13", BarcodeFormat.EAN_13, "১২ বা ১৩টি সংখ্যা"),
-        Kind("EAN-8", BarcodeFormat.EAN_8, "৭ বা ৮টি সংখ্যা"),
-        Kind("UPC-A", BarcodeFormat.UPC_A, "১১ বা ১২টি সংখ্যা")
+        Kind("Code 128", BarcodeFormat.CODE_128, tr("যেকোনো অক্ষর ও সংখ্যা")),
+        Kind("Code 39", BarcodeFormat.CODE_39, tr("বড় হাতের A–Z, সংখ্যা, - . $ / + % স্পেস")),
+        Kind("EAN-13", BarcodeFormat.EAN_13, tr("১২ বা ১৩টি সংখ্যা")),
+        Kind("EAN-8", BarcodeFormat.EAN_8, tr("৭ বা ৮টি সংখ্যা")),
+        Kind("UPC-A", BarcodeFormat.UPC_A, tr("১১ বা ১২টি সংখ্যা"))
     )
     private val levels = listOf("L" to ErrorCorrectionLevel.L, "M" to ErrorCorrectionLevel.M, "Q" to ErrorCorrectionLevel.Q, "H" to ErrorCorrectionLevel.H)
 
@@ -51,15 +51,15 @@ abstract class CodeGenBase(private val barcode: Boolean) : GuardedActivity() {
         scroll.addView(box)
 
         val c = card(14)
-        c.addView(label(if (barcode) "বারকোডের লেখা বা সংখ্যা" else "লেখা বা লিংক", 12f, Ui.MUTED, true))
+        c.addView(label(if (barcode) tr("বারকোডের লেখা বা সংখ্যা") else tr("লেখা বা লিংক"), 12f, Ui.MUTED, true))
         input = EditText(this)
-        input.hint = if (barcode) "যেমন: 123456789012" else "যেমন: https://example.com"
+        input.hint = if (barcode) tr("যেমন: 123456789012") else tr("যেমন: https://example.com")
         input.inputType = InputType.TYPE_CLASS_TEXT or (if (barcode) 0 else InputType.TYPE_TEXT_FLAG_MULTI_LINE)
         input.setTextColor(Ui.TEXT)
         input.onChange { generate() }
         c.addView(input, lp(t = 4, b = 8))
         chipRow = com.example.callrec.FlowLayout(this)
-        c.addView(label(if (barcode) "বারকোডের ধরন" else "ত্রুটি সংশোধন (বেশি হলে নষ্ট QR-ও পড়া যায়)", 12f, Ui.MUTED, true), lp(t = 4, b = 6))
+        c.addView(label(if (barcode) tr("বারকোডের ধরন") else tr("ত্রুটি সংশোধন (বেশি হলে নষ্ট QR-ও পড়া যায়)"), 12f, Ui.MUTED, true), lp(t = 4, b = 6))
         c.addView(chipRow, lp())
         hintV = label("", 12f, Ui.MUTED)
         if (barcode) c.addView(hintV, lp(t = 6))
@@ -71,13 +71,13 @@ abstract class CodeGenBase(private val barcode: Boolean) : GuardedActivity() {
         image.scaleType = ImageView.ScaleType.FIT_CENTER
         image.setBackgroundColor(Color.WHITE)
         r.addView(image, lp(height = 260))
-        msg = label("লেখা দিলেই কোড তৈরি হবে", 13f, Ui.MUTED)
+        msg = label(tr("লেখা দিলেই কোড তৈরি হবে"), 13f, Ui.MUTED)
         msg.gravity = Gravity.CENTER
         r.addView(msg, lp(t = 8, b = 10))
-        r.addView(pill("PNG সংরক্ষণ") { save() })
+        r.addView(pill(tr("PNG সংরক্ষণ")) { save() })
         box.addView(r, lp())
 
-        setScreen(if (barcode) "বারকোড তৈরি" else "QR কোড তৈরি", scroll)
+        setScreen(if (barcode) tr("বারকোড তৈরি") else tr("QR কোড তৈরি"), scroll)
         chips()
         generate()
     }
@@ -106,7 +106,7 @@ abstract class CodeGenBase(private val barcode: Boolean) : GuardedActivity() {
         if (text.isEmpty()) {
             bmp = null
             image.setImageBitmap(null)
-            msg.text = "লেখা দিলেই কোড তৈরি হবে"
+            msg.text = tr("লেখা দিলেই কোড তৈরি হবে")
             return
         }
         try {
@@ -133,17 +133,17 @@ abstract class CodeGenBase(private val barcode: Boolean) : GuardedActivity() {
             b.setPixels(px, 0, m.width, 0, 0, m.width, m.height)
             bmp = b
             image.setImageBitmap(b)
-            msg.text = "তৈরি হয়েছে"
+            msg.text = tr("তৈরি হয়েছে")
         } catch (e: Throwable) {
             bmp = null
             image.setImageBitmap(null)
-            msg.text = if (barcode) "এই লেখা এই বারকোডে চলে না: " + kinds[kind].hint else "কোড তৈরি করা যায়নি (লেখা বেশি বড় হতে পারে)"
+            msg.text = if (barcode) tr("এই লেখা এই বারকোডে চলে না: ") + kinds[kind].hint else tr("কোড তৈরি করা যায়নি (লেখা বেশি বড় হতে পারে)")
         }
     }
 
     private fun save() {
         if (bmp == null) {
-            Toast.makeText(this, "আগে কোড তৈরি করুন", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, tr("আগে কোড তৈরি করুন"), Toast.LENGTH_SHORT).show()
             return
         }
         val i = Intent(Intent.ACTION_CREATE_DOCUMENT)
@@ -160,9 +160,9 @@ abstract class CodeGenBase(private val barcode: Boolean) : GuardedActivity() {
         try {
             val bytes = Img.encode(b, 0, 100)
             contentResolver.openOutputStream(data.data!!)?.use { it.write(bytes) }
-            Toast.makeText(this, "সংরক্ষিত হয়েছে", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, tr("সংরক্ষিত হয়েছে"), Toast.LENGTH_SHORT).show()
         } catch (e: Throwable) {
-            Toast.makeText(this, "সংরক্ষণ করা যায়নি", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, tr("সংরক্ষণ করা যায়নি"), Toast.LENGTH_LONG).show()
         }
     }
 }

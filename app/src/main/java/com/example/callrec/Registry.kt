@@ -3,18 +3,23 @@ package com.example.callrec
 import android.content.Context
 import android.graphics.Color
 
-class Cat(val id: String, val name: String, val icon: Int, val tint: Int, val fg: Int)
+class Cat(val id: String, private val rawName: String, val icon: Int, val tint: Int, val fg: Int) {
+    val name: String get() = tr(rawName)
+}
 
 /** [target] is null while a tool is not built yet. */
 class Tool(
     val id: String,
-    val title: String,
-    val sub: String,
+    private val rawTitle: String,
+    private val rawSub: String,
     val cat: String,
     val target: Class<*>?,
     val online: Boolean = false,
     val keywords: String = ""
-)
+) {
+    val title: String get() = tr(rawTitle)
+    val sub: String get() = tr(rawSub)
+}
 
 /** The list of every tool, grouped into categories. One place to change when a new tool is added. */
 object Registry {

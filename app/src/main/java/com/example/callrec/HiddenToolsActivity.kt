@@ -17,7 +17,7 @@ class HiddenToolsActivity : GuardedActivity() {
         box.orientation = LinearLayout.VERTICAL
         box.setPadding(dp(14), dp(10), dp(14), dp(24))
         scroll.addView(box)
-        setScreen("টুল দেখানো বা লুকানো", scroll)
+        setScreen(tr("টুল দেখানো বা লুকানো"), scroll)
         render()
     }
 
@@ -33,7 +33,7 @@ class HiddenToolsActivity : GuardedActivity() {
 
     private fun render() {
         box.removeAllViews()
-        box.addView(label("বন্ধ করা টুল হোম, সার্চ ও তালিকায় দেখাবে না। ডেটা মুছবে না।", 13f, Ui.MUTED), lp(l = 6, b = 10))
+        box.addView(label(tr("বন্ধ করা টুল হোম, সার্চ ও তালিকায় দেখাবে না। ডেটা মুছবে না।"), 13f, Ui.MUTED), lp(l = 6, b = 10))
         for (c in Registry.cats) {
             val list = Registry.tools.filter { it.cat == c.id }
             if (list.isEmpty()) continue

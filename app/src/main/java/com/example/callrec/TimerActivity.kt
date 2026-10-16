@@ -56,7 +56,7 @@ class TimerActivity : GuardedActivity() {
         root.addView(tabRow, lp(l = 14, t = 12, r = 14, b = 6))
         body = FrameLayout(this)
         root.addView(body, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
-        setScreen("টাইমার", root)
+        setScreen(tr("টাইমার"), root)
 
         if (Build.VERSION.SDK_INT >= 33 &&
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
@@ -109,7 +109,7 @@ class TimerActivity : GuardedActivity() {
         } catch (e: Exception) {
             // device without vibrator
         }
-        Toast.makeText(this, "⏰ সময় শেষ!", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, tr("⏰ সময় শেষ!"), Toast.LENGTH_LONG).show()
     }
 
     private fun stopAlert() {
@@ -133,7 +133,7 @@ class TimerActivity : GuardedActivity() {
         tab = t
         ticker = null
         tabRow.removeAllViews()
-        val names = listOf("কাউন্টডাউন", "স্টপওয়াচ", "পমোডোরো")
+        val names = listOf(tr("কাউন্টডাউন"), tr("স্টপওয়াচ"), tr("পমোডোরো"))
         for (i in names.indices) {
             val on = tab == i
             val chip = label(names[i], 14f, if (on) Color.WHITE else Ui.PRIMARY, true)
@@ -186,12 +186,12 @@ class TimerActivity : GuardedActivity() {
         val chips = LinearLayout(this)
         chips.orientation = LinearLayout.HORIZONTAL
         for (m in listOf(1, 3, 5, 10, 15, 30, 60)) {
-            val chip = label(bn(m.toString()) + " মি", 14f, Ui.PRIMARY, true)
+            val chip = label(bn(m.toString()) + tr(" মি"), 14f, Ui.PRIMARY, true)
             chip.background = bg(Ui.CARD, 20, Ui.PRIMARY, 1)
             chip.setPadding(dp(16), dp(8), dp(16), dp(8))
             chip.setOnClickListener {
                 if (cd.running) {
-                    Toast.makeText(this, "আগে থামান বা রিসেট করুন", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, tr("আগে থামান বা রিসেট করুন"), Toast.LENGTH_SHORT).show()
                 } else {
                     cd.reset(m * 60_000L)
                 }
@@ -202,26 +202,26 @@ class TimerActivity : GuardedActivity() {
         col.addView(chipScroll, lp(b = 12))
 
         val custom = card(14)
-        custom.addView(label("নিজের সময় দিন", 13f, Ui.MUTED))
+        custom.addView(label(tr("নিজের সময় দিন"), 13f, Ui.MUTED))
         val row = LinearLayout(this)
         row.orientation = LinearLayout.HORIZONTAL
         row.gravity = Gravity.CENTER_VERTICAL
         val min = EditText(this)
-        min.hint = "মিনিট"
+        min.hint = tr("মিনিট")
         min.inputType = InputType.TYPE_CLASS_NUMBER
         val sec = EditText(this)
-        sec.hint = "সেকেন্ড"
+        sec.hint = tr("সেকেন্ড")
         sec.inputType = InputType.TYPE_CLASS_NUMBER
         row.addView(min, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         row.addView(sec, lp(width = 0, l = 8, r = 8).also { it.weight = 1f })
-        row.addView(pill("সেট") {
+        row.addView(pill(tr("সেট")) {
             val m = asciiDigits(min.text.toString()).trim().toLongOrNull() ?: 0L
             val s = asciiDigits(sec.text.toString()).trim().toLongOrNull() ?: 0L
             val total = (m * 60 + s) * 1000
             if (cd.running) {
-                Toast.makeText(this, "আগে থামান বা রিসেট করুন", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, tr("আগে থামান বা রিসেট করুন"), Toast.LENGTH_SHORT).show()
             } else if (total <= 0 || total > 99L * 3600 * 1000) {
-                Toast.makeText(this, "সঠিক সময় দিন", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, tr("সঠিক সময় দিন"), Toast.LENGTH_SHORT).show()
             } else {
                 cd.reset(total)
             }
@@ -231,16 +231,16 @@ class TimerActivity : GuardedActivity() {
 
         val controls = LinearLayout(this)
         controls.orientation = LinearLayout.HORIZONTAL
-        val startBtn = pill("শুরু") {
+        val startBtn = pill(tr("শুরু")) {
             if (cd.running) {
                 cd.pause()
                 Alarms.cancel(this, Alarms.CODE_COUNTDOWN)
             } else {
                 cd.start()
-                Alarms.schedule(this, Alarms.CODE_COUNTDOWN, cd.endAt, "টাইমার", "সময় শেষ হয়েছে")
+                Alarms.schedule(this, Alarms.CODE_COUNTDOWN, cd.endAt, tr("টাইমার"), tr("সময় শেষ হয়েছে"))
             }
         }
-        val resetBtn = pill("রিসেট", Ui.BG, Ui.RED) {
+        val resetBtn = pill(tr("রিসেট"), Ui.BG, Ui.RED) {
             cd.reset()
             Alarms.cancel(this, Alarms.CODE_COUNTDOWN)
         }
@@ -253,7 +253,7 @@ class TimerActivity : GuardedActivity() {
             time.text = hms(cd.remaining())
             if (lastRunning != cd.running) {
                 lastRunning = cd.running
-                startBtn.text = if (cd.running) "থামান" else "শুরু"
+                startBtn.text = if (cd.running) tr("থামান") else tr("শুরু")
                 startBtn.background = bg(if (cd.running) Ui.RED else Ui.PRIMARY, 22)
             }
         }
@@ -296,7 +296,7 @@ class TimerActivity : GuardedActivity() {
             val laps = swLaps()
             if (laps.isEmpty()) return
             val lc = card(14)
-            lc.addView(label("ল্যাপ", 14f, Ui.TEXT, true), lp(b = 4))
+            lc.addView(label(tr("ল্যাপ"), 14f, Ui.TEXT, true), lp(b = 4))
             for (i in laps.indices.reversed()) {
                 val prev = if (i == 0) 0L else laps[i - 1]
                 val r = LinearLayout(this)
@@ -313,7 +313,7 @@ class TimerActivity : GuardedActivity() {
 
         val controls = LinearLayout(this)
         controls.orientation = LinearLayout.HORIZONTAL
-        val startBtn = pill("শুরু") {
+        val startBtn = pill(tr("শুরু")) {
             val running = sp.getLong("sw.start", 0L) > 0L
             if (running) {
                 sp.edit().putLong("sw.acc", swElapsed()).putLong("sw.start", 0L).apply()
@@ -321,7 +321,7 @@ class TimerActivity : GuardedActivity() {
                 sp.edit().putLong("sw.start", System.currentTimeMillis()).apply()
             }
         }
-        val lapBtn = pill("ল্যাপ", Ui.BG, Ui.PRIMARY) {
+        val lapBtn = pill(tr("ল্যাপ"), Ui.BG, Ui.PRIMARY) {
             if (sp.getLong("sw.start", 0L) > 0L) {
                 val laps = swLaps().toMutableList()
                 laps.add(swElapsed())
@@ -329,7 +329,7 @@ class TimerActivity : GuardedActivity() {
                 renderLaps()
             }
         }
-        val resetBtn = pill("রিসেট", Ui.BG, Ui.RED) {
+        val resetBtn = pill(tr("রিসেট"), Ui.BG, Ui.RED) {
             sp.edit().putLong("sw.acc", 0L).putLong("sw.start", 0L).putString("sw.laps", "").apply()
             renderLaps()
         }
@@ -346,7 +346,7 @@ class TimerActivity : GuardedActivity() {
             val running = sp.getLong("sw.start", 0L) > 0L
             if (lastRunning != running) {
                 lastRunning = running
-                startBtn.text = if (running) "থামান" else "শুরু"
+                startBtn.text = if (running) tr("থামান") else tr("শুরু")
                 startBtn.background = bg(if (running) Ui.RED else Ui.PRIMARY, 22)
             }
         }
@@ -361,9 +361,9 @@ class TimerActivity : GuardedActivity() {
     }
 
     private fun phaseName(phase: Int): String = when (phase) {
-        0 -> "কাজের সময়"
-        1 -> "ছোট বিরতি"
-        else -> "বড় বিরতি"
+        0 -> tr("কাজের সময়")
+        1 -> tr("ছোট বিরতি")
+        else -> tr("বড় বিরতি")
     }
 
     private fun advancePomo() {
@@ -384,8 +384,8 @@ class TimerActivity : GuardedActivity() {
         val phase = sp.getInt("pomo.phase", 0)
         val count = sp.getInt("pomo.count", 0)
         val next = if (phase == 0) (if ((count + 1) % 4 == 0) 2 else 1) else 0
-        val title = if (phase == 0) "পমোডোরো: কাজ শেষ" else "পমোডোরো: বিরতি শেষ"
-        return Pair(title, "পরের ধাপ: " + phaseName(next) + " (" + bn(phaseMinutes(next).toString()) + " মিনিট)")
+        val title = if (phase == 0) tr("পমোডোরো: কাজ শেষ") else tr("পমোডোরো: বিরতি শেষ")
+        return Pair(title, tr("পরের ধাপ: ") + phaseName(next) + " (" + bn(phaseMinutes(next).toString()) + tr(" মিনিট)"))
     }
 
     private fun buildPomodoro(col: LinearLayout) {
@@ -402,7 +402,7 @@ class TimerActivity : GuardedActivity() {
 
         val controls = LinearLayout(this)
         controls.orientation = LinearLayout.HORIZONTAL
-        val startBtn = pill("শুরু") {
+        val startBtn = pill(tr("শুরু")) {
             if (pomo.running) {
                 pomo.pause()
                 Alarms.cancel(this, Alarms.CODE_POMODORO)
@@ -414,11 +414,11 @@ class TimerActivity : GuardedActivity() {
                 Alarms.schedule(this, Alarms.CODE_POMODORO, pomo.endAt, m.first, m.second)
             }
         }
-        val skipBtn = pill("পরের ধাপ", Ui.BG, Ui.PRIMARY) {
+        val skipBtn = pill(tr("পরের ধাপ"), Ui.BG, Ui.PRIMARY) {
             Alarms.cancel(this, Alarms.CODE_POMODORO)
             advancePomo()
         }
-        val resetBtn = pill("রিসেট", Ui.BG, Ui.RED) {
+        val resetBtn = pill(tr("রিসেট"), Ui.BG, Ui.RED) {
             Alarms.cancel(this, Alarms.CODE_POMODORO)
             sp.edit().putInt("pomo.phase", 0).putInt("pomo.count", 0).apply()
             pomo.reset(phaseMinutes(0) * 60_000L)
@@ -427,17 +427,17 @@ class TimerActivity : GuardedActivity() {
         controls.addView(skipBtn, lp(width = 0, l = 6, r = 6).also { it.weight = 1f })
         controls.addView(resetBtn, lp(width = 0, l = 6).also { it.weight = 1f })
         col.addView(controls, lp(b = 12))
-        col.addView(pill("সময় সেটিংস", Ui.BG, Ui.PRIMARY) { showPomoSettings() }, lp())
+        col.addView(pill(tr("সময় সেটিংস"), Ui.BG, Ui.PRIMARY) { showPomoSettings() }, lp())
 
         var lastRunning: Boolean? = null
         ticker = {
             val phase = sp.getInt("pomo.phase", 0)
             phaseLbl.text = phaseName(phase)
             time.text = hms(pomo.remaining())
-            countLbl.text = "সম্পন্ন পমোডোরো: " + bn(sp.getInt("pomo.count", 0).toString()) + " টি"
+            countLbl.text = tr("সম্পন্ন পমোডোরো: ") + bn(sp.getInt("pomo.count", 0).toString()) + tr(" টি")
             if (lastRunning != pomo.running) {
                 lastRunning = pomo.running
-                startBtn.text = if (pomo.running) "থামান" else "শুরু"
+                startBtn.text = if (pomo.running) tr("থামান") else tr("শুরু")
                 startBtn.background = bg(if (pomo.running) Ui.RED else Ui.PRIMARY, 22)
             }
         }
@@ -456,15 +456,15 @@ class TimerActivity : GuardedActivity() {
             form.addView(e, lp())
             return e
         }
-        val w = field("কাজ (মিনিট)", "pomo.work", 25)
-        val s = field("ছোট বিরতি (মিনিট)", "pomo.short", 5)
-        val l = field("বড় বিরতি (মিনিট)", "pomo.long", 15)
+        val w = field(tr("কাজ (মিনিট)"), "pomo.work", 25)
+        val s = field(tr("ছোট বিরতি (মিনিট)"), "pomo.short", 5)
+        val l = field(tr("বড় বিরতি (মিনিট)"), "pomo.long", 15)
 
         val dlg = AlertDialog.Builder(this)
-            .setTitle("পমোডোরো সময়")
+            .setTitle(tr("পমোডোরো সময়"))
             .setView(form)
-            .setPositiveButton("সংরক্ষণ", null)
-            .setNegativeButton("বাতিল", null)
+            .setPositiveButton(tr("সংরক্ষণ"), null)
+            .setNegativeButton(tr("বাতিল"), null)
             .create()
         dlg.setOnShowListener {
             dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
@@ -472,7 +472,7 @@ class TimerActivity : GuardedActivity() {
                 val sv = asciiDigits(s.text.toString()).trim().toIntOrNull()
                 val lv = asciiDigits(l.text.toString()).trim().toIntOrNull()
                 if (wv == null || sv == null || lv == null || wv !in 1..180 || sv !in 1..60 || lv !in 1..90) {
-                    Toast.makeText(this, "সঠিক মিনিট দিন", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, tr("সঠিক মিনিট দিন"), Toast.LENGTH_SHORT).show()
                 } else {
                     sp.edit().putInt("pomo.work", wv).putInt("pomo.short", sv).putInt("pomo.long", lv).apply()
                     if (!pomo.running) pomo.reset(phaseMinutes(sp.getInt("pomo.phase", 0)) * 60_000L)

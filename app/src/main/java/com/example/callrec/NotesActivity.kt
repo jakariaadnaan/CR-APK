@@ -27,7 +27,7 @@ class NotesActivity : GuardedActivity() {
         content.orientation = LinearLayout.VERTICAL
 
         search = EditText(this)
-        search.hint = "🔍  নোট খুঁজুন"
+        search.hint = tr("🔍  নোট খুঁজুন")
         search.inputType = InputType.TYPE_CLASS_TEXT
         search.isSingleLine = true
         search.background = bg(Ui.CARD, 12)
@@ -48,7 +48,7 @@ class NotesActivity : GuardedActivity() {
         scroll.addView(listBox)
         content.addView(scroll, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
 
-        setScreen("দ্রুত নোট", content, pill("+ নতুন নোট") { showEditor(null) })
+        setScreen(tr("দ্রুত নোট"), content, pill(tr("+ নতুন নোট")) { showEditor(null) })
         render()
     }
 
@@ -60,7 +60,7 @@ class NotesActivity : GuardedActivity() {
             .sortedWith(compareByDescending<Note> { it.pinned }.thenByDescending { it.updated })
 
         if (items.isEmpty()) {
-            val msg = if (q.isEmpty()) "কোনো নোট নেই।\nনিচের “+ নতুন নোট” চেপে লিখুন।" else "কিছু পাওয়া যায়নি।"
+            val msg = if (q.isEmpty()) tr("কোনো নোট নেই।\nনিচের “+ নতুন নোট” চেপে লিখুন।") else tr("কিছু পাওয়া যায়নি।")
             val empty = label(msg, 14f, Ui.MUTED)
             empty.gravity = Gravity.CENTER
             empty.setPadding(0, dp(30), 0, dp(30))
@@ -89,13 +89,13 @@ class NotesActivity : GuardedActivity() {
         form.setPadding(dp(20), dp(10), dp(20), 0)
 
         val title = EditText(this)
-        title.hint = "শিরোনাম (ঐচ্ছিক)"
+        title.hint = tr("শিরোনাম (ঐচ্ছিক)")
         title.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
         title.setText(old?.title ?: "")
         form.addView(title, lp())
 
         val body = EditText(this)
-        body.hint = "এখানে লিখুন…"
+        body.hint = tr("এখানে লিখুন…")
         body.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
         body.minLines = 6
         body.gravity = Gravity.TOP or Gravity.START
@@ -103,23 +103,23 @@ class NotesActivity : GuardedActivity() {
         form.addView(body, lp(t = 4))
 
         val pin = CheckBox(this)
-        pin.text = "উপরে পিন করুন"
+        pin.text = tr("উপরে পিন করুন")
         pin.isChecked = old?.pinned ?: false
         form.addView(pin, lp(t = 6))
 
         val builder = AlertDialog.Builder(this)
-            .setTitle(if (old == null) "নতুন নোট" else "নোট সম্পাদনা")
+            .setTitle(if (old == null) tr("নতুন নোট") else tr("নোট সম্পাদনা"))
             .setView(form)
-            .setPositiveButton("সংরক্ষণ", null)
-            .setNegativeButton("বাতিল", null)
-        if (old != null) builder.setNeutralButton("মুছুন", null)
+            .setPositiveButton(tr("সংরক্ষণ"), null)
+            .setNegativeButton(tr("বাতিল"), null)
+        if (old != null) builder.setNeutralButton(tr("মুছুন"), null)
         val dlg = builder.create()
         dlg.setOnShowListener {
             dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 val t = title.text.toString().trim()
                 val b = body.text.toString().trim()
                 if (t.isEmpty() && b.isEmpty()) {
-                    Toast.makeText(this, "কিছু লিখুন", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, tr("কিছু লিখুন"), Toast.LENGTH_SHORT).show()
                 } else {
                     NoteStore.upsert(this, Note(old?.id ?: System.currentTimeMillis(), t, b, pin.isChecked, System.currentTimeMillis()))
                     dlg.dismiss()
@@ -129,13 +129,13 @@ class NotesActivity : GuardedActivity() {
             if (old != null) {
                 dlg.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
                     AlertDialog.Builder(this)
-                        .setMessage("এই নোট মুছে ফেলবেন?")
-                        .setPositiveButton("মুছুন") { _, _ ->
+                        .setMessage(tr("এই নোট মুছে ফেলবেন?"))
+                        .setPositiveButton(tr("মুছুন")) { _, _ ->
                             NoteStore.delete(this, old.id)
                             dlg.dismiss()
                             render()
                         }
-                        .setNegativeButton("না", null)
+                        .setNegativeButton(tr("না"), null)
                         .show()
                 }
             }

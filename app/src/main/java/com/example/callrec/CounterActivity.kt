@@ -19,8 +19,8 @@ class CounterActivity : GuardedActivity() {
     private val values = ArrayList<TextView>()
 
     private val names = listOf(
-        "শব্দ", "অক্ষর (স্পেসসহ)", "অক্ষর (স্পেস ছাড়া)",
-        "লাইন", "অনুচ্ছেদ", "বাক্য", "পড়তে সময় (আনুমানিক)"
+        tr("শব্দ"), tr("অক্ষর (স্পেসসহ)"), tr("অক্ষর (স্পেস ছাড়া)"),
+        tr("লাইন"), tr("অনুচ্ছেদ"), tr("বাক্য"), tr("পড়তে সময় (আনুমানিক)")
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,9 +32,9 @@ class CounterActivity : GuardedActivity() {
         scroll.addView(box)
 
         val inCard = card(14)
-        inCard.addView(label("আপনার লেখা", 12f, Ui.MUTED, true))
+        inCard.addView(label(tr("আপনার লেখা"), 12f, Ui.MUTED, true))
         input = EditText(this)
-        input.hint = "এখানে লিখুন বা পেস্ট করুন"
+        input.hint = tr("এখানে লিখুন বা পেস্ট করুন")
         input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
         input.minLines = 6
         input.gravity = Gravity.TOP or Gravity.START
@@ -42,8 +42,8 @@ class CounterActivity : GuardedActivity() {
         inCard.addView(input, lp(t = 4))
         val row = LinearLayout(this)
         row.orientation = LinearLayout.HORIZONTAL
-        row.addView(pill("পেস্ট", Ui.BG, Ui.PRIMARY) { paste() }, lp(r = 8))
-        row.addView(pill("মুছুন", Ui.BG, Ui.RED) { input.setText("") })
+        row.addView(pill(tr("পেস্ট"), Ui.BG, Ui.PRIMARY) { paste() }, lp(r = 8))
+        row.addView(pill(tr("মুছুন"), Ui.BG, Ui.RED) { input.setText("") })
         inCard.addView(row, lp(t = 6))
         box.addView(inCard, lp(b = 12))
 
@@ -52,18 +52,18 @@ class CounterActivity : GuardedActivity() {
             val r = LinearLayout(this)
             r.orientation = LinearLayout.HORIZONTAL
             r.addView(label(n, 14f, Ui.MUTED), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-            val v = label("০", 16f, Ui.PRIMARY, true)
+            val v = label(tr("০"), 16f, Ui.PRIMARY, true)
             values.add(v)
             r.addView(v)
             stats.addView(r, lp(t = 8))
         }
         box.addView(stats, lp(b = 8))
         box.addView(
-            label("অক্ষর গণনায় যুক্তাক্ষর ও কার-চিহ্নসহ অক্ষরকে একটি ধরা হয়।", 12f, Ui.MUTED),
+            label(tr("অক্ষর গণনায় যুক্তাক্ষর ও কার-চিহ্নসহ অক্ষরকে একটি ধরা হয়।"), 12f, Ui.MUTED),
             lp(l = 4)
         )
 
-        setScreen("শব্দ ও অক্ষর গণনা", scroll)
+        setScreen(tr("শব্দ ও অক্ষর গণনা"), scroll)
         update()
     }
 
@@ -71,7 +71,7 @@ class CounterActivity : GuardedActivity() {
         val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val t = cm.primaryClip?.getItemAt(0)?.coerceToText(this)?.toString()
         if (t.isNullOrEmpty()) {
-            Toast.makeText(this, "ক্লিপবোর্ডে কিছু নেই", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, tr("ক্লিপবোর্ডে কিছু নেই"), Toast.LENGTH_SHORT).show()
         } else {
             input.setText(t)
         }
@@ -96,9 +96,9 @@ class CounterActivity : GuardedActivity() {
         val sentences = s.split(Regex("[.!?।]+")).filter { it.isNotBlank() }.size
         val seconds = Math.round(words / 200.0 * 60).toInt()
         val read = when {
-            words == 0 -> "০"
-            seconds < 60 -> bn(seconds.toString()) + " সেকেন্ড"
-            else -> bn((seconds / 60).toString()) + " মিনিট " + bn((seconds % 60).toString()) + " সেকেন্ড"
+            words == 0 -> tr("০")
+            seconds < 60 -> bn(seconds.toString()) + tr(" সেকেন্ড")
+            else -> bn((seconds / 60).toString()) + tr(" মিনিট ") + bn((seconds % 60).toString()) + tr(" সেকেন্ড")
         }
         val nums = listOf(words, chars, noSpace, lines, paras, sentences)
         for (i in nums.indices) values[i].text = bn(nums[i].toString())

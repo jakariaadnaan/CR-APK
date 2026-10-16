@@ -44,26 +44,26 @@ class LockActivity : Activity() {
         val lock = label("🔒", 40f, Color.WHITE)
         lock.gravity = Gravity.CENTER
         root.addView(lock, lp())
-        val title = label("আমার খাতা", 22f, Color.WHITE, true)
+        val title = label(tr("আমার খাতা"), 22f, Color.WHITE, true)
         title.gravity = Gravity.CENTER
         root.addView(title, lp(t = 8))
 
         dots = label("", 30f, Color.WHITE, true)
         dots.gravity = Gravity.CENTER
-        msg = label(if (isPattern) "প্যাটার্ন আঁকুন" else "পিন দিন", 14f, Color.parseColor("#D6E0FB"))
+        msg = label(if (isPattern) tr("প্যাটার্ন আঁকুন") else tr("পিন দিন"), 14f, Ui.mix(Ui.PRIMARY, Color.WHITE, 0.82f))
         msg.gravity = Gravity.CENTER
 
         if (isPattern) {
             root.addView(msg, lp(t = 16, b = 16))
             val pv = PatternView(this)
-            pv.baseColor = Color.parseColor("#A9BDF5")
+            pv.baseColor = Ui.mix(Ui.PRIMARY, Color.WHITE, 0.6f)
             pv.activeColor = Color.WHITE
             pv.errorColor = Color.parseColor("#FF8A80")
             pv.onComplete = { s -> onPattern(pv, s) }
             pattern = pv
             root.addView(pv, LinearLayout.LayoutParams(dp(290), dp(290)))
             if (bioReady()) {
-                val bio = label("👆  ফিঙ্গারপ্রিন্ট ব্যবহার করুন", 15f, Color.WHITE, true)
+                val bio = label(tr("👆  ফিঙ্গারপ্রিন্ট ব্যবহার করুন"), 15f, Color.WHITE, true)
                 bio.gravity = Gravity.CENTER
                 bio.setPadding(dp(16), dp(12), dp(16), dp(12))
                 bio.setOnClickListener { showBiometric() }
@@ -87,7 +87,7 @@ class LockActivity : Activity() {
                     val isBioKey = k == "👆"
                     val b = label(if (isBioKey) (if (bioReady()) k else "") else bn(k), 26f, Color.WHITE, true)
                     b.gravity = Gravity.CENTER
-                    if (!isBioKey || bioReady()) b.background = bg(Color.parseColor("#4A74EC"), 40)
+                    if (!isBioKey || bioReady()) b.background = bg(Ui.mix(Ui.PRIMARY, Color.WHITE, 0.15f), 40)
                     b.setOnClickListener {
                         when (k) {
                             "👆" -> if (bioReady()) showBiometric()
@@ -154,7 +154,7 @@ class LockActivity : Activity() {
             lockedUntil = System.currentTimeMillis() + 30_000L
             countdown()
         } else {
-            msg.text = "ভুল $what"
+            msg.text = tr("ভুল") + " " + what
         }
     }
 
@@ -167,7 +167,7 @@ class LockActivity : Activity() {
             success()
         } else {
             pv.flashError()
-            registerFail("প্যাটার্ন")
+            registerFail(tr("প্যাটার্ন"))
         }
     }
 
@@ -182,7 +182,7 @@ class LockActivity : Activity() {
             } else {
                 input = ""
                 refreshDots()
-                registerFail("পিন")
+                registerFail(tr("পিন"))
             }
         }
     }
@@ -190,10 +190,10 @@ class LockActivity : Activity() {
     private fun countdown() {
         val left = (lockedUntil - System.currentTimeMillis() + 999) / 1000
         if (left <= 0) {
-            msg.text = if (isPattern) "প্যাটার্ন আঁকুন" else "পিন দিন"
+            msg.text = if (isPattern) tr("প্যাটার্ন আঁকুন") else tr("পিন দিন")
             return
         }
-        msg.text = "অনেকবার ভুল হয়েছে। " + bn(left.toString()) + " সেকেন্ড পরে চেষ্টা করুন"
+        msg.text = tr("অনেকবার ভুল হয়েছে। ") + bn(left.toString()) + tr(" সেকেন্ড পরে চেষ্টা করুন")
         handler.postDelayed({ countdown() }, 1000)
     }
 
@@ -203,9 +203,9 @@ class LockActivity : Activity() {
             val s = CancellationSignal()
             signal = s
             val prompt = BiometricPrompt.Builder(this)
-                .setTitle("আনলক করুন")
+                .setTitle(tr("আনলক করুন"))
                 .setNegativeButton(
-                    if (isPattern) "প্যাটার্ন ব্যবহার করুন" else "পিন ব্যবহার করুন",
+                    if (isPattern) tr("প্যাটার্ন ব্যবহার করুন") else tr("পিন ব্যবহার করুন"),
                     mainExecutor,
                     DialogInterface.OnClickListener { _, _ -> signal = null }
                 )

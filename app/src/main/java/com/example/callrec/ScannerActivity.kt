@@ -55,26 +55,26 @@ class ScannerActivity : GuardedActivity(), SurfaceHolder.Callback {
         surface = SurfaceView(this)
         surface.holder.addCallback(this)
         cc.addView(surface, lp(height = 340))
-        camNote = label("ক্যামেরা চালু হচ্ছে…", 12f, Ui.MUTED)
+        camNote = label(tr("ক্যামেরা চালু হচ্ছে…"), 12f, Ui.MUTED)
         cc.addView(camNote, lp(t = 6))
         box.addView(cc, lp(b = 12))
 
         val rc = card(14)
-        rc.addView(label("ফলাফল", 12f, Ui.MUTED, true))
+        rc.addView(label(tr("ফলাফল"), 12f, Ui.MUTED, true))
         typeV = label("", 12f, Ui.PRIMARY, true)
         rc.addView(typeV, lp(t = 4))
-        resultV = label("QR বা বারকোডের দিকে ক্যামেরা ধরুন", 16f, Ui.TEXT)
+        resultV = label(tr("QR বা বারকোডের দিকে ক্যামেরা ধরুন"), 16f, Ui.TEXT)
         resultV.setTextIsSelectable(true)
         rc.addView(resultV, lp(t = 2, b = 10))
         val row = LinearLayout(this)
         row.orientation = LinearLayout.HORIZONTAL
-        row.addView(pill("কপি") { if (lastText.isNotEmpty()) copyText(lastText) }, lp(r = 8))
-        openBtn = pill("লিংক খুলুন", Ui.BG, Ui.PRIMARY) { openLink() }
+        row.addView(pill(tr("কপি")) { if (lastText.isNotEmpty()) copyText(lastText) }, lp(r = 8))
+        openBtn = pill(tr("লিংক খুলুন"), Ui.BG, Ui.PRIMARY) { openLink() }
         openBtn.visibility = android.view.View.GONE
         row.addView(openBtn, lp(r = 8))
-        row.addView(pill("আবার স্ক্যান", Ui.BG, Ui.PRIMARY) { again() })
+        row.addView(pill(tr("আবার স্ক্যান"), Ui.BG, Ui.PRIMARY) { again() })
         rc.addView(row, lp(b = 8))
-        rc.addView(pill("ছবি থেকে পড়ুন", Ui.BG, Ui.PRIMARY) {
+        rc.addView(pill(tr("ছবি থেকে পড়ুন"), Ui.BG, Ui.PRIMARY) {
             val i = Intent(Intent.ACTION_OPEN_DOCUMENT)
             i.addCategory(Intent.CATEGORY_OPENABLE)
             i.type = "image/*"
@@ -82,7 +82,7 @@ class ScannerActivity : GuardedActivity(), SurfaceHolder.Callback {
         })
         box.addView(rc, lp())
 
-        setScreen("স্ক্যানার", scroll)
+        setScreen(tr("স্ক্যানার"), scroll)
     }
 
     override fun surfaceCreated(h: SurfaceHolder) {
@@ -110,7 +110,7 @@ class ScannerActivity : GuardedActivity(), SurfaceHolder.Callback {
     private fun ensureCamera() {
         if (cam != null) return
         if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            camNote.text = "ক্যামেরার অনুমতি দিন"
+            camNote.text = tr("ক্যামেরার অনুমতি দিন")
             requestPermissions(arrayOf(Manifest.permission.CAMERA), 97)
             return
         }
@@ -136,9 +136,9 @@ class ScannerActivity : GuardedActivity(), SurfaceHolder.Callback {
             c.setPreviewCallback { data, _ -> onFrame(data) }
             c.startPreview()
             cam = c
-            camNote.text = "স্ক্যান চলছে…"
+            camNote.text = tr("স্ক্যান চলছে…")
         } catch (e: Throwable) {
-            camNote.text = "ক্যামেরা চালু করা যায়নি"
+            camNote.text = tr("ক্যামেরা চালু করা যায়নি")
             cam = null
         }
     }
@@ -193,7 +193,7 @@ class ScannerActivity : GuardedActivity(), SurfaceHolder.Callback {
         typeV.text = type
         resultV.text = t
         openBtn.visibility = if (isUrl(t)) android.view.View.VISIBLE else android.view.View.GONE
-        camNote.text = "পাওয়া গেছে। আবার স্ক্যান করতে নিচের বোতাম চাপুন।"
+        camNote.text = tr("পাওয়া গেছে। আবার স্ক্যান করতে নিচের বোতাম চাপুন।")
     }
 
     private fun isUrl(t: String) = t.startsWith("http://") || t.startsWith("https://")
@@ -202,7 +202,7 @@ class ScannerActivity : GuardedActivity(), SurfaceHolder.Callback {
         try {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(lastText)))
         } catch (e: Throwable) {
-            Toast.makeText(this, "লিংক খোলা যায়নি", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, tr("লিংক খোলা যায়নি"), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -210,9 +210,9 @@ class ScannerActivity : GuardedActivity(), SurfaceHolder.Callback {
         scanning = true
         lastText = ""
         typeV.text = ""
-        resultV.text = "QR বা বারকোডের দিকে ক্যামেরা ধরুন"
+        resultV.text = tr("QR বা বারকোডের দিকে ক্যামেরা ধরুন")
         openBtn.visibility = android.view.View.GONE
-        camNote.text = "স্ক্যান চলছে…"
+        camNote.text = tr("স্ক্যান চলছে…")
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -221,7 +221,7 @@ class ScannerActivity : GuardedActivity(), SurfaceHolder.Callback {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 if (surfaceReady) ensureCamera()
             } else {
-                camNote.text = "অনুমতি ছাড়া ক্যামেরা চলবে না। চাইলে নিচে ছবি থেকে পড়তে পারেন।"
+                camNote.text = tr("অনুমতি ছাড়া ক্যামেরা চলবে না। চাইলে নিচে ছবি থেকে পড়তে পারেন।")
             }
         }
     }
@@ -252,7 +252,7 @@ class ScannerActivity : GuardedActivity(), SurfaceHolder.Callback {
             val t = text
             val ty = type
             runOnUiThread {
-                if (t != null) show(t, ty) else Toast.makeText(this, "ছবিতে কোনো QR বা বারকোড পাওয়া যায়নি", Toast.LENGTH_LONG).show()
+                if (t != null) show(t, ty) else Toast.makeText(this, tr("ছবিতে কোনো QR বা বারকোড পাওয়া যায়নি"), Toast.LENGTH_LONG).show()
             }
         }.start()
     }

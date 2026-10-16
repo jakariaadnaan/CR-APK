@@ -35,29 +35,29 @@ class UpscaleActivity : ImageToolBase() {
         box.addView(pickCard(), lp(b = 12))
 
         val opt = card(14)
-        opt.addView(label("কত গুণ বড় করবেন", 12f, Ui.MUTED, true))
+        opt.addView(label(tr("কত গুণ বড় করবেন"), 12f, Ui.MUTED, true))
         factorRow = LinearLayout(this)
         factorRow.orientation = LinearLayout.HORIZONTAL
         opt.addView(factorRow, lp(t = 6, b = 10))
-        opt.addView(label("ধার বাড়ানো (Sharpen)", 12f, Ui.MUTED, true))
+        opt.addView(label(tr("ধার বাড়ানো (Sharpen)"), 12f, Ui.MUTED, true))
         sharpRow = LinearLayout(this)
         sharpRow.orientation = LinearLayout.HORIZONTAL
         opt.addView(sharpRow, lp(t = 6, b = 6))
-        opt.addView(label("এটি এআই নয়; ছবি মসৃণভাবে বড় হয়, নতুন ডিটেইল তৈরি হয় না।", 12f, Ui.MUTED))
+        opt.addView(label(tr("এটি এআই নয়; ছবি মসৃণভাবে বড় হয়, নতুন ডিটেইল তৈরি হয় না।"), 12f, Ui.MUTED))
         box.addView(opt, lp(b = 12))
 
         val res = card(14)
-        res.addView(label("ফলাফল", 12f, Ui.MUTED, true))
-        result = label("আগে একটি ছবি বাছুন", 15f, Ui.TEXT)
+        res.addView(label(tr("ফলাফল"), 12f, Ui.MUTED, true))
+        result = label(tr("আগে একটি ছবি বাছুন"), 15f, Ui.TEXT)
         res.addView(result, lp(t = 4, b = 10))
         val row = LinearLayout(this)
         row.orientation = LinearLayout.HORIZONTAL
-        row.addView(pill("PNG সংরক্ষণ") { save(0) }, lp(r = 8))
-        row.addView(pill("JPG সংরক্ষণ", Ui.BG, Ui.PRIMARY) { save(1) })
+        row.addView(pill(tr("PNG সংরক্ষণ")) { save(0) }, lp(r = 8))
+        row.addView(pill(tr("JPG সংরক্ষণ"), Ui.BG, Ui.PRIMARY) { save(1) })
         res.addView(row, lp())
         box.addView(res, lp())
 
-        setScreen("ইমেজ আপস্কেলার", scroll)
+        setScreen(tr("ইমেজ আপস্কেলার"), scroll)
         chips()
     }
 
@@ -74,8 +74,8 @@ class UpscaleActivity : ImageToolBase() {
         factorRow.removeAllViews()
         for (f in listOf(2, 3, 4)) factorRow.addView(chip(bn(f.toString()) + "×", f == factor) { factor = f; chips(); recompute() }, lp(r = 8))
         sharpRow.removeAllViews()
-        sharpRow.addView(chip("চালু", sharpen) { sharpen = true; chips(); recompute() }, lp(r = 8))
-        sharpRow.addView(chip("বন্ধ", !sharpen) { sharpen = false; chips(); recompute() })
+        sharpRow.addView(chip(tr("চালু"), sharpen) { sharpen = true; chips(); recompute() }, lp(r = 8))
+        sharpRow.addView(chip(tr("বন্ধ"), !sharpen) { sharpen = false; chips(); recompute() })
     }
 
     override fun onImageLoaded() {
@@ -86,7 +86,7 @@ class UpscaleActivity : ImageToolBase() {
     private fun recompute() {
         val src = bmp ?: return
         val my = ++gen
-        result.text = "হিসাব চলছে…"
+        result.text = tr("হিসাব চলছে…")
         val f = factor
         val sh = sharpen
         Thread {
@@ -96,9 +96,9 @@ class UpscaleActivity : ImageToolBase() {
                 var k = f
                 // keep the output within about 16 megapixels so memory stays safe
                 while (k > 1 && src.width.toLong() * k * src.height * k > 16_000_000L) k--
-                if (k < f) note = "\n(মেমরির কারণে " + bn(k.toString()) + "× করা হয়েছে)"
+                if (k < f) note = tr("\n(মেমরির কারণে ") + bn(k.toString()) + tr("× করা হয়েছে)")
                 if (k <= 1) {
-                    note = "\nছবিটি আগেই যথেষ্ট বড়।"
+                    note = tr("\nছবিটি আগেই যথেষ্ট বড়।")
                     res = src
                 } else {
                     val big = Bitmap.createScaledBitmap(src, src.width * k, src.height * k, true)
@@ -111,10 +111,10 @@ class UpscaleActivity : ImageToolBase() {
                 if (my != gen) return@runOnUiThread
                 out = res
                 if (res == null) {
-                    result.text = "ছবিটি বড় করা যায়নি (মেমরি কম)"
+                    result.text = tr("ছবিটি বড় করা যায়নি (মেমরি কম)")
                 } else {
                     preview.setImageBitmap(res)
-                    result.text = "নতুন মাপ: " + bn(res.width.toString()) + "×" + bn(res.height.toString()) + note
+                    result.text = tr("নতুন মাপ: ") + bn(res.width.toString()) + "×" + bn(res.height.toString()) + note
                 }
             }
         }.start()
@@ -162,13 +162,13 @@ class UpscaleActivity : ImageToolBase() {
     private fun save(fmt: Int) {
         val b = out
         if (b == null) {
-            Toast.makeText(this, "আগে একটি ছবি বাছুন", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, tr("আগে একটি ছবি বাছুন"), Toast.LENGTH_SHORT).show()
             return
         }
         Thread {
             val bytes = try { Img.encode(b, fmt, 92) } catch (e: Throwable) { null }
             runOnUiThread {
-                if (bytes == null) Toast.makeText(this, "সংরক্ষণ করা যায়নি", Toast.LENGTH_LONG).show()
+                if (bytes == null) Toast.makeText(this, tr("সংরক্ষণ করা যায়নি"), Toast.LENGTH_LONG).show()
                 else askSave(bytes, baseName() + "_x" + factor + (if (fmt == 0) ".png" else ".jpg"), if (fmt == 0) "image/png" else "image/jpeg")
             }
         }.start()

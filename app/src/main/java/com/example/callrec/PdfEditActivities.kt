@@ -45,13 +45,13 @@ abstract class PdfBase : GuardedActivity() {
         val row = LinearLayout(this)
         row.orientation = LinearLayout.HORIZONTAL
         row.gravity = android.view.Gravity.CENTER_VERTICAL
-        row.addView(pill("PDF বাছুন") {
+        row.addView(pill(tr("PDF বাছুন")) {
             val i = Intent(Intent.ACTION_OPEN_DOCUMENT)
             i.addCategory(Intent.CATEGORY_OPENABLE)
             i.type = "application/pdf"
             startActivityForResult(i, 85)
         }, lp(r = 12))
-        info = label("কোনো PDF বাছা হয়নি", 13f, Ui.MUTED)
+        info = label(tr("কোনো PDF বাছা হয়নি"), 13f, Ui.MUTED)
         row.addView(info, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         c.addView(row, lp())
         return c
@@ -76,7 +76,7 @@ abstract class PdfBase : GuardedActivity() {
 
     protected fun requireFile(): Boolean {
         if (src == null) {
-            Toast.makeText(this, "আগে একটি PDF বাছুন", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, tr("আগে একটি PDF বাছুন"), Toast.LENGTH_SHORT).show()
             return false
         }
         return true
@@ -103,9 +103,9 @@ abstract class PdfBase : GuardedActivity() {
             val res = try {
                 block()
             } catch (e: InvalidPasswordException) {
-                "পাসওয়ার্ড ভুল বা PDF লক করা"
+                tr("পাসওয়ার্ড ভুল বা PDF লক করা")
             } catch (e: Throwable) {
-                "কাজটি করা যায়নি"
+                tr("কাজটি করা যায়নি")
             }
             runOnUiThread { status.text = res }
         }.start()
@@ -125,7 +125,7 @@ abstract class PdfBase : GuardedActivity() {
     }
 
     private fun load(u: Uri) {
-        info.text = "খোলা হচ্ছে…"
+        info.text = tr("খোলা হচ্ছে…")
         Thread {
             var n = 0
             var enc = false
@@ -144,14 +144,14 @@ abstract class PdfBase : GuardedActivity() {
             val ff = f
             runOnUiThread {
                 if (ff == null) {
-                    info.text = "কোনো PDF বাছা হয়নি"
-                    Toast.makeText(this, "PDF খোলা যায়নি", Toast.LENGTH_LONG).show()
+                    info.text = tr("কোনো PDF বাছা হয়নি")
+                    Toast.makeText(this, tr("PDF খোলা যায়নি"), Toast.LENGTH_LONG).show()
                 } else {
                     src = ff
                     encrypted = ee
                     pages = nn
                     pdfName = if (name.lowercase().endsWith(".pdf")) name.substring(0, name.length - 4) else name
-                    info.text = name + (if (ee) " · পাসওয়ার্ড দেওয়া" else " · " + bn(nn.toString()) + " পেজ")
+                    info.text = name + (if (ee) tr(" · পাসওয়ার্ড দেওয়া") else " · " + bn(nn.toString()) + tr(" পেজ"))
                     status.text = ""
                     onLoaded()
                 }
@@ -214,23 +214,23 @@ class PdfSplitActivity : PdfBase() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val opt = card(14)
-        opt.addView(label("প্রতি কত পেজে একটি ফাইল", 12f, Ui.MUTED, true))
-        count = field("যেমন: ১", InputType.TYPE_CLASS_NUMBER)
+        opt.addView(label(tr("প্রতি কত পেজে একটি ফাইল"), 12f, Ui.MUTED, true))
+        count = field(tr("যেমন: ১"), InputType.TYPE_CLASS_NUMBER)
         count.setText("1")
         opt.addView(count)
-        val act = actionCard("ফোল্ডার বেছে ভাগ করুন", "ফাইলের নাম হবে নাম_part1.pdf, নাম_part2.pdf…") { go() }
-        screen("PDF ভাগ", pickCard(), opt, act)
+        val act = actionCard(tr("ফোল্ডার বেছে ভাগ করুন"), tr("ফাইলের নাম হবে নাম_part1.pdf, নাম_part2.pdf…")) { go() }
+        screen(tr("PDF ভাগ"), pickCard(), opt, act)
     }
 
     private fun go() {
         if (!requireFile()) return
-        if (encrypted) { status.text = "আগে PDF আনলক করুন (PDF লক / আনলক টুল)"; return }
+        if (encrypted) { status.text = tr("আগে PDF আনলক করুন (PDF লক / আনলক টুল)"); return }
         val n = asciiDigits(count.text.toString()).toIntOrNull()
-        if (n == null || n < 1) { status.text = "পেজ সংখ্যা ঠিক নেই"; return }
+        if (n == null || n < 1) { status.text = tr("পেজ সংখ্যা ঠিক নেই"); return }
         askTree { tree ->
             val f = src!!
             val base = baseOut()
-            work("ভাগ হচ্ছে…") {
+            work(tr("ভাগ হচ্ছে…")) {
                 val parent = DocumentsContract.buildDocumentUriUsingTree(tree, DocumentsContract.getTreeDocumentId(tree))
                 var made = 0
                 PDDocument.load(f).use { doc ->
@@ -246,7 +246,7 @@ class PdfSplitActivity : PdfBase() {
                         p.close()
                     }
                 }
-                "সংরক্ষিত হয়েছে: " + bn(made.toString()) + "টি ফাইল"
+                tr("সংরক্ষিত হয়েছে: ") + bn(made.toString()) + tr("টি ফাইল")
             }
         }
     }
@@ -259,29 +259,29 @@ class PdfExtractActivity : PdfBase() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val opt = card(14)
-        opt.addView(label("কোন কোন পেজ চান", 12f, Ui.MUTED, true))
-        spec = field("যেমন: 1-3, 5, 8-", InputType.TYPE_CLASS_TEXT)
+        opt.addView(label(tr("কোন কোন পেজ চান"), 12f, Ui.MUTED, true))
+        spec = field(tr("যেমন: 1-3, 5, 8-"), InputType.TYPE_CLASS_TEXT)
         opt.addView(spec)
-        opt.addView(label("কমা দিয়ে আলাদা করুন। 8- মানে ৮ থেকে শেষ পর্যন্ত।", 12f, Ui.MUTED), lp(t = 6))
-        val act = actionCard("নতুন PDF বানান", "") { go() }
-        screen("পেজ এক্সট্র্যাক্টর", pickCard(), opt, act)
+        opt.addView(label(tr("কমা দিয়ে আলাদা করুন। 8- মানে ৮ থেকে শেষ পর্যন্ত।"), 12f, Ui.MUTED), lp(t = 6))
+        val act = actionCard(tr("নতুন PDF বানান"), "") { go() }
+        screen(tr("পেজ এক্সট্র্যাক্টর"), pickCard(), opt, act)
     }
 
     private fun go() {
         if (!requireFile()) return
-        if (encrypted) { status.text = "আগে PDF আনলক করুন (PDF লক / আনলক টুল)"; return }
+        if (encrypted) { status.text = tr("আগে PDF আনলক করুন (PDF লক / আনলক টুল)"); return }
         val idx = parsePageSpec(spec.text.toString(), pages)
-        if (idx == null) { status.text = "পেজ নম্বর ঠিক নেই (মোট " + bn(pages.toString()) + " পেজ)"; return }
+        if (idx == null) { status.text = tr("পেজ নম্বর ঠিক নেই (মোট ") + bn(pages.toString()) + tr(" পেজ)"); return }
         askCreate(baseOut() + "_pages.pdf") { out ->
             val f = src!!
-            work("তৈরি হচ্ছে…") {
+            work(tr("তৈরি হচ্ছে…")) {
                 PDDocument.load(f).use { doc ->
                     val nd = PDDocument()
                     for (i in idx) nd.importPage(doc.getPage(i))
                     saveDoc(nd, out)
                     nd.close()
                 }
-                "সংরক্ষিত হয়েছে: " + bn(idx.size.toString()) + " পেজের PDF"
+                tr("সংরক্ষিত হয়েছে: ") + bn(idx.size.toString()) + tr(" পেজের PDF")
             }
         }
     }
@@ -299,29 +299,29 @@ class PdfLockActivity : PdfBase() {
         row = LinearLayout(this)
         row.orientation = LinearLayout.HORIZONTAL
         opt.addView(row, lp(b = 10))
-        opt.addView(label("পাসওয়ার্ড", 12f, Ui.MUTED, true))
-        pw = field("পাসওয়ার্ড লিখুন", InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD)
+        opt.addView(label(tr("পাসওয়ার্ড"), 12f, Ui.MUTED, true))
+        pw = field(tr("পাসওয়ার্ড লিখুন"), InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD)
         opt.addView(pw)
-        opt.addView(label("পাসওয়ার্ড ভুলে গেলে PDF খোলা যাবে না, তাই মনে রাখুন।", 12f, Ui.MUTED), lp(t = 6))
-        val act = actionCard("নতুন PDF সংরক্ষণ", "") { go() }
-        screen("PDF লক / আনলক", pickCard(), opt, act)
+        opt.addView(label(tr("পাসওয়ার্ড ভুলে গেলে PDF খোলা যাবে না, তাই মনে রাখুন।"), 12f, Ui.MUTED), lp(t = 6))
+        val act = actionCard(tr("নতুন PDF সংরক্ষণ"), "") { go() }
+        screen(tr("PDF লক / আনলক"), pickCard(), opt, act)
         chips()
     }
 
     private fun chips() {
         row.removeAllViews()
-        row.addView(chip("লক করুন", lock) { lock = true; chips() }, lp(r = 8))
-        row.addView(chip("আনলক করুন", !lock) { lock = false; chips() })
+        row.addView(chip(tr("লক করুন"), lock) { lock = true; chips() }, lp(r = 8))
+        row.addView(chip(tr("আনলক করুন"), !lock) { lock = false; chips() })
     }
 
     private fun go() {
         if (!requireFile()) return
         val p = pw.text.toString()
-        if (p.isEmpty()) { status.text = "পাসওয়ার্ড লিখুন"; return }
+        if (p.isEmpty()) { status.text = tr("পাসওয়ার্ড লিখুন"); return }
         val doLock = lock
         askCreate(baseOut() + (if (doLock) "_locked.pdf" else "_unlocked.pdf")) { out ->
             val f = src!!
-            work(if (doLock) "লক করা হচ্ছে…" else "আনলক করা হচ্ছে…") {
+            work(if (doLock) tr("লক করা হচ্ছে…") else tr("আনলক করা হচ্ছে…")) {
                 if (doLock) {
                     PDDocument.load(f).use { doc ->
                         val policy = StandardProtectionPolicy(p, p, AccessPermission())
@@ -329,13 +329,13 @@ class PdfLockActivity : PdfBase() {
                         doc.protect(policy)
                         saveDoc(doc, out)
                     }
-                    "লক করা PDF সংরক্ষিত হয়েছে"
+                    tr("লক করা PDF সংরক্ষিত হয়েছে")
                 } else {
                     PDDocument.load(f, p).use { doc ->
                         doc.isAllSecurityToBeRemoved = true
                         saveDoc(doc, out)
                     }
-                    "আনলক করা PDF সংরক্ষিত হয়েছে"
+                    tr("আনলক করা PDF সংরক্ষিত হয়েছে")
                 }
             }
         }

@@ -16,17 +16,17 @@ class IpActivity : OnlineBase() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        build("আমার IP ও IP তথ্য")
+        build(tr("আমার IP ও IP তথ্য"))
         val c = card(14)
-        c.addView(label("অন্য IP বা ডোমেইন (খালি রাখলে আপনার নিজের)", 12f, Ui.MUTED, true))
-        input = field("যেমন: 8.8.8.8")
+        c.addView(label(tr("অন্য IP বা ডোমেইন (খালি রাখলে আপনার নিজের)"), 12f, Ui.MUTED, true))
+        input = field(tr("যেমন: 8.8.8.8"))
         input.imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH
         input.setOnEditorActionListener { _, _, _ -> go(); true }
         c.addView(input, lp(b = 8))
         val row = LinearLayout(this)
         row.orientation = LinearLayout.HORIZONTAL
-        row.addView(pill("খুঁজুন") { go() }, lp(r = 8))
-        row.addView(pill("আমার IP", Ui.BG, Ui.PRIMARY) { input.setText(""); go() })
+        row.addView(pill(tr("খুঁজুন")) { go() }, lp(r = 8))
+        row.addView(pill(tr("আমার IP"), Ui.BG, Ui.PRIMARY) { input.setText(""); go() })
         c.addView(row, lp())
         box.addView(c, lp(b = 12))
         out = LinearLayout(this)
@@ -38,37 +38,37 @@ class IpActivity : OnlineBase() {
     private fun go() {
         val q = input.text.toString().trim()
         out.removeAllViews()
-        out.addView(label("খোঁজা হচ্ছে…", 13f, Ui.MUTED))
+        out.addView(label(tr("খোঁজা হচ্ছে…"), 13f, Ui.MUTED))
         fetch("https://ipwho.is/" + NetUtil.enc(q), { body ->
             out.removeAllViews()
             try {
                 val j = JSONObject(body)
                 if (!j.optBoolean("success", false)) {
-                    out.addView(label("তথ্য পাওয়া যায়নি: " + j.optString("message"), 14f, Ui.MUTED))
+                    out.addView(label(tr("তথ্য পাওয়া যায়নি: ") + j.optString("message"), 14f, Ui.MUTED))
                 } else {
                     val c = card(14)
                     c.addView(label(j.optString("ip"), 22f, Ui.PRIMARY, true).also { it.setTextIsSelectable(true) }, lp(b = 10))
-                    kv(c, "ধরন", j.optString("type"))
-                    kv(c, "দেশ", j.optString("flag").let { "" }.ifEmpty { j.optString("country") })
-                    kv(c, "অঞ্চল", j.optString("region"))
-                    kv(c, "শহর", j.optString("city"))
-                    kv(c, "পোস্টকোড", j.optString("postal"))
-                    if (j.has("latitude")) kv(c, "অবস্থান", String.format(Locale.US, "%.4f, %.4f", j.optDouble("latitude"), j.optDouble("longitude")))
-                    j.optJSONObject("timezone")?.let { kv(c, "টাইমজোন", it.optString("id") + " (" + it.optString("utc") + ")") }
+                    kv(c, tr("ধরন"), j.optString("type"))
+                    kv(c, tr("দেশ"), j.optString("flag").let { "" }.ifEmpty { j.optString("country") })
+                    kv(c, tr("অঞ্চল"), j.optString("region"))
+                    kv(c, tr("শহর"), j.optString("city"))
+                    kv(c, tr("পোস্টকোড"), j.optString("postal"))
+                    if (j.has("latitude")) kv(c, tr("অবস্থান"), String.format(Locale.US, "%.4f, %.4f", j.optDouble("latitude"), j.optDouble("longitude")))
+                    j.optJSONObject("timezone")?.let { kv(c, tr("টাইমজোন"), it.optString("id") + " (" + it.optString("utc") + ")") }
                     j.optJSONObject("connection")?.let {
                         kv(c, "ISP", it.optString("isp"))
-                        kv(c, "প্রতিষ্ঠান", it.optString("org"))
+                        kv(c, tr("প্রতিষ্ঠান"), it.optString("org"))
                         kv(c, "ASN", it.optString("asn"))
-                        kv(c, "ডোমেইন", it.optString("domain"))
+                        kv(c, tr("ডোমেইন"), it.optString("domain"))
                     }
                     out.addView(c, lp())
                 }
             } catch (e: Throwable) {
-                out.addView(label("ফলাফল পড়া যায়নি", 13f, Ui.MUTED))
+                out.addView(label(tr("ফলাফল পড়া যায়নি"), 13f, Ui.MUTED))
             }
         }, { err ->
             out.removeAllViews()
-            out.addView(label(if (err == "404") "তথ্য পাওয়া যায়নি" else err, 14f, Ui.MUTED))
+            out.addView(label(if (err == "404") tr("তথ্য পাওয়া যায়নি") else err, 14f, Ui.MUTED))
         })
     }
 }
@@ -81,18 +81,18 @@ class WhoisActivity : OnlineBase() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        build("WHOIS লুকআপ")
+        build(tr("WHOIS লুকআপ"))
         val c = card(14)
-        c.addView(label("ডোমেইন", 12f, Ui.MUTED, true))
-        input = field("যেমন: example.com")
+        c.addView(label(tr("ডোমেইন"), 12f, Ui.MUTED, true))
+        input = field(tr("যেমন: example.com"))
         input.setOnEditorActionListener { _, _, _ -> go(); true }
         c.addView(input, lp(b = 8))
-        c.addView(pill("খুঁজুন") { go() })
+        c.addView(pill(tr("খুঁজুন")) { go() })
         box.addView(c, lp(b = 12))
         out = LinearLayout(this)
         out.orientation = LinearLayout.VERTICAL
         box.addView(out, lp())
-        box.addView(label("মালিকের ব্যক্তিগত তথ্য সাধারণত গোপন থাকে। .bd ডোমেইনের তথ্য নাও আসতে পারে।", 12f, Ui.MUTED), lp(l = 4, t = 8))
+        box.addView(label(tr("মালিকের ব্যক্তিগত তথ্য সাধারণত গোপন থাকে। .bd ডোমেইনের তথ্য নাও আসতে পারে।"), 12f, Ui.MUTED), lp(l = 4, t = 8))
     }
 
     private fun clean(s: String): String =
@@ -102,21 +102,21 @@ class WhoisActivity : OnlineBase() {
         val d = clean(input.text.toString())
         if (d.isEmpty() || !d.contains(".")) {
             out.removeAllViews()
-            out.addView(label("সঠিক ডোমেইন লিখুন", 13f, Ui.MUTED))
+            out.addView(label(tr("সঠিক ডোমেইন লিখুন"), 13f, Ui.MUTED))
             return
         }
         out.removeAllViews()
-        out.addView(label("খোঁজা হচ্ছে…", 13f, Ui.MUTED))
+        out.addView(label(tr("খোঁজা হচ্ছে…"), 13f, Ui.MUTED))
         fetch("https://rdap.org/domain/" + NetUtil.enc(d), { body ->
             out.removeAllViews()
             try {
                 show(JSONObject(body), d)
             } catch (e: Throwable) {
-                out.addView(label("ফলাফল পড়া যায়নি", 13f, Ui.MUTED))
+                out.addView(label(tr("ফলাফল পড়া যায়নি"), 13f, Ui.MUTED))
             }
         }, { err ->
             out.removeAllViews()
-            out.addView(label(if (err == "404") "ডোমেইন নিবন্ধিত নয়, বা এর তথ্য পাওয়া যায়নি" else err, 14f, Ui.MUTED))
+            out.addView(label(if (err == "404") tr("ডোমেইন নিবন্ধিত নয়, বা এর তথ্য পাওয়া যায়নি") else err, 14f, Ui.MUTED))
         })
     }
 
@@ -128,9 +128,9 @@ class WhoisActivity : OnlineBase() {
             for (i in 0 until ev.length()) {
                 val e = ev.getJSONObject(i)
                 val name = when (e.optString("eventAction")) {
-                    "registration" -> "নিবন্ধনের তারিখ"
-                    "expiration" -> "মেয়াদ শেষ"
-                    "last changed" -> "সর্বশেষ বদল"
+                    "registration" -> tr("নিবন্ধনের তারিখ")
+                    "expiration" -> tr("মেয়াদ শেষ")
+                    "last changed" -> tr("সর্বশেষ বদল")
                     else -> ""
                 }
                 if (name.isNotEmpty()) kv(c, name, e.optString("eventDate").take(10))
@@ -140,7 +140,7 @@ class WhoisActivity : OnlineBase() {
         if (st != null) {
             val l = ArrayList<String>()
             for (i in 0 until st.length()) l.add(st.getString(i))
-            kv(c, "স্ট্যাটাস", l.joinToString("\n"))
+            kv(c, tr("স্ট্যাটাস"), l.joinToString("\n"))
         }
         val ent = j.optJSONArray("entities")
         if (ent != null) {
@@ -152,7 +152,7 @@ class WhoisActivity : OnlineBase() {
                     if (vc != null) {
                         for (k in 0 until vc.length()) {
                             val row = vc.optJSONArray(k) ?: continue
-                            if (row.optString(0) == "fn") kv(c, "রেজিস্ট্রার", row.optString(3))
+                            if (row.optString(0) == "fn") kv(c, tr("রেজিস্ট্রার"), row.optString(3))
                         }
                     }
                 }
@@ -162,7 +162,7 @@ class WhoisActivity : OnlineBase() {
         if (ns != null) {
             val l = ArrayList<String>()
             for (i in 0 until ns.length()) l.add(ns.getJSONObject(i).optString("ldhName").lowercase())
-            kv(c, "নেমসার্ভার", l.joinToString("\n"))
+            kv(c, tr("নেমসার্ভার"), l.joinToString("\n"))
         }
         out.addView(c, lp())
     }
@@ -181,16 +181,16 @@ class SpeedTestActivity : OnlineBase() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        build("ইন্টারনেট স্পিড টেস্ট")
+        build(tr("ইন্টারনেট স্পিড টেস্ট"))
         val c = card(16)
-        pingV = big(c, "পিং", "—")
-        downV = big(c, "ডাউনলোড", "—")
-        upV = big(c, "আপলোড", "—")
-        status = label("শুরু করতে বোতাম চাপুন", 13f, Ui.MUTED)
+        pingV = big(c, tr("পিং"), "—")
+        downV = big(c, tr("ডাউনলোড"), "—")
+        upV = big(c, tr("আপলোড"), "—")
+        status = label(tr("শুরু করতে বোতাম চাপুন"), 13f, Ui.MUTED)
         c.addView(status, lp(t = 4, b = 12))
-        c.addView(pill("টেস্ট শুরু করুন") { start() })
+        c.addView(pill(tr("টেস্ট শুরু করুন")) { start() })
         box.addView(c, lp())
-        box.addView(label("টেস্টে প্রায় ৩০ MB ডেটা খরচ হতে পারে। মোবাইল ডেটায় সতর্ক থাকুন।", 12f, Ui.MUTED), lp(l = 4, t = 8))
+        box.addView(label(tr("টেস্টে প্রায় ৩০ MB ডেটা খরচ হতে পারে। মোবাইল ডেটায় সতর্ক থাকুন।"), 12f, Ui.MUTED), lp(l = 4, t = 8))
     }
 
     override fun onDestroy() {
@@ -216,7 +216,7 @@ class SpeedTestActivity : OnlineBase() {
         pingV.text = "—"; downV.text = "—"; upV.text = "—"
         Thread {
             try {
-                ui { status.text = "পিং মাপা হচ্ছে…" }
+                ui { status.text = tr("পিং মাপা হচ্ছে…") }
                 var best = Long.MAX_VALUE
                 for (i in 0 until 4) {
                     val t0 = System.nanoTime()
@@ -228,7 +228,7 @@ class SpeedTestActivity : OnlineBase() {
                 }
                 ui { pingV.text = bn((best / 1_000_000).toString()) + " ms" }
 
-                ui { status.text = "ডাউনলোড মাপা হচ্ছে…" }
+                ui { status.text = tr("ডাউনলোড মাপা হচ্ছে…") }
                 val dc = URL("https://speed.cloudflare.com/__down?bytes=25000000").openConnection() as HttpURLConnection
                 dc.connectTimeout = 8000; dc.readTimeout = 10000
                 val buf = ByteArray(65536)
@@ -255,7 +255,7 @@ class SpeedTestActivity : OnlineBase() {
                 val dTot = total
                 ui { downV.text = mbps(dTot, dEl) }
 
-                ui { status.text = "আপলোড মাপা হচ্ছে…" }
+                ui { status.text = tr("আপলোড মাপা হচ্ছে…") }
                 val size = 6_000_000
                 val uc = URL("https://speed.cloudflare.com/__up").openConnection() as HttpURLConnection
                 uc.requestMethod = "POST"
@@ -275,9 +275,9 @@ class SpeedTestActivity : OnlineBase() {
                 uc.inputStream.use { it.readBytes() }
                 uc.disconnect()
                 val uEl = System.nanoTime() - u0
-                ui { upV.text = mbps(size.toLong(), uEl); status.text = "টেস্ট শেষ" }
+                ui { upV.text = mbps(size.toLong(), uEl); status.text = tr("টেস্ট শেষ") }
             } catch (e: Throwable) {
-                ui { status.text = "টেস্ট সম্পূর্ণ হয়নি (ইন্টারনেট বা সার্ভারের সমস্যা)" }
+                ui { status.text = tr("টেস্ট সম্পূর্ণ হয়নি (ইন্টারনেট বা সার্ভারের সমস্যা)") }
             }
             running = false
         }.start()

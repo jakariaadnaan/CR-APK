@@ -27,7 +27,7 @@ class TodoActivity : GuardedActivity() {
         box.orientation = LinearLayout.VERTICAL
         box.setPadding(dp(14), dp(14), dp(14), dp(96))
         scroll.addView(box)
-        setScreen("করণীয়", scroll, pill("+ নতুন কাজ") { showEditor(null) })
+        setScreen(tr("করণীয়"), scroll, pill(tr("+ নতুন কাজ")) { showEditor(null) })
         render()
     }
 
@@ -42,18 +42,18 @@ class TodoActivity : GuardedActivity() {
         head.orientation = LinearLayout.HORIZONTAL
         head.gravity = Gravity.CENTER_VERTICAL
         head.addView(
-            label("বাকি " + bn(pending.toString()) + " টি · সম্পন্ন " + bn(done.toString()) + " টি", 14f, Ui.MUTED, true),
+            label(tr("বাকি ") + bn(pending.toString()) + tr(" টি · সম্পন্ন ") + bn(done.toString()) + tr(" টি"), 14f, Ui.MUTED, true),
             LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         )
         if (done > 0) {
-            head.addView(pill("সম্পন্নগুলো মুছুন", Ui.BG, Ui.RED) {
+            head.addView(pill(tr("সম্পন্নগুলো মুছুন"), Ui.BG, Ui.RED) {
                 AlertDialog.Builder(this)
-                    .setMessage("সব সম্পন্ন কাজ তালিকা থেকে মুছে ফেলবেন?")
-                    .setPositiveButton("মুছুন") { _, _ ->
+                    .setMessage(tr("সব সম্পন্ন কাজ তালিকা থেকে মুছে ফেলবেন?"))
+                    .setPositiveButton(tr("মুছুন")) { _, _ ->
                         TodoStore.clearDone(this)
                         render()
                     }
-                    .setNegativeButton("না", null)
+                    .setNegativeButton(tr("না"), null)
                     .show()
             })
         }
@@ -67,7 +67,7 @@ class TodoActivity : GuardedActivity() {
         )
 
         if (items.isEmpty()) {
-            val empty = label("কোনো কাজ নেই।\nনিচের “+ নতুন কাজ” চেপে লিখে রাখুন।", 14f, Ui.MUTED)
+            val empty = label(tr("কোনো কাজ নেই।\nনিচের “+ নতুন কাজ” চেপে লিখে রাখুন।"), 14f, Ui.MUTED)
             empty.gravity = Gravity.CENTER
             empty.setPadding(0, dp(30), 0, dp(30))
             box.addView(empty, lp())
@@ -94,13 +94,13 @@ class TodoActivity : GuardedActivity() {
             mid.addView(title)
             if (t.due != 0L) {
                 val late = !t.done && t.due < today
-                val dueTxt = "শেষ তারিখ: " + dateText(t.due) + if (late) " (দেরি হয়েছে)" else if (t.due == today) " (আজ)" else ""
+                val dueTxt = tr("শেষ তারিখ: ") + dateText(t.due) + if (late) tr(" (দেরি হয়েছে)") else if (t.due == today) tr(" (আজ)") else ""
                 mid.addView(label(dueTxt, 12f, if (late) Ui.RED else Ui.MUTED))
             }
             c.addView(mid, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
 
             if (t.urgent && !t.done) {
-                val u = label("জরুরি", 12f, android.graphics.Color.WHITE, true)
+                val u = label(tr("জরুরি"), 12f, android.graphics.Color.WHITE, true)
                 u.background = bg(Ui.RED, 10)
                 u.setPadding(dp(10), dp(3), dp(10), dp(3))
                 c.addView(u)
@@ -119,17 +119,17 @@ class TodoActivity : GuardedActivity() {
         form.setPadding(dp(20), dp(10), dp(20), 0)
 
         val title = EditText(this)
-        title.hint = "কাজের নাম"
+        title.hint = tr("কাজের নাম")
         title.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
         title.setText(old?.title ?: "")
         form.addView(title, lp())
 
         val urgent = CheckBox(this)
-        urgent.text = "জরুরি কাজ"
+        urgent.text = tr("জরুরি কাজ")
         urgent.isChecked = old?.urgent ?: false
         form.addView(urgent, lp(t = 8))
 
-        fun dueLabel(): String = if (dueMs == 0L) "শেষ তারিখ: নেই" else "শেষ তারিখ: " + dateText(dueMs)
+        fun dueLabel(): String = if (dueMs == 0L) tr("শেষ তারিখ: নেই") else tr("শেষ তারিখ: ") + dateText(dueMs)
         val dueBtn = pill(dueLabel(), Ui.BG, Ui.PRIMARY) {}
         dueBtn.setOnClickListener {
             val c = Calendar.getInstance()
@@ -145,7 +145,7 @@ class TodoActivity : GuardedActivity() {
                 },
                 c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)
             )
-            dpd.setButton(DialogInterface.BUTTON_NEUTRAL, "তারিখ বাদ দিন") { _, _ ->
+            dpd.setButton(DialogInterface.BUTTON_NEUTRAL, tr("তারিখ বাদ দিন")) { _, _ ->
                 dueMs = 0L
                 dueBtn.text = dueLabel()
             }
@@ -154,17 +154,17 @@ class TodoActivity : GuardedActivity() {
         form.addView(dueBtn, lp(t = 10, b = 4))
 
         val builder = AlertDialog.Builder(this)
-            .setTitle(if (old == null) "নতুন কাজ" else "কাজ সম্পাদনা")
+            .setTitle(if (old == null) tr("নতুন কাজ") else tr("কাজ সম্পাদনা"))
             .setView(form)
-            .setPositiveButton("সংরক্ষণ", null)
-            .setNegativeButton("বাতিল", null)
-        if (old != null) builder.setNeutralButton("মুছুন", null)
+            .setPositiveButton(tr("সংরক্ষণ"), null)
+            .setNegativeButton(tr("বাতিল"), null)
+        if (old != null) builder.setNeutralButton(tr("মুছুন"), null)
         val dlg = builder.create()
         dlg.setOnShowListener {
             dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 val txt = title.text.toString().trim()
                 if (txt.isEmpty()) {
-                    Toast.makeText(this, "কাজের নাম লিখুন", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, tr("কাজের নাম লিখুন"), Toast.LENGTH_SHORT).show()
                 } else {
                     TodoStore.upsert(
                         this,

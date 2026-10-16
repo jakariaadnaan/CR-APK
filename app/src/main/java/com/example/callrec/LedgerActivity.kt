@@ -36,8 +36,8 @@ class LedgerActivity : GuardedActivity() {
         box.setPadding(dp(14), dp(14), dp(14), dp(96))
         scroll.addView(box)
 
-        val add = pill("+ নতুন লেনদেন") { showEditor(null) }
-        setScreen("খরচের খাতা", scroll, add)
+        val add = pill(tr("+ নতুন লেনদেন")) { showEditor(null) }
+        setScreen(tr("খরচের খাতা"), scroll, add)
         render()
     }
 
@@ -80,10 +80,10 @@ class LedgerActivity : GuardedActivity() {
         val sum = card()
         val row = LinearLayout(this)
         row.orientation = LinearLayout.HORIZONTAL
-        row.addView(statCol("আয়", taka(inc), Ui.GREEN), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        row.addView(statCol("ব্যয়", taka(exp), Ui.RED), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        row.addView(statCol(tr("আয়"), taka(inc), Ui.GREEN), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        row.addView(statCol(tr("ব্যয়"), taka(exp), Ui.RED), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         row.addView(
-            statCol("ব্যালেন্স", taka(bal), if (bal >= 0) Ui.GREEN else Ui.RED),
+            statCol(tr("ব্যালেন্স"), taka(bal), if (bal >= 0) Ui.GREEN else Ui.RED),
             LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         )
         sum.addView(row)
@@ -96,12 +96,12 @@ class LedgerActivity : GuardedActivity() {
             .sortedByDescending { it.second }
         if (byCat.isNotEmpty() && exp > 0) {
             val cc = card()
-            cc.addView(label("ক্যাটাগরি অনুযায়ী ব্যয়", 15f, Ui.TEXT, true), lp(b = 8))
+            cc.addView(label(tr("ক্যাটাগরি অনুযায়ী ব্যয়"), 15f, Ui.TEXT, true), lp(b = 8))
             for ((name, amt) in byCat) {
                 val pct = (amt / exp * 100)
                 val line = LinearLayout(this)
                 line.orientation = LinearLayout.HORIZONTAL
-                line.addView(label(name, 14f), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+                line.addView(label(tr(name), 14f), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
                 line.addView(label(taka(amt) + "  (" + bn(Math.round(pct).toString()) + "%)", 13f, Ui.MUTED))
                 cc.addView(line, lp(t = 6))
 
@@ -118,9 +118,9 @@ class LedgerActivity : GuardedActivity() {
         }
 
         // Entries
-        box.addView(label("লেনদেন (" + bn(items.size.toString()) + ")", 15f, Ui.MUTED, true), lp(l = 4, b = 6))
+        box.addView(label(tr("লেনদেন (") + bn(items.size.toString()) + ")", 15f, Ui.MUTED, true), lp(l = 4, b = 6))
         if (items.isEmpty()) {
-            val empty = label("এই মাসে কোনো লেনদেন নেই।\nনিচের “+ নতুন লেনদেন” চেপে শুরু করুন।", 14f, Ui.MUTED)
+            val empty = label(tr("এই মাসে কোনো লেনদেন নেই।\nনিচের “+ নতুন লেনদেন” চেপে শুরু করুন।"), 14f, Ui.MUTED)
             empty.gravity = Gravity.CENTER
             empty.setPadding(0, dp(30), 0, dp(30))
             box.addView(empty, lp())
@@ -131,7 +131,7 @@ class LedgerActivity : GuardedActivity() {
             c.gravity = Gravity.CENTER_VERTICAL
             val left = LinearLayout(this)
             left.orientation = LinearLayout.VERTICAL
-            left.addView(label(e.category, 15f, Ui.TEXT, true))
+            left.addView(label(tr(e.category), 15f, Ui.TEXT, true))
             if (e.note.isNotBlank()) left.addView(label(e.note, 13f, Ui.MUTED))
             left.addView(label(dateText(e.date), 12f, Ui.MUTED))
             c.addView(left, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
@@ -176,8 +176,8 @@ class LedgerActivity : GuardedActivity() {
 
         val tabs = LinearLayout(this)
         tabs.orientation = LinearLayout.HORIZONTAL
-        val tOut = label("ব্যয়", 15f, Color.WHITE, true)
-        val tIn = label("আয়", 15f, Color.WHITE, true)
+        val tOut = label(tr("ব্যয়"), 15f, Color.WHITE, true)
+        val tIn = label(tr("আয়"), 15f, Color.WHITE, true)
         for (t in listOf(tOut, tIn)) {
             t.gravity = Gravity.CENTER
             t.setPadding(0, dp(10), 0, dp(10))
@@ -187,7 +187,7 @@ class LedgerActivity : GuardedActivity() {
         form.addView(tabs, lp(b = 12))
 
         val amount = EditText(this)
-        amount.hint = "টাকার পরিমাণ"
+        amount.hint = tr("টাকার পরিমাণ")
         amount.inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
         if (old != null) {
             val a = old.amount
@@ -199,7 +199,7 @@ class LedgerActivity : GuardedActivity() {
         form.addView(spin, lp(t = 8))
 
         val note = EditText(this)
-        note.hint = "নোট (ঐচ্ছিক)"
+        note.hint = tr("নোট (ঐচ্ছিক)")
         note.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
         note.setText(old?.note ?: "")
         form.addView(note, lp(t = 4))
@@ -210,7 +210,7 @@ class LedgerActivity : GuardedActivity() {
         fun cats(): List<String> = if (income) LedgerStore.INCOME_CATS else LedgerStore.EXPENSE_CATS
 
         fun fillCats(selected: String?) {
-            spin.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, cats())
+            spin.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, cats().map { tr(it) })
             val i = cats().indexOf(selected)
             if (i >= 0) spin.setSelection(i)
         }
@@ -249,19 +249,19 @@ class LedgerActivity : GuardedActivity() {
         }
 
         val builder = AlertDialog.Builder(this)
-            .setTitle(if (old == null) "নতুন লেনদেন" else "লেনদেন সম্পাদনা")
+            .setTitle(if (old == null) tr("নতুন লেনদেন") else tr("লেনদেন সম্পাদনা"))
             .setView(form)
-            .setPositiveButton("সংরক্ষণ", null)
-            .setNegativeButton("বাতিল", null)
-        if (old != null) builder.setNeutralButton("মুছুন", null)
+            .setPositiveButton(tr("সংরক্ষণ"), null)
+            .setNegativeButton(tr("বাতিল"), null)
+        if (old != null) builder.setNeutralButton(tr("মুছুন"), null)
         val dlg = builder.create()
         dlg.setOnShowListener {
             dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 val v = asciiDigits(amount.text.toString()).replace(",", "").trim().toDoubleOrNull()
                 if (v == null || v <= 0.0 || v > 1.0e11) {
-                    Toast.makeText(this, "সঠিক টাকার পরিমাণ লিখুন", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, tr("সঠিক টাকার পরিমাণ লিখুন"), Toast.LENGTH_SHORT).show()
                 } else {
-                    val cat = spin.selectedItem as? String ?: "অন্যান্য"
+                    val cat = cats().getOrNull(spin.selectedItemPosition) ?: "অন্যান্য"
                     val saved = Entry(old?.id ?: System.currentTimeMillis(), income, v, cat, note.text.toString().trim(), dateMs)
                     LedgerStore.upsert(this, saved)
                     val c = Calendar.getInstance()
@@ -275,13 +275,13 @@ class LedgerActivity : GuardedActivity() {
             if (old != null) {
                 dlg.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
                     AlertDialog.Builder(this)
-                        .setMessage("এই লেনদেন মুছে ফেলবেন?")
-                        .setPositiveButton("মুছুন") { _, _ ->
+                        .setMessage(tr("এই লেনদেন মুছে ফেলবেন?"))
+                        .setPositiveButton(tr("মুছুন")) { _, _ ->
                             LedgerStore.delete(this, old.id)
                             dlg.dismiss()
                             render()
                         }
-                        .setNegativeButton("না", null)
+                        .setNegativeButton(tr("না"), null)
                         .show()
                 }
             }

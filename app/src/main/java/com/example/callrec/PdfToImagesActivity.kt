@@ -42,18 +42,18 @@ class PdfToImagesActivity : GuardedActivity() {
         val row = LinearLayout(this)
         row.orientation = LinearLayout.HORIZONTAL
         row.gravity = android.view.Gravity.CENTER_VERTICAL
-        row.addView(pill("PDF বাছুন") { pick() }, lp(r = 12))
-        info = label("কোনো PDF বাছা হয়নি", 13f, Ui.MUTED)
+        row.addView(pill(tr("PDF বাছুন")) { pick() }, lp(r = 12))
+        info = label(tr("কোনো PDF বাছা হয়নি"), 13f, Ui.MUTED)
         row.addView(info, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         c.addView(row, lp())
         box.addView(c, lp(b = 12))
 
         val opt = card(14)
-        opt.addView(label("ছবির ফরম্যাট", 12f, Ui.MUTED, true))
+        opt.addView(label(tr("ছবির ফরম্যাট"), 12f, Ui.MUTED, true))
         fmtRow = LinearLayout(this)
         fmtRow.orientation = LinearLayout.HORIZONTAL
         opt.addView(fmtRow, lp(t = 6, b = 10))
-        opt.addView(label("মান (DPI)", 12f, Ui.MUTED, true))
+        opt.addView(label(tr("মান (DPI)"), 12f, Ui.MUTED, true))
         dpiRow = LinearLayout(this)
         dpiRow.orientation = LinearLayout.HORIZONTAL
         opt.addView(dpiRow, lp(t = 6))
@@ -62,10 +62,10 @@ class PdfToImagesActivity : GuardedActivity() {
         val res = card(14)
         status = label("", 14f, Ui.TEXT)
         res.addView(status, lp(b = 10))
-        res.addView(pill("ফোল্ডার বেছে সংরক্ষণ") { chooseFolder() })
+        res.addView(pill(tr("ফোল্ডার বেছে সংরক্ষণ")) { chooseFolder() })
         box.addView(res, lp())
 
-        setScreen("PDF → ছবি", scroll)
+        setScreen(tr("PDF → ছবি"), scroll)
         chips()
     }
 
@@ -95,7 +95,7 @@ class PdfToImagesActivity : GuardedActivity() {
 
     private fun chooseFolder() {
         if (pdf == null || pages == 0) {
-            Toast.makeText(this, "আগে একটি PDF বাছুন", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, tr("আগে একটি PDF বাছুন"), Toast.LENGTH_SHORT).show()
             return
         }
         startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), 84)
@@ -117,7 +117,7 @@ class PdfToImagesActivity : GuardedActivity() {
         if (resultCode != Activity.RESULT_OK || data?.data == null) return
         val u = data.data!!
         if (requestCode == 83) {
-            info.text = "খোলা হচ্ছে…"
+            info.text = tr("খোলা হচ্ছে…")
             Thread {
                 var n = 0
                 try {
@@ -136,13 +136,13 @@ class PdfToImagesActivity : GuardedActivity() {
                 val cnt = n
                 runOnUiThread {
                     if (cnt == 0) {
-                        info.text = "কোনো PDF বাছা হয়নি"
-                        Toast.makeText(this, "PDF খোলা যায়নি (পাসওয়ার্ড দেওয়া বা নষ্ট হতে পারে)", Toast.LENGTH_LONG).show()
+                        info.text = tr("কোনো PDF বাছা হয়নি")
+                        Toast.makeText(this, tr("PDF খোলা যায়নি (পাসওয়ার্ড দেওয়া বা নষ্ট হতে পারে)"), Toast.LENGTH_LONG).show()
                     } else {
                         pdf = u
                         pages = cnt
                         pdfName = if (name.lowercase().endsWith(".pdf")) name.substring(0, name.length - 4) else name
-                        info.text = name + " · " + bn(cnt.toString()) + " পেজ"
+                        info.text = name + " · " + bn(cnt.toString()) + tr(" পেজ")
                     }
                 }
             }.start()
@@ -152,7 +152,7 @@ class PdfToImagesActivity : GuardedActivity() {
     }
 
     private fun export(tree: Uri) {
-        status.text = "ছবি তৈরি হচ্ছে…"
+        status.text = tr("ছবি তৈরি হচ্ছে…")
         val usePng = png
         val scale = dpi / 72f
         val base = pdfName
@@ -186,7 +186,7 @@ class PdfToImagesActivity : GuardedActivity() {
                         done++
                     }
                     val d = done
-                    runOnUiThread { status.text = "হচ্ছে… " + bn(d.toString()) + "/" + bn(r.pageCount.toString()) }
+                    runOnUiThread { status.text = tr("হচ্ছে… ") + bn(d.toString()) + "/" + bn(r.pageCount.toString()) }
                 }
                 r.close()
                 pfd.close()
@@ -195,7 +195,7 @@ class PdfToImagesActivity : GuardedActivity() {
             }
             val d = done
             runOnUiThread {
-                status.text = if (ok) "সংরক্ষিত হয়েছে: " + bn(d.toString()) + "টি ছবি" else "কিছু পেজ সংরক্ষণ করা যায়নি (" + bn(d.toString()) + "টি হয়েছে)"
+                status.text = if (ok) tr("সংরক্ষিত হয়েছে: ") + bn(d.toString()) + tr("টি ছবি") else tr("কিছু পেজ সংরক্ষণ করা যায়নি (") + bn(d.toString()) + tr("টি হয়েছে)")
             }
         }.start()
     }

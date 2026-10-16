@@ -43,15 +43,15 @@ class WebcamActivity : GuardedActivity(), SurfaceHolder.Callback {
 
         val r = card(14)
         fpsV = label("—", 24f, Ui.PRIMARY, true)
-        r.addView(label("ফ্রেম রেট (সত্যিকারের)", 12f, Ui.MUTED, true))
+        r.addView(label(tr("ফ্রেম রেট (সত্যিকারের)"), 12f, Ui.MUTED, true))
         r.addView(fpsV, lp(b = 6))
         infoV = label("", 13f, Ui.TEXT)
         r.addView(infoV, lp(b = 10))
-        switchBtn = pill("ক্যামেরা বদলান") { switchCamera() }
+        switchBtn = pill(tr("ক্যামেরা বদলান")) { switchCamera() }
         r.addView(switchBtn)
         box.addView(r, lp())
 
-        setScreen("ওয়েবক্যাম টেস্টার", scroll)
+        setScreen(tr("ওয়েবক্যাম টেস্টার"), scroll)
     }
 
     override fun surfaceCreated(h: SurfaceHolder) { surfaceReady = true; start() }
@@ -71,7 +71,7 @@ class WebcamActivity : GuardedActivity(), SurfaceHolder.Callback {
     private fun switchCamera() {
         val n = Camera.getNumberOfCameras()
         if (n <= 1) {
-            infoV.text = "এই ডিভাইসে একটিই ক্যামেরা আছে"
+            infoV.text = tr("এই ডিভাইসে একটিই ক্যামেরা আছে")
             return
         }
         stop()
@@ -82,7 +82,7 @@ class WebcamActivity : GuardedActivity(), SurfaceHolder.Callback {
     private fun start() {
         if (cam != null) return
         if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            infoV.text = "ক্যামেরার অনুমতি দিন"
+            infoV.text = tr("ক্যামেরার অনুমতি দিন")
             requestPermissions(arrayOf(Manifest.permission.CAMERA), 98)
             return
         }
@@ -131,11 +131,11 @@ class WebcamActivity : GuardedActivity(), SurfaceHolder.Callback {
             c.startPreview()
             cam = c
             val sizes = p.supportedPreviewSizes.sortedByDescending { it.width * it.height }.take(4).joinToString(", ") { it.width.toString() + "×" + it.height }
-            infoV.text = "ক্যামেরা " + bn((id + 1).toString()) + "/" + bn(Camera.getNumberOfCameras().toString()) +
-                " (" + (if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) "সামনের" else "পেছনের") + ")\n" +
-                "প্রিভিউ: " + pw + "×" + ph + "\nসর্বোচ্চ সাপোর্টেড: " + sizes
+            infoV.text = tr("ক্যামেরা ") + bn((id + 1).toString()) + "/" + bn(Camera.getNumberOfCameras().toString()) +
+                " (" + (if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) tr("সামনের") else tr("পেছনের")) + ")\n" +
+                tr("প্রিভিউ: ") + pw + "×" + ph + tr("\nসর্বোচ্চ সাপোর্টেড: ") + sizes
         } catch (e: Throwable) {
-            infoV.text = "ক্যামেরা চালু করা যায়নি (অন্য অ্যাপ ব্যবহার করছে হতে পারে)"
+            infoV.text = tr("ক্যামেরা চালু করা যায়নি (অন্য অ্যাপ ব্যবহার করছে হতে পারে)")
             cam = null
         }
     }
@@ -156,7 +156,7 @@ class WebcamActivity : GuardedActivity(), SurfaceHolder.Callback {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 if (surfaceReady) start()
             } else {
-                infoV.text = "অনুমতি ছাড়া ক্যামেরা চালানো যাবে না"
+                infoV.text = tr("অনুমতি ছাড়া ক্যামেরা চালানো যাবে না")
             }
         }
     }

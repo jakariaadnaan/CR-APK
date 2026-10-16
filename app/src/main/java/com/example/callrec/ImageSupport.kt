@@ -118,7 +118,7 @@ object Img {
 
     fun human(bytes: Long): String {
         val s = when {
-            bytes < 1024 -> bytes.toString() + " বাইট"
+            bytes < 1024 -> bytes.toString() + tr(" বাইট")
             bytes < 1024 * 1024 -> String.format(Locale.US, "%.1f", bytes / 1024.0) + " KB"
             else -> String.format(Locale.US, "%.2f", bytes / 1048576.0) + " MB"
         }
@@ -146,8 +146,8 @@ abstract class ImageToolBase : GuardedActivity() {
         val row = LinearLayout(this)
         row.orientation = LinearLayout.HORIZONTAL
         row.gravity = Gravity.CENTER_VERTICAL
-        row.addView(pill("ছবি বাছুন") { pick() }, lp(r = 12))
-        info = label("কোনো ছবি বাছা হয়নি", 13f, Ui.MUTED)
+        row.addView(pill(tr("ছবি বাছুন")) { pick() }, lp(r = 12))
+        info = label(tr("কোনো ছবি বাছা হয়নি"), 13f, Ui.MUTED)
         row.addView(info, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         c.addView(row, lp(b = 10))
         preview = ImageView(this)
@@ -178,15 +178,15 @@ abstract class ImageToolBase : GuardedActivity() {
         if (resultCode != Activity.RESULT_OK || data?.data == null) return
         val uri = data.data!!
         if (requestCode == Img.REQ_PICK) {
-            info.text = "লোড হচ্ছে…"
+            info.text = tr("লোড হচ্ছে…")
             Thread {
                 val b = Img.decode(this, uri, maxSide)
                 val n = Img.name(this, uri)
                 val s = Img.size(this, uri)
                 runOnUiThread {
                     if (b == null) {
-                        Toast.makeText(this, "ছবিটি খোলা যায়নি", Toast.LENGTH_LONG).show()
-                        info.text = "কোনো ছবি বাছা হয়নি"
+                        Toast.makeText(this, tr("ছবিটি খোলা যায়নি"), Toast.LENGTH_LONG).show()
+                        info.text = tr("কোনো ছবি বাছা হয়নি")
                     } else {
                         bmp = b
                         srcName = n
@@ -200,9 +200,9 @@ abstract class ImageToolBase : GuardedActivity() {
             val bytes = pendingBytes ?: return
             try {
                 contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
-                Toast.makeText(this, "সংরক্ষিত হয়েছে", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, tr("সংরক্ষিত হয়েছে"), Toast.LENGTH_SHORT).show()
             } catch (e: Throwable) {
-                Toast.makeText(this, "সংরক্ষণ করা যায়নি", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, tr("সংরক্ষণ করা যায়নি"), Toast.LENGTH_LONG).show()
             }
         }
     }

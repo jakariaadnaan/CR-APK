@@ -57,8 +57,8 @@ class PasswordActivity : GuardedActivity() {
 
         val btns = LinearLayout(this)
         btns.orientation = LinearLayout.HORIZONTAL
-        btns.addView(pill("নতুন তৈরি করুন") { generate() }, lp(width = 0, r = 6).also { it.weight = 1f })
-        btns.addView(pill("কপি", Ui.BG, Ui.PRIMARY) { copySecret() }, lp(width = 0, l = 6).also { it.weight = 1f })
+        btns.addView(pill(tr("নতুন তৈরি করুন")) { generate() }, lp(width = 0, r = 6).also { it.weight = 1f })
+        btns.addView(pill(tr("কপি"), Ui.BG, Ui.PRIMARY) { copySecret() }, lp(width = 0, l = 6).also { it.weight = 1f })
         top.addView(btns, lp())
         box.addView(top, lp(b = 12))
 
@@ -79,21 +79,21 @@ class PasswordActivity : GuardedActivity() {
         })
         opts.addView(seek, lp(t = 4, b = 8))
 
-        upper = check("বড় হাতের অক্ষর (A-Z)", true)
-        lower = check("ছোট হাতের অক্ষর (a-z)", true)
-        digits = check("সংখ্যা (0-9)", true)
-        symbols = check("চিহ্ন (!@#$…)", true)
-        clear = check("দেখতে এক রকম অক্ষর বাদ (O, 0, l, 1, I)", false)
+        upper = check(tr("বড় হাতের অক্ষর (A-Z)"), true)
+        lower = check(tr("ছোট হাতের অক্ষর (a-z)"), true)
+        digits = check(tr("সংখ্যা (0-9)"), true)
+        symbols = check(tr("চিহ্ন (!@#$…)"), true)
+        clear = check(tr("দেখতে এক রকম অক্ষর বাদ (O, 0, l, 1, I)"), false)
         for (c in listOf(upper, lower, digits, symbols, clear)) opts.addView(c)
         box.addView(opts, lp(b = 12))
 
         val note = label(
-            "পাসওয়ার্ড শুধু এই ফোনেই তৈরি হয়, কোথাও সংরক্ষিত বা পাঠানো হয় না। কপি করা পাসওয়ার্ড ক্লিপবোর্ডে থাকে, তাই ব্যবহারের পর অন্য কিছু কপি করে নিন।",
+            tr("পাসওয়ার্ড শুধু এই ফোনেই তৈরি হয়, কোথাও সংরক্ষিত বা পাঠানো হয় না। কপি করা পাসওয়ার্ড ক্লিপবোর্ডে থাকে, তাই ব্যবহারের পর অন্য কিছু কপি করে নিন।"),
             12f, Ui.MUTED
         )
         box.addView(note, lp(l = 4))
 
-        setScreen("পাসওয়ার্ড জেনারেটর", scroll)
+        setScreen(tr("পাসওয়ার্ড জেনারেটর"), scroll)
         generate()
     }
 
@@ -106,7 +106,7 @@ class PasswordActivity : GuardedActivity() {
     }
 
     private fun updateLenLabel() {
-        lenLabel.text = "দৈর্ঘ্য: " + bn(length.toString()) + " অক্ষর"
+        lenLabel.text = tr("দৈর্ঘ্য: ") + bn(length.toString()) + tr(" অক্ষর")
     }
 
     private fun generate() {
@@ -122,7 +122,7 @@ class PasswordActivity : GuardedActivity() {
         if (digits.isChecked) add("0123456789")
         if (symbols.isChecked) add("!@#\$%^&*()-_=+[]{};:,.?/")
         if (sets.isEmpty()) {
-            Toast.makeText(this, "অন্তত একটি ধরন বেছে নিন", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, tr("অন্তত একটি ধরন বেছে নিন"), Toast.LENGTH_SHORT).show()
             lower.setOnCheckedChangeListener(null)
             lower.isChecked = true
             lower.setOnCheckedChangeListener { _, _ -> generate() }
@@ -147,19 +147,19 @@ class PasswordActivity : GuardedActivity() {
         val frac: Float
         when {
             bits < 45 -> {
-                lbl = "দুর্বল"; color = Ui.RED; frac = 0.25f
+                lbl = tr("দুর্বল"); color = Ui.RED; frac = 0.25f
             }
             bits < 70 -> {
-                lbl = "মোটামুটি"; color = android.graphics.Color.parseColor("#E08E0B"); frac = 0.5f
+                lbl = tr("মোটামুটি"); color = android.graphics.Color.parseColor("#E08E0B"); frac = 0.5f
             }
             bits < 100 -> {
-                lbl = "শক্তিশালী"; color = Ui.GREEN; frac = 0.78f
+                lbl = tr("শক্তিশালী"); color = Ui.GREEN; frac = 0.78f
             }
             else -> {
-                lbl = "অনেক শক্তিশালী"; color = Ui.PRIMARY; frac = 1f
+                lbl = tr("অনেক শক্তিশালী"); color = Ui.PRIMARY; frac = 1f
             }
         }
-        strength.text = lbl + " (প্রায় " + bn(bits.toInt().toString()) + " বিট)"
+        strength.text = lbl + tr(" (প্রায় ") + bn(bits.toInt().toString()) + tr(" বিট)")
         strength.setTextColor(color)
         bar.background = bg(color, 3)
         val p = bar.layoutParams as LinearLayout.LayoutParams
@@ -177,6 +177,6 @@ class PasswordActivity : GuardedActivity() {
         extras.putBoolean("android.content.extra.IS_SENSITIVE", true)
         clip.description.extras = extras
         cm.setPrimaryClip(clip)
-        Toast.makeText(this, "কপি হয়েছে", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, tr("কপি হয়েছে"), Toast.LENGTH_SHORT).show()
     }
 }

@@ -27,7 +27,7 @@ class VideoInfoActivity : GuardedActivity() {
         scroll.addView(box)
 
         val c = card(14)
-        c.addView(pill("ভিডিও বাছুন") {
+        c.addView(pill(tr("ভিডিও বাছুন")) {
             val i = Intent(Intent.ACTION_OPEN_DOCUMENT)
             i.addCategory(Intent.CATEGORY_OPENABLE)
             i.type = "video/*"
@@ -42,11 +42,11 @@ class VideoInfoActivity : GuardedActivity() {
         val r = card(14)
         rows = LinearLayout(this)
         rows.orientation = LinearLayout.VERTICAL
-        rows.addView(label("কোনো ভিডিও বাছা হয়নি", 13f, Ui.MUTED))
+        rows.addView(label(tr("কোনো ভিডিও বাছা হয়নি"), 13f, Ui.MUTED))
         r.addView(rows, lp())
         box.addView(r, lp())
 
-        setScreen("ভিডিও মেটাডেটা", scroll)
+        setScreen(tr("ভিডিও মেটাডেটা"), scroll)
     }
 
     private fun row(k: String, v: String) {
@@ -65,7 +65,7 @@ class VideoInfoActivity : GuardedActivity() {
         if (requestCode != 93 || resultCode != Activity.RESULT_OK || data?.data == null) return
         val u = data.data!!
         rows.removeAllViews()
-        rows.addView(label("পড়া হচ্ছে…", 13f, Ui.MUTED))
+        rows.addView(label(tr("পড়া হচ্ছে…"), 13f, Ui.MUTED))
         Thread {
             val m = MediaMetadataRetriever()
             val list = ArrayList<Pair<String, String>>()
@@ -74,25 +74,25 @@ class VideoInfoActivity : GuardedActivity() {
             try {
                 m.setDataSource(this, u)
                 fun g(k: Int): String? = m.extractMetadata(k)
-                list.add("ফাইল" to Img.name(this, u))
-                list.add("সাইজ" to Img.human(Img.size(this, u)))
-                g(MediaMetadataRetriever.METADATA_KEY_MIMETYPE)?.let { list.add("ধরন" to it) }
-                g(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()?.let { list.add("দৈর্ঘ্য" to dur(it)) }
+                list.add(tr("ফাইল") to Img.name(this, u))
+                list.add(tr("সাইজ") to Img.human(Img.size(this, u)))
+                g(MediaMetadataRetriever.METADATA_KEY_MIMETYPE)?.let { list.add(tr("ধরন") to it) }
+                g(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()?.let { list.add(tr("দৈর্ঘ্য") to dur(it)) }
                 var w = g(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
                 var h = g(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
                 val rot = g(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)?.toIntOrNull() ?: 0
                 if (rot == 90 || rot == 270) { val t = w; w = h; h = t }
-                if (w != null && h != null) list.add("রেজোলিউশন" to bn(w) + " × " + bn(h))
-                if (rot != 0) list.add("ঘোরানো" to bn(rot.toString()) + "°")
+                if (w != null && h != null) list.add(tr("রেজোলিউশন") to bn(w) + " × " + bn(h))
+                if (rot != 0) list.add(tr("ঘোরানো") to bn(rot.toString()) + "°")
                 g(MediaMetadataRetriever.METADATA_KEY_CAPTURE_FRAMERATE)?.toFloatOrNull()?.let {
-                    list.add("ফ্রেম রেট" to bn(String.format(Locale.US, "%.1f", it)) + " fps")
+                    list.add(tr("ফ্রেম রেট") to bn(String.format(Locale.US, "%.1f", it)) + " fps")
                 }
                 g(MediaMetadataRetriever.METADATA_KEY_BITRATE)?.toLongOrNull()?.let {
-                    list.add("বিটরেট" to bn(String.format(Locale.US, "%.2f", it / 1000000.0)) + " Mbps")
+                    list.add(tr("বিটরেট") to bn(String.format(Locale.US, "%.2f", it / 1000000.0)) + " Mbps")
                 }
-                list.add("অডিও আছে" to (if (g(MediaMetadataRetriever.METADATA_KEY_HAS_AUDIO) == "yes") "হ্যাঁ" else "না"))
-                g(MediaMetadataRetriever.METADATA_KEY_DATE)?.let { list.add("তারিখ" to it) }
-                g(MediaMetadataRetriever.METADATA_KEY_LOCATION)?.let { list.add("অবস্থান" to it) }
+                list.add(tr("অডিও আছে") to (if (g(MediaMetadataRetriever.METADATA_KEY_HAS_AUDIO) == "yes") tr("হ্যাঁ") else tr("না")))
+                g(MediaMetadataRetriever.METADATA_KEY_DATE)?.let { list.add(tr("তারিখ") to it) }
+                g(MediaMetadataRetriever.METADATA_KEY_LOCATION)?.let { list.add(tr("অবস্থান") to it) }
                 frame = m.getFrameAtTime(0)
             } catch (e: Throwable) {
                 ok = false
@@ -102,8 +102,8 @@ class VideoInfoActivity : GuardedActivity() {
             runOnUiThread {
                 rows.removeAllViews()
                 if (!ok) {
-                    rows.addView(label("তথ্য পড়া যায়নি", 13f, Ui.MUTED))
-                    Toast.makeText(this, "ভিডিও খোলা যায়নি", Toast.LENGTH_LONG).show()
+                    rows.addView(label(tr("তথ্য পড়া যায়নি"), 13f, Ui.MUTED))
+                    Toast.makeText(this, tr("ভিডিও খোলা যায়নি"), Toast.LENGTH_LONG).show()
                 } else {
                     thumb.setImageBitmap(frame)
                     for (p in list) row(p.first, p.second)

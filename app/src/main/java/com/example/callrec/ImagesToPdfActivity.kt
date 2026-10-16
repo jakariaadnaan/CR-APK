@@ -34,14 +34,14 @@ class ImagesToPdfActivity : GuardedActivity() {
         scroll.addView(box)
 
         val c = card(14)
-        c.addView(pill("ছবি যোগ করুন") { pick() }, lp(b = 10))
+        c.addView(pill(tr("ছবি যোগ করুন")) { pick() }, lp(b = 10))
         listBox = LinearLayout(this)
         listBox.orientation = LinearLayout.VERTICAL
         c.addView(listBox, lp())
         box.addView(c, lp(b = 12))
 
         val opt = card(14)
-        opt.addView(label("পেজের মাপ", 12f, Ui.MUTED, true))
+        opt.addView(label(tr("পেজের মাপ"), 12f, Ui.MUTED, true))
         sizeRow = LinearLayout(this)
         sizeRow.orientation = LinearLayout.HORIZONTAL
         opt.addView(sizeRow, lp(t = 6))
@@ -50,10 +50,10 @@ class ImagesToPdfActivity : GuardedActivity() {
         val res = card(14)
         status = label("", 14f, Ui.TEXT)
         res.addView(status, lp(b = 10))
-        res.addView(pill("PDF বানান") { save() })
+        res.addView(pill(tr("PDF বানান")) { save() })
         box.addView(res, lp())
 
-        setScreen("ছবি → PDF", scroll)
+        setScreen(tr("ছবি → PDF"), scroll)
         render()
     }
 
@@ -69,11 +69,11 @@ class ImagesToPdfActivity : GuardedActivity() {
     private fun render() {
         sizeRow.removeAllViews()
         sizeRow.addView(chip("A4", a4) { a4 = true; render() }, lp(r = 8))
-        sizeRow.addView(chip("ছবির মাপ অনুযায়ী", !a4) { a4 = false; render() })
+        sizeRow.addView(chip(tr("ছবির মাপ অনুযায়ী"), !a4) { a4 = false; render() })
 
         listBox.removeAllViews()
         if (uris.isEmpty()) {
-            listBox.addView(label("এখনো কোনো ছবি নেই", 13f, Ui.MUTED))
+            listBox.addView(label(tr("এখনো কোনো ছবি নেই"), 13f, Ui.MUTED))
         }
         for (i in uris.indices) {
             val row = LinearLayout(this)
@@ -85,7 +85,7 @@ class ImagesToPdfActivity : GuardedActivity() {
             row.addView(pill("✕", Ui.BG, Ui.RED) { uris.removeAt(i); names.removeAt(i); render() }, lp(l = 6))
             listBox.addView(row, lp(b = 6))
         }
-        status.text = if (uris.isEmpty()) "আগে ছবি যোগ করুন" else bn(uris.size.toString()) + "টি ছবি → " + bn(uris.size.toString()) + " পেজের PDF"
+        status.text = if (uris.isEmpty()) tr("আগে ছবি যোগ করুন") else bn(uris.size.toString()) + tr("টি ছবি → ") + bn(uris.size.toString()) + tr(" পেজের PDF")
     }
 
     private fun move(i: Int, d: Int) {
@@ -106,7 +106,7 @@ class ImagesToPdfActivity : GuardedActivity() {
 
     private fun save() {
         if (uris.isEmpty()) {
-            Toast.makeText(this, "আগে ছবি যোগ করুন", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, tr("আগে ছবি যোগ করুন"), Toast.LENGTH_SHORT).show()
             return
         }
         val i = Intent(Intent.ACTION_CREATE_DOCUMENT)
@@ -139,7 +139,7 @@ class ImagesToPdfActivity : GuardedActivity() {
     }
 
     private fun build(out: Uri) {
-        status.text = "PDF তৈরি হচ্ছে…"
+        status.text = tr("PDF তৈরি হচ্ছে…")
         val list = ArrayList(uris)
         val useA4 = a4
         Thread {
@@ -185,10 +185,10 @@ class ImagesToPdfActivity : GuardedActivity() {
             val n = pages
             runOnUiThread {
                 if (ok) {
-                    status.text = "সংরক্ষিত হয়েছে: " + bn(n.toString()) + " পেজের PDF"
+                    status.text = tr("সংরক্ষিত হয়েছে: ") + bn(n.toString()) + tr(" পেজের PDF")
                 } else {
-                    status.text = "PDF বানানো যায়নি"
-                    Toast.makeText(this, "PDF বানানো যায়নি", Toast.LENGTH_LONG).show()
+                    status.text = tr("PDF বানানো যায়নি")
+                    Toast.makeText(this, tr("PDF বানানো যায়নি"), Toast.LENGTH_LONG).show()
                 }
             }
         }.start()

@@ -29,28 +29,28 @@ class CalcActivity : GuardedActivity() {
 
     private val categories = listOf(
         Category(
-            "দৈর্ঘ্য",
+            tr("দৈর্ঘ্য"),
             listOf(
-                UnitDef("মিটার", 1.0), UnitDef("কিলোমিটার", 1000.0), UnitDef("সেন্টিমিটার", 0.01),
-                UnitDef("মিলিমিটার", 0.001), UnitDef("ইঞ্চি", 0.0254), UnitDef("ফুট", 0.3048),
-                UnitDef("গজ", 0.9144), UnitDef("হাত (১৮ ইঞ্চি)", 0.4572), UnitDef("মাইল", 1609.344)
+                UnitDef(tr("মিটার"), 1.0), UnitDef(tr("কিলোমিটার"), 1000.0), UnitDef(tr("সেন্টিমিটার"), 0.01),
+                UnitDef(tr("মিলিমিটার"), 0.001), UnitDef(tr("ইঞ্চি"), 0.0254), UnitDef(tr("ফুট"), 0.3048),
+                UnitDef(tr("গজ"), 0.9144), UnitDef(tr("হাত (১৮ ইঞ্চি)"), 0.4572), UnitDef(tr("মাইল"), 1609.344)
             )
         ),
         Category(
-            "ওজন",
+            tr("ওজন"),
             listOf(
-                UnitDef("কেজি", 1.0), UnitDef("গ্রাম", 0.001), UnitDef("মিলিগ্রাম", 0.000001),
-                UnitDef("টন (মেট্রিক)", 1000.0), UnitDef("পাউন্ড", 0.45359237),
-                UnitDef("আউন্স", 0.028349523125), UnitDef("ভরি (১১.৬৬৪ গ্রাম)", 0.011664),
-                UnitDef("সের (৮০ তোলা)", 0.93312), UnitDef("মণ (৪০ সের)", 37.3248)
+                UnitDef(tr("কেজি"), 1.0), UnitDef(tr("গ্রাম"), 0.001), UnitDef(tr("মিলিগ্রাম"), 0.000001),
+                UnitDef(tr("টন (মেট্রিক)"), 1000.0), UnitDef(tr("পাউন্ড"), 0.45359237),
+                UnitDef(tr("আউন্স"), 0.028349523125), UnitDef(tr("ভরি (১১.৬৬৪ গ্রাম)"), 0.011664),
+                UnitDef(tr("সের (৮০ তোলা)"), 0.93312), UnitDef(tr("মণ (৪০ সের)"), 37.3248)
             )
         ),
-        Category("তাপমাত্রা", listOf(UnitDef("সেলসিয়াস °C", 1.0), UnitDef("ফারেনহাইট °F", 1.0), UnitDef("কেলভিন K", 1.0)), true),
+        Category(tr("তাপমাত্রা"), listOf(UnitDef(tr("সেলসিয়াস °C"), 1.0), UnitDef(tr("ফারেনহাইট °F"), 1.0), UnitDef(tr("কেলভিন K"), 1.0)), true),
         Category(
-            "আয়তন",
+            tr("আয়তন"),
             listOf(
-                UnitDef("লিটার", 1.0), UnitDef("মিলিলিটার", 0.001), UnitDef("ঘনমিটার", 1000.0),
-                UnitDef("গ্যালন (US)", 3.785411784), UnitDef("কাপ (US)", 0.2365882365)
+                UnitDef(tr("লিটার"), 1.0), UnitDef(tr("মিলিলিটার"), 0.001), UnitDef(tr("ঘনমিটার"), 1000.0),
+                UnitDef(tr("গ্যালন (US)"), 3.785411784), UnitDef(tr("কাপ (US)"), 0.2365882365)
             )
         )
     )
@@ -77,14 +77,14 @@ class CalcActivity : GuardedActivity() {
         body = FrameLayout(this)
         root.addView(body, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
 
-        setScreen("ক্যালকুলেটর", root)
+        setScreen(tr("ক্যালকুলেটর"), root)
         showTab(0)
     }
 
     private fun showTab(t: Int) {
         tab = t
         tabRow.removeAllViews()
-        val names = listOf("ক্যালকুলেটর", "রূপান্তর")
+        val names = listOf(tr("ক্যালকুলেটর"), tr("রূপান্তর"))
         for (i in names.indices) {
             val on = tab == i
             val chip = label(names[i], 14f, if (on) Color.WHITE else Ui.PRIMARY, true)
@@ -94,7 +94,7 @@ class CalcActivity : GuardedActivity() {
             chip.setOnClickListener { showTab(i) }
             tabRow.addView(chip, lp(r = 8))
         }
-        val sci = label("সায়েন্টিফিক ↗", 14f, Ui.PRIMARY, true)
+        val sci = label(tr("সায়েন্টিফিক ↗"), 14f, Ui.PRIMARY, true)
         sci.gravity = Gravity.CENTER
         sci.background = bg(Ui.CARD, 20, Ui.PRIMARY, 1)
         sci.setPadding(dp(18), dp(8), dp(18), dp(8))
@@ -170,7 +170,7 @@ class CalcActivity : GuardedActivity() {
         try {
             fmt(Parser(e).parse(), 8)
         } catch (ex: ArithmeticException) {
-            "ত্রুটি"
+            tr("ত্রুটি")
         } catch (ex: Exception) {
             null
         }
@@ -245,7 +245,7 @@ class CalcActivity : GuardedActivity() {
             resView.text = m
         } else {
             val r = if (expr.isEmpty()) null else evaluate(expr)
-            resView.text = if (r == null || r == "ত্রুটি") "" else "= " + bn(r)
+            resView.text = if (r == null || r == tr("ত্রুটি")) "" else "= " + bn(r)
         }
     }
 
@@ -259,7 +259,7 @@ class CalcActivity : GuardedActivity() {
             "=" -> {
                 if (expr.isNotEmpty()) {
                     val r = evaluate(expr)
-                    if (r == "ত্রুটি") message = "ত্রুটি (শূন্য দিয়ে ভাগ)"
+                    if (r == tr("ত্রুটি")) message = tr("ত্রুটি (শূন্য দিয়ে ভাগ)")
                     else if (r != null) expr = r
                 }
             }
@@ -321,7 +321,7 @@ class CalcActivity : GuardedActivity() {
 
         val c = card(16)
         val input = EditText(this)
-        input.hint = "মান লিখুন"
+        input.hint = tr("মান লিখুন")
         input.inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL or InputType.TYPE_NUMBER_FLAG_SIGNED
         input.textSize = 22f
         c.addView(input, lp())
@@ -375,7 +375,7 @@ class CalcActivity : GuardedActivity() {
             var txt = try {
                 fmt(out, 6)
             } catch (e: Exception) {
-                "ত্রুটি"
+                tr("ত্রুটি")
             }
             if (txt == "0" && out != 0.0) txt = String.format(Locale.US, "%.4e", out)
             result.text = bn(txt) + " " + cat.units[b].name.substringBefore(" ")

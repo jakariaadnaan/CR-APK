@@ -62,20 +62,20 @@ class GifMakerActivity : GuardedActivity() {
         box.addView(b, lp(b = 12))
 
         val s = card(14)
-        s.addView(label("GIF-এর চওড়া (পিক্সেল)", 12f, Ui.MUTED, true))
+        s.addView(label(tr("GIF-এর চওড়া (পিক্সেল)"), 12f, Ui.MUTED, true))
         sizeRow = LinearLayout(this)
         sizeRow.orientation = LinearLayout.HORIZONTAL
         s.addView(sizeRow, lp(t = 6))
-        s.addView(label("ছোট মাপ হলে ফাইল ছোট হয়। রঙ সীমিত (২৫২টি), তাই ছবির মান কিছুটা কমে।", 12f, Ui.MUTED), lp(t = 8))
+        s.addView(label(tr("ছোট মাপ হলে ফাইল ছোট হয়। রঙ সীমিত (২৫২টি), তাই ছবির মান কিছুটা কমে।"), 12f, Ui.MUTED), lp(t = 8))
         box.addView(s, lp(b = 12))
 
         val r = card(14)
         status = label("", 14f, Ui.TEXT)
         r.addView(status, lp(b = 10))
-        r.addView(pill("GIF বানান") { go() })
+        r.addView(pill(tr("GIF বানান")) { go() })
         box.addView(r, lp())
 
-        setScreen("GIF মেকার", scroll)
+        setScreen(tr("GIF মেকার"), scroll)
         render()
     }
 
@@ -101,22 +101,22 @@ class GifMakerActivity : GuardedActivity() {
 
     private fun render() {
         modeRow.removeAllViews()
-        modeRow.addView(chip("ছবি থেকে", !fromVideo) { fromVideo = false; render() }, lp(r = 8))
-        modeRow.addView(chip("ভিডিও থেকে", fromVideo) { fromVideo = true; render() })
+        modeRow.addView(chip(tr("ছবি থেকে"), !fromVideo) { fromVideo = false; render() }, lp(r = 8))
+        modeRow.addView(chip(tr("ভিডিও থেকে"), fromVideo) { fromVideo = true; render() })
 
         sizeRow.removeAllViews()
         for (w in listOf(240, 320, 480, 640)) sizeRow.addView(chip(bn(w.toString()), w == width) { width = w; render() }, lp(r = 8))
 
         body.removeAllViews()
         if (!fromVideo) {
-            body.addView(pill("ছবি যোগ করুন") {
+            body.addView(pill(tr("ছবি যোগ করুন")) {
                 val i = Intent(Intent.ACTION_OPEN_DOCUMENT)
                 i.addCategory(Intent.CATEGORY_OPENABLE)
                 i.type = "image/*"
                 i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
                 startActivityForResult(i, 101)
             }, lp(b = 8))
-            if (uris.isEmpty()) body.addView(label("কমপক্ষে ২টি ছবি লাগবে", 13f, Ui.MUTED))
+            if (uris.isEmpty()) body.addView(label(tr("কমপক্ষে ২টি ছবি লাগবে"), 13f, Ui.MUTED))
             for (i in uris.indices) {
                 val row = LinearLayout(this)
                 row.orientation = LinearLayout.HORIZONTAL
@@ -130,18 +130,18 @@ class GifMakerActivity : GuardedActivity() {
                 row.addView(pill("✕", Ui.BG, Ui.RED) { uris.removeAt(i); names.removeAt(i); render() }, lp(l = 6))
                 body.addView(row, lp(b = 6))
             }
-            body.addView(chipRow("প্রতি ছবি কতক্ষণ থাকবে", listOf("০.৩ সে." to 300, "০.৫ সে." to 500, "১ সে." to 1000, "২ সে." to 2000), delayMs) { delayMs = it })
+            body.addView(chipRow(tr("প্রতি ছবি কতক্ষণ থাকবে"), listOf(tr("০.৩ সে.") to 300, tr("০.৫ সে.") to 500, tr("১ সে.") to 1000, tr("২ সে.") to 2000), delayMs) { delayMs = it })
         } else {
-            body.addView(pill("ভিডিও বাছুন") {
+            body.addView(pill(tr("ভিডিও বাছুন")) {
                 val i = Intent(Intent.ACTION_OPEN_DOCUMENT)
                 i.addCategory(Intent.CATEGORY_OPENABLE)
                 i.type = "video/*"
                 startActivityForResult(i, 102)
             }, lp(b = 8))
-            body.addView(label(if (video == null) "কোনো ভিডিও বাছা হয়নি" else videoName, 13f, Ui.MUTED))
-            body.addView(chipRow("প্রতি সেকেন্ডে ফ্রেম", listOf("৫" to 5, "৮" to 8, "১০" to 10), fps) { fps = it })
-            body.addView(chipRow("কত সেকেন্ডের GIF", listOf("৩" to 3, "৫" to 5, "১০" to 10), seconds) { seconds = it })
-            body.addView(label("ভিডিওর কত সেকেন্ড থেকে শুরু", 12f, Ui.MUTED, true), lp(t = 8, b = 4))
+            body.addView(label(if (video == null) tr("কোনো ভিডিও বাছা হয়নি") else videoName, 13f, Ui.MUTED))
+            body.addView(chipRow(tr("প্রতি সেকেন্ডে ফ্রেম"), listOf(tr("৫") to 5, tr("৮") to 8, tr("১০") to 10), fps) { fps = it })
+            body.addView(chipRow(tr("কত সেকেন্ডের GIF"), listOf(tr("৩") to 3, tr("৫") to 5, tr("১০") to 10), seconds) { seconds = it })
+            body.addView(label(tr("ভিডিওর কত সেকেন্ড থেকে শুরু"), 12f, Ui.MUTED, true), lp(t = 8, b = 4))
             val keep = if (::startF.isInitialized) startF.text.toString() else "0"
             startF = EditText(this)
             startF.inputType = InputType.TYPE_CLASS_NUMBER
@@ -183,8 +183,8 @@ class GifMakerActivity : GuardedActivity() {
 
     private fun go() {
         if (busy) return
-        if (!fromVideo && uris.size < 2) { status.text = "কমপক্ষে ২টি ছবি যোগ করুন"; return }
-        if (fromVideo && video == null) { status.text = "আগে একটি ভিডিও বাছুন"; return }
+        if (!fromVideo && uris.size < 2) { status.text = tr("কমপক্ষে ২টি ছবি যোগ করুন"); return }
+        if (fromVideo && video == null) { status.text = tr("আগে একটি ভিডিও বাছুন"); return }
         val i = Intent(Intent.ACTION_CREATE_DOCUMENT)
         i.addCategory(Intent.CATEGORY_OPENABLE)
         i.type = "image/gif"
@@ -206,7 +206,7 @@ class GifMakerActivity : GuardedActivity() {
 
     private fun make(dest: Uri) {
         busy = true
-        status.text = "GIF তৈরি হচ্ছে…"
+        status.text = tr("GIF তৈরি হচ্ছে…")
         val vid = fromVideo
         val list = ArrayList(uris)
         val v = video
@@ -236,7 +236,7 @@ class GifMakerActivity : GuardedActivity() {
                             f.recycle()
                             frames++
                             val n = frames
-                            runOnUiThread { status.text = "GIF তৈরি হচ্ছে… " + bn(n.toString()) + "/" + bn(list.size.toString()) }
+                            runOnUiThread { status.text = tr("GIF তৈরি হচ্ছে… ") + bn(n.toString()) + "/" + bn(list.size.toString()) }
                         }
                         enc?.finish()
                     } else {
@@ -261,7 +261,7 @@ class GifMakerActivity : GuardedActivity() {
                                 f.recycle()
                                 frames++
                                 val n = i + 1
-                                runOnUiThread { status.text = "GIF তৈরি হচ্ছে… " + bn(n.toString()) + "/" + bn(total.toString()) }
+                                runOnUiThread { status.text = tr("GIF তৈরি হচ্ছে… ") + bn(n.toString()) + "/" + bn(total.toString()) }
                             }
                             enc.finish()
                         } finally {
@@ -271,9 +271,9 @@ class GifMakerActivity : GuardedActivity() {
                 }
                 if (frames == 0) throw IllegalStateException()
                 contentResolver.openOutputStream(dest)?.use { os -> FileInputStream(tmp).use { it.copyTo(os) } }
-                msg = "সংরক্ষিত হয়েছে: " + bn(frames.toString()) + " ফ্রেম · " + Img.human(tmp.length())
+                msg = tr("সংরক্ষিত হয়েছে: ") + bn(frames.toString()) + tr(" ফ্রেম · ") + Img.human(tmp.length())
             } catch (e: Throwable) {
-                msg = "GIF বানানো যায়নি"
+                msg = tr("GIF বানানো যায়নি")
             } finally {
                 tmp.delete()
             }

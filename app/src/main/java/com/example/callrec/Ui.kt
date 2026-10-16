@@ -58,6 +58,28 @@ object Ui {
             CHEV = Color.parseColor("#B3B8C0"); KEY_OP = Color.parseColor("#DDE6FB"); KEY_FN = Color.parseColor("#E8EAEE")
             PREVIEW = Color.parseColor("#ECEEF1"); GREEN = Color.parseColor("#2E8B57"); RED = Color.parseColor("#C0392B")
         }
+        val ai = p.getInt("accent", 0).coerceIn(0, ACCENTS.size - 1)
+        PRIMARY = Color.parseColor(if (dark) ACCENTS[ai].dark else ACCENTS[ai].light)
+        KEY_OP = if (dark) mix(PRIMARY, CARD, 0.75f) else mix(PRIMARY, Color.WHITE, 0.87f)
+    }
+
+    class Accent(val name: String, val light: String, val dark: String)
+
+    val ACCENTS = listOf(
+        Accent("নীল", "#2D5BE3", "#5B84F2"),
+        Accent("সবুজ", "#1E8E5A", "#3FB27F"),
+        Accent("বেগুনি", "#7A45D6", "#9E78EA"),
+        Accent("কমলা", "#E0701A", "#F0903F"),
+        Accent("লাল", "#D23B3B", "#EA6666"),
+        Accent("টিল", "#0E8A94", "#35B0BA")
+    )
+
+    /** Blends [a] towards [b]; [t] is how much of [b] (0..1). */
+    fun mix(a: Int, b: Int, t: Float): Int {
+        val r = (Color.red(a) * (1 - t) + Color.red(b) * t).toInt()
+        val g = (Color.green(a) * (1 - t) + Color.green(b) * t).toInt()
+        val bl = (Color.blue(a) * (1 - t) + Color.blue(b) * t).toInt()
+        return Color.rgb(r, g, bl)
     }
 }
 
@@ -208,12 +230,12 @@ fun taka(d: Double): String {
     }
     var s = groupIndian(whole)
     if (paisa != 0) s += "." + String.format(Locale.US, "%02d", paisa)
-    return bn((if (neg) "-" else "") + "৳" + s)
+    return bn((if (neg) "-" else "") + tr("৳") + s)
 }
 
-val BN_MONTHS = listOf(
-    "জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন",
-    "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"
+val BN_MONTHS: List<String> get() = listOf(
+    tr("জানুয়ারি"), tr("ফেব্রুয়ারি"), tr("মার্চ"), tr("এপ্রিল"), tr("মে"), tr("জুন"),
+    tr("জুলাই"), tr("আগস্ট"), tr("সেপ্টেম্বর"), tr("অক্টোবর"), tr("নভেম্বর"), tr("ডিসেম্বর")
 )
 
 // ---------- Date helpers and small shared widgets ----------
@@ -282,7 +304,7 @@ fun fmtNum(d: Double, scale: Int): String {
 fun Context.copyText(text: String) {
     val cm = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
     cm.setPrimaryClip(android.content.ClipData.newPlainText("text", text))
-    android.widget.Toast.makeText(this, "কপি হয়েছে", android.widget.Toast.LENGTH_SHORT).show()
+    android.widget.Toast.makeText(this, tr("কপি হয়েছে"), android.widget.Toast.LENGTH_SHORT).show()
 }
 
 // ---------- Icons, wrapping layout, result card, bottom navigation ----------
@@ -362,7 +384,7 @@ fun Context.resultCard(title: String): Pair<LinearLayout, TextView> {
     val v = label("", 15f, Ui.TEXT)
     v.setTextIsSelectable(true)
     c.addView(v, lp(t = 4, b = 8))
-    c.addView(pill("কপি", Ui.BG, Ui.PRIMARY) { copyText(v.text.toString()) })
+    c.addView(pill(tr("কপি"), Ui.BG, Ui.PRIMARY) { copyText(v.text.toString()) })
     return Pair(c, v)
 }
 
@@ -378,7 +400,7 @@ fun Activity.navBar(selected: Int): View {
     bar.orientation = LinearLayout.HORIZONTAL
     bar.setPadding(dp(8), dp(8), dp(8), dp(8))
     wrap.addView(bar, lp())
-    val names = listOf("হোম", "সব টুল", "সেটিংস")
+    val names = listOf(tr("হোম"), tr("সব টুল"), tr("সেটিংস"))
     val icons = listOf(R.drawable.ic_home, R.drawable.ic_grid, R.drawable.ic_lock)
     for (i in 0..2) {
         val item = LinearLayout(this)

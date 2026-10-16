@@ -98,11 +98,11 @@ class TimerReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
         if (TimerState.visible) return
         val code = intent.getIntExtra("code", 0)
-        val title = intent.getStringExtra("title") ?: "সময় শেষ"
+        val title = intent.getStringExtra("title") ?: tr("সময় শেষ")
         val text = intent.getStringExtra("text") ?: ""
 
         val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val ch = NotificationChannel("timer_alarm", "টাইমার", NotificationManager.IMPORTANCE_HIGH)
+        val ch = NotificationChannel("timer_alarm", tr("টাইমার"), NotificationManager.IMPORTANCE_HIGH)
         ch.setSound(
             RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
             AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).build()

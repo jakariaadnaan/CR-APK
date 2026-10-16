@@ -203,7 +203,7 @@ class SciCalcActivity : GuardedActivity() {
             grid.addView(line, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
         }
         col.addView(grid, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
-        setScreen("সায়েন্টিফিক ক্যালকুলেটর", col)
+        setScreen(tr("সায়েন্টিফিক ক্যালকুলেটর"), col)
         refresh()
     }
 
@@ -225,7 +225,7 @@ class SciCalcActivity : GuardedActivity() {
         try {
             fmt(SciParser(closed(e), deg, ans).parse())
         } catch (x: ArithmeticException) {
-            "ত্রুটি"
+            tr("ত্রুটি")
         } catch (x: Exception) {
             null
         }
@@ -240,7 +240,7 @@ class SciCalcActivity : GuardedActivity() {
             resView.text = m
         } else {
             val r = if (expr.isEmpty()) null else evaluate(expr)
-            resView.text = if (r == null || r == "ত্রুটি") "" else "= " + bn(r)
+            resView.text = if (r == null || r == tr("ত্রুটি")) "" else "= " + bn(r)
         }
     }
 
@@ -253,8 +253,8 @@ class SciCalcActivity : GuardedActivity() {
             "=" -> {
                 if (expr.isNotEmpty()) {
                     val r = evaluate(expr)
-                    if (r == "ত্রুটি") message = "ত্রুটি (গণনা সম্ভব নয়)"
-                    else if (r == null) message = "রাশিটি অসম্পূর্ণ"
+                    if (r == tr("ত্রুটি")) message = tr("ত্রুটি (গণনা সম্ভব নয়)")
+                    else if (r == null) message = tr("রাশিটি অসম্পূর্ণ")
                     else {
                         ans = r.toDouble()
                         expr = r

@@ -49,7 +49,7 @@ class ColorPickerActivity : ImageToolBase() {
             }
             bmp != null
         }
-        box.addView(label("ছবির উপর আঙুল রাখুন বা টেনে নিন", 12f, Ui.MUTED), lp(l = 4, b = 10))
+        box.addView(label(tr("ছবির উপর আঙুল রাখুন বা টেনে নিন"), 12f, Ui.MUTED), lp(l = 4, b = 10))
 
         val c = card(14)
         val top = LinearLayout(this)
@@ -68,19 +68,19 @@ class ColorPickerActivity : ImageToolBase() {
         c.addView(top, lp(b = 12))
         val btns = LinearLayout(this)
         btns.orientation = LinearLayout.HORIZONTAL
-        btns.addView(pill("HEX কপি") { copyText(hex(current)) }, lp(r = 8))
-        btns.addView(pill("RGB কপি", Ui.BG, Ui.PRIMARY) { copyText(rgbText(current)) }, lp(r = 8))
-        btns.addView(pill("HSL কপি", Ui.BG, Ui.PRIMARY) { copyText(hslText(current)) })
+        btns.addView(pill(tr("HEX কপি")) { copyText(hex(current)) }, lp(r = 8))
+        btns.addView(pill(tr("RGB কপি"), Ui.BG, Ui.PRIMARY) { copyText(rgbText(current)) }, lp(r = 8))
+        btns.addView(pill(tr("HSL কপি"), Ui.BG, Ui.PRIMARY) { copyText(hslText(current)) })
         c.addView(btns, lp())
         box.addView(c, lp(b = 12))
 
         val h = card(14)
-        h.addView(label("বাছা রঙ", 12f, Ui.MUTED, true), lp(b = 8))
+        h.addView(label(tr("বাছা রঙ"), 12f, Ui.MUTED, true), lp(b = 8))
         histBox = FlowLayout(this)
         h.addView(histBox, lp())
         box.addView(h, lp())
 
-        setScreen("কালার পিকার", scroll)
+        setScreen(tr("কালার পিকার"), scroll)
         show(current)
     }
 

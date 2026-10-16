@@ -16,17 +16,17 @@ class TextCaseActivity : GuardedActivity() {
     private class Mode(val name: String, val f: (String) -> String)
 
     private val modes = listOf(
-        Mode("বড় হাতের (UPPER)") { it.uppercase() },
-        Mode("ছোট হাতের (lower)") { it.lowercase() },
-        Mode("প্রতি শব্দের প্রথম বড় (Title)") { titleCase(it) },
-        Mode("বাক্যের প্রথম বড় (Sentence)") { sentenceCase(it) },
+        Mode(tr("বড় হাতের (UPPER)")) { it.uppercase() },
+        Mode(tr("ছোট হাতের (lower)")) { it.lowercase() },
+        Mode(tr("প্রতি শব্দের প্রথম বড় (Title)")) { titleCase(it) },
+        Mode(tr("বাক্যের প্রথম বড় (Sentence)")) { sentenceCase(it) },
         Mode("camelCase") { s -> wordsOf(s).mapIndexed { i, w -> if (i == 0) w.lowercase() else cap(w) }.joinToString("") },
         Mode("PascalCase") { s -> wordsOf(s).joinToString("") { cap(it) } },
         Mode("snake_case") { s -> wordsOf(s).joinToString("_") { it.lowercase() } },
         Mode("kebab-case") { s -> wordsOf(s).joinToString("-") { it.lowercase() } },
-        Mode("বাড়তি স্পেস মুছুন") { s -> s.lines().joinToString("\n") { it.trim().replace(Regex("[ \\t]+"), " ") } },
-        Mode("লাইন সাজান (A→Z)") { s -> s.lines().sorted().joinToString("\n") },
-        Mode("লাইনের ক্রম উল্টো") { s -> s.lines().reversed().joinToString("\n") }
+        Mode(tr("বাড়তি স্পেস মুছুন")) { s -> s.lines().joinToString("\n") { it.trim().replace(Regex("[ \\t]+"), " ") } },
+        Mode(tr("লাইন সাজান (A→Z)")) { s -> s.lines().sorted().joinToString("\n") },
+        Mode(tr("লাইনের ক্রম উল্টো")) { s -> s.lines().reversed().joinToString("\n") }
     )
 
     private var selected = 0
@@ -43,9 +43,9 @@ class TextCaseActivity : GuardedActivity() {
         scroll.addView(box)
 
         val inCard = card(14)
-        inCard.addView(label("আপনার লেখা", 12f, Ui.MUTED, true))
+        inCard.addView(label(tr("আপনার লেখা"), 12f, Ui.MUTED, true))
         input = EditText(this)
-        input.hint = "এখানে লিখুন বা পেস্ট করুন"
+        input.hint = tr("এখানে লিখুন বা পেস্ট করুন")
         input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
         input.minLines = 4
         input.gravity = Gravity.TOP or Gravity.START
@@ -53,32 +53,32 @@ class TextCaseActivity : GuardedActivity() {
         inCard.addView(input, lp(t = 4))
         val row = LinearLayout(this)
         row.orientation = LinearLayout.HORIZONTAL
-        row.addView(pill("মুছুন", Ui.BG, Ui.RED) { input.setText("") }, lp(r = 8))
+        row.addView(pill(tr("মুছুন"), Ui.BG, Ui.RED) { input.setText("") }, lp(r = 8))
         inCard.addView(row, lp(t = 6))
         box.addView(inCard, lp(b = 12))
 
-        box.addView(label("কী করতে চান", 14f, Ui.MUTED, true), lp(l = 4, b = 8))
+        box.addView(label(tr("কী করতে চান"), 14f, Ui.MUTED, true), lp(l = 4, b = 8))
         flow = FlowLayout(this)
         box.addView(flow, lp(b = 12))
 
         val outCard = card(14)
-        outCard.addView(label("ফলাফল", 12f, Ui.MUTED, true))
+        outCard.addView(label(tr("ফলাফল"), 12f, Ui.MUTED, true))
         output = label("", 16f, Ui.TEXT)
         output.setTextIsSelectable(true)
         outCard.addView(output, lp(t = 4, b = 10))
         val btns = LinearLayout(this)
         btns.orientation = LinearLayout.HORIZONTAL
-        btns.addView(pill("কপি") {
-            if (output.text.isNotEmpty()) copyText(output.text.toString()) else Toast.makeText(this, "আগে কিছু লিখুন", Toast.LENGTH_SHORT).show()
+        btns.addView(pill(tr("কপি")) {
+            if (output.text.isNotEmpty()) copyText(output.text.toString()) else Toast.makeText(this, tr("আগে কিছু লিখুন"), Toast.LENGTH_SHORT).show()
         }, lp(r = 8))
-        btns.addView(pill("ইনপুটে বসান", Ui.BG, Ui.PRIMARY) {
+        btns.addView(pill(tr("ইনপুটে বসান"), Ui.BG, Ui.PRIMARY) {
             input.setText(output.text)
             input.setSelection(input.text.length)
         })
         outCard.addView(btns, lp())
         box.addView(outCard, lp())
 
-        setScreen("টেক্সট কেস কনভার্টার", scroll)
+        setScreen(tr("টেক্সট কেস কনভার্টার"), scroll)
         buildChips()
         update()
     }
