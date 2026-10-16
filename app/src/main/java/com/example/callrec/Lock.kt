@@ -107,6 +107,7 @@ open class GuardedActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         Ui.apply(this)
+        Registry.loadHidden(this)
         stamp = Ui.stamp
         setTheme(if (Ui.dark) android.R.style.Theme_Material_NoActionBar else android.R.style.Theme_Material_Light_NoActionBar)
         super.onCreate(savedInstanceState)

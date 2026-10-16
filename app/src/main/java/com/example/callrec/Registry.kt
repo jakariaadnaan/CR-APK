@@ -79,7 +79,22 @@ object Registry {
     )
 
     fun cat(id: String): Cat = cats.first { it.id == id }
-    fun inCat(id: String): List<Tool> = tools.filter { it.cat == id }
+    /** Tools the person hid from the home screen and lists. */
+    @Volatile var hidden: Set<String> = emptySet()
+
+    fun loadHidden(c: Context) {
+        hidden = (c.getSharedPreferences("home", Context.MODE_PRIVATE).getString("hidden", "") ?: "")
+            .split(",").filter { it.isNotEmpty() }.toSet()
+    }
+
+    fun setHidden(c: Context, id: String, hide: Boolean) {
+        val s = hidden.toMutableSet()
+        if (hide) s.add(id) else s.remove(id)
+        hidden = s
+        c.getSharedPreferences("home", Context.MODE_PRIVATE).edit().putString("hidden", s.joinToString(",")).apply()
+    }
+
+    fun inCat(id: String): List<Tool> = tools.filter { it.cat == id && it.id !in hidden }
 
     private fun sp(c: Context) = c.getSharedPreferences("home", Context.MODE_PRIVATE)
 
@@ -104,6 +119,7 @@ object Registry {
     }
 
     fun matches(t: Tool, query: String): Boolean {
+        if (t.id in hidden) return false
         val q = query.trim().lowercase()
         if (q.isEmpty()) return true
         val hay = (t.title + " " + t.sub + " " + t.keywords + " " + cat(t.cat).name).lowercase()

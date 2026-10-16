@@ -71,6 +71,41 @@ class SettingsActivity : GuardedActivity() {
         return s
     }
 
+    private val dataNames = listOf("খরচের খাতা", "বাকির খাতা", "করণীয় তালিকা", "দ্রুত নোট")
+
+    private fun askDelete() {
+        val items = (dataNames + "সব ডেটা").toTypedArray()
+        AlertDialog.Builder(this).setTitle("কী মুছবেন?").setItems(items) { _, i ->
+            val keys = if (i < 4) listOf(dataKeys[i]) else dataKeys
+            AlertDialog.Builder(this)
+                .setTitle(items[i] + " মুছে ফেলবেন?")
+                .setMessage("এটি আর ফেরানো যাবে না। আগে ব্যাকআপ নেওয়া থাকলে ভালো।")
+                .setPositiveButton("মুছুন") { _, _ ->
+                    for (k in keys) Store.write(this, k, org.json.JSONArray())
+                    Toast.makeText(this, "মুছে ফেলা হয়েছে", Toast.LENGTH_SHORT).show()
+                }
+                .setNegativeButton("থাক", null)
+                .show()
+        }.show()
+    }
+
+    private fun showAbout() {
+        val ver = try { packageManager.getPackageInfo(packageName, 0).versionName } catch (e: Throwable) { "?" }
+        val sb = StringBuilder()
+        sb.append("সংস্করণ: ").append(bn(ver ?: "?")).append("\n\n")
+        var total = 0
+        for (i in dataKeys.indices) {
+            val n = Store.read(this, dataKeys[i]).length()
+            total += n
+            sb.append(dataNames[i]).append(": ").append(bn(n.toString())).append("টি\n")
+        }
+        val size = try { java.io.File(applicationInfo.dataDir, "shared_prefs/appdata.xml").length() } catch (e: Throwable) { 0L }
+        sb.append("\nমোট এন্ট্রি: ").append(bn(total.toString()))
+        sb.append("\nজমানো ডেটার আকার: ").append(Img.human(size))
+        sb.append("\n\nডেটা শুধু এই ফোনেই থাকে। ব্যাকআপ না নিলে অ্যাপ মুছলে ডেটাও যাবে।")
+        AlertDialog.Builder(this).setTitle("আমার খাতা").setMessage(sb.toString()).setPositiveButton("ঠিক আছে", null).show()
+    }
+
     private fun section(title: String) {
         box.addView(label(title, 13f, Ui.MUTED, true), lp(l = 4, t = 10, b = 6))
     }
@@ -184,11 +219,23 @@ class SettingsActivity : GuardedActivity() {
         }
 
         // ---- Backup
+        section("হোম")
+        box.addView(
+            row("টুল দেখানো বা লুকানো", "যে টুল লাগে না সেটি লুকিয়ে রাখুন", null) {
+                startActivity(Intent(this, HiddenToolsActivity::class.java))
+            },
+            lp(b = 8)
+        )
+
         section("ব্যাকআপ")
         val last = prefs.getLong("lastBackup", 0L)
         val lastText = if (last == 0L) "এখনো ব্যাকআপ নেওয়া হয়নি" else "সর্বশেষ: " + bn(SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US).format(Date(last)))
         box.addView(row("ব্যাকআপ তৈরি করুন", lastText, null) { startBackup() }, lp(b = 8))
         box.addView(row("ব্যাকআপ থেকে ফিরিয়ে আনুন", "আগের ব্যাকআপ ফাইল বেছে নিন", null) { startRestore() }, lp(b = 8))
+
+        section("ডেটা ও অ্যাপ")
+        box.addView(row("ডেটা মুছুন", "খাতা, নোট ইত্যাদি মুছে ফেলুন", null) { askDelete() }, lp(b = 8))
+        box.addView(row("অ্যাপ সম্পর্কে", "সংস্করণ ও জমানো ডেটা", null) { showAbout() }, lp(b = 8))
         box.addView(
             label(
                 "ব্যাকআপে খরচের খাতা, বাকির খাতা, করণীয় ও নোট থাকে। ফাইল সেভ করার সময় তালিকা থেকে “Drive” বেছে নিলে সরাসরি Google Drive-এ জমা হবে। ফাইলটি সাধারণ লেখা হিসেবে থাকে, তাই নিরাপদ জায়গায় রাখুন।",

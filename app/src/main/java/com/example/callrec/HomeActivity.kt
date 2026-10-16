@@ -86,7 +86,7 @@ class HomeActivity : GuardedActivity() {
             return
         }
 
-        val favs = Registry.favIds(this).mapNotNull { id -> Registry.tools.firstOrNull { it.id == id } }
+        val favs = Registry.favIds(this).mapNotNull { id -> Registry.tools.firstOrNull { it.id == id && it.id !in Registry.hidden } }
         content.addView(label("প্রিয় টুল", 14f, Ui.MUTED, true), lp(l = 6, b = 8))
         if (favs.isEmpty()) {
             content.addView(label("কোনো টুলে চেপে ধরে রাখলে সেটি এখানে যোগ হবে।", 13f, Ui.MUTED), lp(l = 6, b = 6))
@@ -108,7 +108,7 @@ class HomeActivity : GuardedActivity() {
         }
 
         content.addView(label("ক্যাটাগরি", 14f, Ui.MUTED, true), lp(l = 6, t = 14, b = 8))
-        val rows = Registry.cats.map { c ->
+        val rows = Registry.cats.filter { Registry.inCat(it.id).isNotEmpty() }.map { c ->
             val r = listRow(c.icon, c.name, bn(Registry.inCat(c.id).size.toString()) + "টি টুল")
             r.setOnClickListener {
                 startActivity(Intent(this, ToolListActivity::class.java).putExtra("cat", c.id))
