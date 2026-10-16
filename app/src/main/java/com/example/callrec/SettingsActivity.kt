@@ -27,6 +27,7 @@ class SettingsActivity : GuardedActivity() {
     private val dataKeys = listOf("ledger", "debts", "todos", "notes")
 
     private lateinit var box: LinearLayout
+    private val page by lazy { intent.getStringExtra("page") ?: "main" }
     private val prefs by lazy { getSharedPreferences("settings", MODE_PRIVATE) }
 
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
@@ -36,7 +37,13 @@ class SettingsActivity : GuardedActivity() {
         box.orientation = LinearLayout.VERTICAL
         box.setPadding(dp(14), dp(14), dp(14), dp(24))
         scroll.addView(box)
-        setScreen(tr("সেটিংস ও ব্যাকআপ"), scroll)
+        val title = when (page) {
+            "lock" -> tr("অ্যাপ লক")
+            "backup" -> tr("ব্যাকআপ")
+            "data" -> tr("ডেটা ও অ্যাপ")
+            else -> tr("সেটিংস")
+        }
+        if (page == "main") setScreen(title, scroll, back = false, bottom = navBar(2)) else setScreen(title, scroll)
         render()
     }
 
@@ -106,15 +113,30 @@ class SettingsActivity : GuardedActivity() {
         AlertDialog.Builder(this).setTitle(tr("আমার খাতা")).setMessage(sb.toString()).setPositiveButton(tr("ঠিক আছে"), null).show()
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (::box.isInitialized) render()
+    }
+
     private fun section(title: String) {
         box.addView(label(title, 13f, Ui.MUTED, true), lp(l = 4, t = 10, b = 6))
     }
 
     private fun render() {
         box.removeAllViews()
+        when (page) {
+            "lock" -> renderLock()
+            "backup" -> renderBackup()
+            "data" -> renderData()
+            else -> renderMain()
+        }
+    }
 
-        // ---- Appearance and language
-        section(tr("চেহারা ও ভাষা"))
+    private fun go(p: String) {
+        startActivity(Intent(this, SettingsActivity::class.java).putExtra("page", p))
+    }
+
+    private fun renderMain() {
         val themeNames = arrayOf(tr("ফোনের সেটিং অনুযায়ী"), tr("হালকা"), tr("গাঢ় (ডার্ক)"))
         box.addView(
             row(tr("চেহারা ও ভাষা"), themeNames[prefs.getInt("theme", 0).coerceIn(0, 2)] + " · " + (if (Lang.en) "English" else "বাংলা"), null) {
@@ -123,8 +145,30 @@ class SettingsActivity : GuardedActivity() {
             lp(b = 8)
         )
 
-        // ---- App lock
-        section(tr("অ্যাপ লক"))
+        box.addView(
+            row(tr("অ্যাপ লক"), if (Lock.enabled(this)) tr("চালু আছে (") + (if (Lock.type(this) == "pattern") tr("প্যাটার্ন") else tr("পিন")) + ")" else tr("বন্ধ আছে (পিন বা প্যাটার্ন)"), null) { go("lock") },
+            lp(b = 8)
+        )
+        box.addView(
+            row(tr("টুল দেখানো বা লুকানো"), tr("যে টুল লাগে না সেটি লুকিয়ে রাখুন"), null) {
+                startActivity(Intent(this, HiddenToolsActivity::class.java))
+            },
+            lp(b = 8)
+        )
+
+        val last = prefs.getLong("lastBackup", 0L)
+        val lastText = if (last == 0L) tr("এখনো ব্যাকআপ নেওয়া হয়নি") else tr("সর্বশেষ: ") + bn(SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US).format(Date(last)))
+        box.addView(row(tr("ব্যাকআপ"), lastText, null) { go("backup") }, lp(b = 8))
+        box.addView(row(tr("ডেটা ও অ্যাপ"), tr("ডেটা মুছুন") + " · " + tr("অ্যাপ সম্পর্কে"), null) { go("data") }, lp(b = 8))
+        val ver = try {
+            packageManager.getPackageInfo(packageName, 0).versionName ?: ""
+        } catch (e: Exception) {
+            ""
+        }
+        box.addView(label(tr("আমার খাতা · সংস্করণ ") + bn(ver), 13f, Ui.MUTED), lp(l = 4))
+    }
+
+    private fun renderLock() {
         val on = Lock.enabled(this)
         box.addView(
             row(tr("অ্যাপ লক"), if (on) tr("চালু আছে (") + (if (Lock.type(this) == "pattern") tr("প্যাটার্ন") else tr("পিন")) + ")" else tr("বন্ধ আছে (পিন বা প্যাটার্ন)"), switchView(on)) {
@@ -197,24 +241,14 @@ class SettingsActivity : GuardedActivity() {
             )
         }
 
-        // ---- Backup
-        section(tr("হোম"))
-        box.addView(
-            row(tr("টুল দেখানো বা লুকানো"), tr("যে টুল লাগে না সেটি লুকিয়ে রাখুন"), null) {
-                startActivity(Intent(this, HiddenToolsActivity::class.java))
-            },
-            lp(b = 8)
-        )
+    }
 
-        section(tr("ব্যাকআপ"))
+    private fun renderBackup() {
         val last = prefs.getLong("lastBackup", 0L)
         val lastText = if (last == 0L) tr("এখনো ব্যাকআপ নেওয়া হয়নি") else tr("সর্বশেষ: ") + bn(SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US).format(Date(last)))
         box.addView(row(tr("ব্যাকআপ তৈরি করুন"), lastText, null) { startBackup() }, lp(b = 8))
         box.addView(row(tr("ব্যাকআপ থেকে ফিরিয়ে আনুন"), tr("আগের ব্যাকআপ ফাইল বেছে নিন"), null) { startRestore() }, lp(b = 8))
 
-        section(tr("ডেটা ও অ্যাপ"))
-        box.addView(row(tr("ডেটা মুছুন"), tr("খাতা, নোট ইত্যাদি মুছে ফেলুন"), null) { askDelete() }, lp(b = 8))
-        box.addView(row(tr("অ্যাপ সম্পর্কে"), tr("সংস্করণ ও জমানো ডেটা"), null) { showAbout() }, lp(b = 8))
         box.addView(
             label(
                 tr("ব্যাকআপে খরচের খাতা, বাকির খাতা, করণীয় ও নোট থাকে। ফাইল সেভ করার সময় তালিকা থেকে “Drive” বেছে নিলে সরাসরি Google Drive-এ জমা হবে। ফাইলটি সাধারণ লেখা হিসেবে থাকে, তাই নিরাপদ জায়গায় রাখুন।"),
@@ -223,13 +257,11 @@ class SettingsActivity : GuardedActivity() {
             lp(l = 4, b = 4)
         )
 
-        section(tr("অ্যাপ সম্পর্কে"))
-        val ver = try {
-            packageManager.getPackageInfo(packageName, 0).versionName ?: ""
-        } catch (e: Exception) {
-            ""
-        }
-        box.addView(label(tr("আমার খাতা · সংস্করণ ") + bn(ver), 13f, Ui.MUTED), lp(l = 4))
+    }
+
+    private fun renderData() {
+        box.addView(row(tr("ডেটা মুছুন"), tr("খাতা, নোট ইত্যাদি মুছে ফেলুন"), null) { askDelete() }, lp(b = 8))
+        box.addView(row(tr("অ্যাপ সম্পর্কে"), tr("সংস্করণ ও জমানো ডেটা"), null) { showAbout() }, lp(b = 8))
     }
 
     // ------------------------------------------------------------------ PIN dialogs
