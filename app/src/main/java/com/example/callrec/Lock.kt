@@ -92,7 +92,23 @@ object Lock {
 
 /** Base class for every screen: asks for the lock when needed and hides the recents preview. */
 open class GuardedActivity : Activity() {
+    private var stamp = 0
+
+    override fun attachBaseContext(newBase: Context) {
+        val fs = newBase.getSharedPreferences("settings", Context.MODE_PRIVATE).getFloat("fontScale", 1f)
+        if (fs == 1f) {
+            super.attachBaseContext(newBase)
+        } else {
+            val c = android.content.res.Configuration(newBase.resources.configuration)
+            c.fontScale = newBase.resources.configuration.fontScale * fs
+            super.attachBaseContext(newBase.createConfigurationContext(c))
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        Ui.apply(this)
+        stamp = Ui.stamp
+        setTheme(if (Ui.dark) android.R.style.Theme_Material_NoActionBar else android.R.style.Theme_Material_Light_NoActionBar)
         super.onCreate(savedInstanceState)
         if (Lock.enabled(this)) {
             window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
@@ -101,6 +117,10 @@ open class GuardedActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        if (stamp != Ui.stamp) {
+            recreate()
+            return
+        }
         if (Lock.needsUnlock(this) && !Lock.showing) {
             startActivity(Intent(this, LockActivity::class.java))
         }

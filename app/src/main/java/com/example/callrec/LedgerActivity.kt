@@ -216,8 +216,8 @@ class LedgerActivity : GuardedActivity() {
         }
 
         fun styleTabs() {
-            tOut.background = bg(if (!income) Ui.RED else Color.parseColor("#B9BEC6"), 10)
-            tIn.background = bg(if (income) Ui.GREEN else Color.parseColor("#B9BEC6"), 10)
+            tOut.background = bg(if (!income) Ui.RED else Ui.GREY, 10)
+            tIn.background = bg(if (income) Ui.GREEN else Ui.GREY, 10)
         }
 
         styleTabs()

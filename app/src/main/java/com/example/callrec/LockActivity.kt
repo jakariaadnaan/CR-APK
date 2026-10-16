@@ -30,6 +30,7 @@ class LockActivity : Activity() {
 
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
+        Ui.apply(this)
         Lock.showing = true
         window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
         window.statusBarColor = Ui.PRIMARY

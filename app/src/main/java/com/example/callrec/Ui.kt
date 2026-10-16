@@ -16,15 +16,49 @@ import java.util.Locale
 
 /** Colours shared by every screen. */
 object Ui {
-    val PRIMARY: Int = Color.parseColor("#2D5BE3")
-    val BG: Int = Color.parseColor("#F1F2F4")
-    val CARD: Int = Color.WHITE
-    val TEXT: Int = Color.parseColor("#14161A")
-    val MUTED: Int = Color.parseColor("#6E737A")
-    val GREEN: Int = Color.parseColor("#2E8B57")
-    val RED: Int = Color.parseColor("#C0392B")
-    val LINE: Int = Color.parseColor("#E4E6EA")
-    val ICON: Int = Color.parseColor("#3A3F46")
+    var PRIMARY: Int = Color.parseColor("#2D5BE3"); private set
+    var BG: Int = Color.parseColor("#F1F2F4"); private set
+    var CARD: Int = Color.WHITE; private set
+    var TEXT: Int = Color.parseColor("#14161A"); private set
+    var MUTED: Int = Color.parseColor("#6E737A"); private set
+    var GREEN: Int = Color.parseColor("#2E8B57"); private set
+    var RED: Int = Color.parseColor("#C0392B"); private set
+    var LINE: Int = Color.parseColor("#E4E6EA"); private set
+    var ICON: Int = Color.parseColor("#3A3F46"); private set
+    var NAV: Int = Color.WHITE; private set
+    var GREY: Int = Color.parseColor("#B9BEC6"); private set
+    var CHEV: Int = Color.parseColor("#B3B8C0"); private set
+    var KEY_OP: Int = Color.parseColor("#DDE6FB"); private set
+    var KEY_FN: Int = Color.parseColor("#E8EAEE"); private set
+    var PREVIEW: Int = Color.parseColor("#ECEEF1"); private set
+    var dark = false; private set
+    var bangla = true; private set
+
+    /** Bumped when the look changes, so screens already open rebuild themselves. */
+    var stamp = 0
+
+    /** Reads the saved look (theme, digits) and sets every colour. Call before building a screen. */
+    fun apply(ctx: Context) {
+        val p = ctx.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        val theme = p.getInt("theme", 0) // 0 follow phone, 1 light, 2 dark
+        val night = (ctx.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+            android.content.res.Configuration.UI_MODE_NIGHT_YES
+        dark = theme == 2 || (theme == 0 && night)
+        bangla = p.getBoolean("digitsBn", true)
+        if (dark) {
+            PRIMARY = Color.parseColor("#5B84F2"); BG = Color.parseColor("#0F1115"); CARD = Color.parseColor("#1A1D23")
+            TEXT = Color.parseColor("#ECEFF3"); MUTED = Color.parseColor("#9AA1AB"); LINE = Color.parseColor("#2A2E36")
+            ICON = Color.parseColor("#C9CFD8"); NAV = Color.parseColor("#14171C"); GREY = Color.parseColor("#3A3F4A")
+            CHEV = Color.parseColor("#5A6070"); KEY_OP = Color.parseColor("#26324F"); KEY_FN = Color.parseColor("#262A32")
+            PREVIEW = Color.parseColor("#22262D"); GREEN = Color.parseColor("#3FAE76"); RED = Color.parseColor("#E5624F")
+        } else {
+            PRIMARY = Color.parseColor("#2D5BE3"); BG = Color.parseColor("#F1F2F4"); CARD = Color.WHITE
+            TEXT = Color.parseColor("#14161A"); MUTED = Color.parseColor("#6E737A"); LINE = Color.parseColor("#E4E6EA")
+            ICON = Color.parseColor("#3A3F46"); NAV = Color.WHITE; GREY = Color.parseColor("#B9BEC6")
+            CHEV = Color.parseColor("#B3B8C0"); KEY_OP = Color.parseColor("#DDE6FB"); KEY_FN = Color.parseColor("#E8EAEE")
+            PREVIEW = Color.parseColor("#ECEEF1"); GREEN = Color.parseColor("#2E8B57"); RED = Color.parseColor("#C0392B")
+        }
+    }
 }
 
 fun Context.dp(v: Int): Int = (v * resources.displayMetrics.density + 0.5f).toInt()
@@ -85,8 +119,8 @@ fun Context.divider(): View {
 @Suppress("DEPRECATION")
 fun Activity.setScreen(title: String, content: View, fab: View? = null, back: Boolean = true, bottom: View? = null) {
     window.statusBarColor = Ui.BG
-    window.navigationBarColor = Color.WHITE
-    window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+    window.navigationBarColor = Ui.NAV
+    window.decorView.systemUiVisibility = if (Ui.dark) 0 else View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
     val root = FrameLayout(this)
     root.setBackgroundColor(Ui.BG)
 
@@ -128,6 +162,7 @@ fun Activity.setScreen(title: String, content: View, fab: View? = null, back: Bo
 // ---------- Bangla number helpers ----------
 
 fun bn(s: String): String {
+    if (!Ui.bangla) return s
     val sb = StringBuilder()
     for (ch in s) sb.append(if (ch in '0'..'9') ('০' + (ch - '0')) else ch)
     return sb.toString()
@@ -209,7 +244,7 @@ fun Context.dialogTabs(
     row.orientation = LinearLayout.HORIZONTAL
     val ta = label(a, 15f, Color.WHITE, true)
     val tb = label(b, 15f, Color.WHITE, true)
-    val grey = Color.parseColor("#B9BEC6")
+    val grey = Ui.GREY
     fun style(isB: Boolean) {
         ta.background = bg(if (!isB) colorA else grey, 10)
         tb.background = bg(if (isB) colorB else grey, 10)
@@ -335,7 +370,7 @@ fun Context.resultCard(title: String): Pair<LinearLayout, TextView> {
 fun Activity.navBar(selected: Int): View {
     val wrap = LinearLayout(this)
     wrap.orientation = LinearLayout.VERTICAL
-    wrap.setBackgroundColor(Color.WHITE)
+    wrap.setBackgroundColor(Ui.NAV)
     val line = View(this)
     line.setBackgroundColor(Ui.LINE)
     wrap.addView(line, lp(height = 1))
@@ -393,7 +428,7 @@ fun Context.listRow(
     if (sub.isNotEmpty()) mid.addView(label(sub, 14f, Ui.MUTED), lp(t = 2))
     r.addView(mid, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
     if (extra != null) r.addView(extra, lp(width = ViewGroup.LayoutParams.WRAP_CONTENT, l = 8))
-    if (chevron) r.addView(iconView(R.drawable.ic_chevron, 20, Color.parseColor("#B3B8C0")), lp(width = dp(20), height = dp(20), l = 8))
+    if (chevron) r.addView(iconView(R.drawable.ic_chevron, 20, Ui.CHEV), lp(width = dp(20), height = dp(20), l = 8))
     return r
 }
 

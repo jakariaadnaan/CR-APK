@@ -55,7 +55,7 @@ class SettingsActivity : GuardedActivity() {
         if (right != null) {
             c.addView(right, lp(width = ViewGroup.LayoutParams.WRAP_CONTENT, l = 12))
         } else {
-            c.addView(iconView(R.drawable.ic_chevron, 20, android.graphics.Color.parseColor("#B3B8C0")), lp(width = dp(20), height = dp(20), l = 12))
+            c.addView(iconView(R.drawable.ic_chevron, 20, Ui.CHEV), lp(width = dp(20), height = dp(20), l = 12))
         }
         c.setOnClickListener { onClick() }
         return c
@@ -67,7 +67,7 @@ class SettingsActivity : GuardedActivity() {
         s.isClickable = false
         val states = arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf())
         s.thumbTintList = android.content.res.ColorStateList(states, intArrayOf(android.graphics.Color.WHITE, android.graphics.Color.WHITE))
-        s.trackTintList = android.content.res.ColorStateList(states, intArrayOf(Ui.PRIMARY, android.graphics.Color.parseColor("#C5C9D0")))
+        s.trackTintList = android.content.res.ColorStateList(states, intArrayOf(Ui.PRIMARY, Ui.GREY))
         return s
     }
 
@@ -77,6 +77,46 @@ class SettingsActivity : GuardedActivity() {
 
     private fun render() {
         box.removeAllViews()
+
+        // ---- Appearance
+        section("চেহারা")
+        val themeNames = arrayOf("ফোনের সেটিং অনুযায়ী", "হালকা", "গাঢ় (ডার্ক)")
+        box.addView(
+            row("থিম", themeNames[prefs.getInt("theme", 0).coerceIn(0, 2)], null) {
+                AlertDialog.Builder(this).setTitle("থিম").setItems(themeNames) { _, i ->
+                    prefs.edit().putInt("theme", i).apply()
+                    Ui.stamp++
+                    recreate()
+                }.show()
+            },
+            lp(b = 8)
+        )
+        val digitNames = arrayOf("বাংলা (১২৩)", "ইংরেজি (123)")
+        box.addView(
+            row("সংখ্যার ধরন", if (prefs.getBoolean("digitsBn", true)) digitNames[0] else digitNames[1], null) {
+                AlertDialog.Builder(this).setTitle("সংখ্যার ধরন").setItems(digitNames) { _, i ->
+                    prefs.edit().putBoolean("digitsBn", i == 0).apply()
+                    Ui.stamp++
+                    recreate()
+                }.show()
+            },
+            lp(b = 8)
+        )
+        val sizeNames = arrayOf("ছোট", "মাঝারি", "বড়", "অনেক বড়")
+        val sizeVals = floatArrayOf(0.9f, 1f, 1.15f, 1.3f)
+        val curSize = prefs.getFloat("fontScale", 1f)
+        var curIdx = 1
+        for (i in sizeVals.indices) if (Math.abs(sizeVals[i] - curSize) < 0.01f) curIdx = i
+        box.addView(
+            row("লেখার আকার", sizeNames[curIdx], null) {
+                AlertDialog.Builder(this).setTitle("লেখার আকার").setItems(sizeNames) { _, i ->
+                    prefs.edit().putFloat("fontScale", sizeVals[i]).apply()
+                    Ui.stamp++
+                    recreate()
+                }.show()
+            },
+            lp(b = 8)
+        )
 
         // ---- App lock
         section("অ্যাপ লক")
@@ -273,7 +313,7 @@ class SettingsActivity : GuardedActivity() {
 
     private fun patternView(): PatternView {
         val pv = PatternView(this)
-        pv.baseColor = Color.parseColor("#B9BEC6")
+        pv.baseColor = Ui.GREY
         pv.activeColor = Ui.PRIMARY
         return pv
     }

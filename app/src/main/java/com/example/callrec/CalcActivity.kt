@@ -213,8 +213,8 @@ class CalcActivity : GuardedActivity() {
                 }
                 val fill = when {
                     k == "=" -> Ui.PRIMARY
-                    isOp -> Color.parseColor("#DDE6FB")
-                    k == "C" || k == "⌫" || k == "%" -> Color.parseColor("#E8EAEE")
+                    isOp -> Ui.KEY_OP
+                    k == "C" || k == "⌫" || k == "%" -> Ui.KEY_FN
                     else -> Ui.CARD
                 }
                 val fg = when {

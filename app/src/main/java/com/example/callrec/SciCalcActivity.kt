@@ -181,9 +181,9 @@ class SciCalcActivity : GuardedActivity() {
                 val isOp = k in listOf("÷", "×", "−", "+", "^")
                 val fill = when {
                     k == "=" -> Ui.PRIMARY
-                    isOp -> Color.parseColor("#DDE6FB")
+                    isOp -> Ui.KEY_OP
                     isNum -> Ui.CARD
-                    else -> Color.parseColor("#E8EAEE")
+                    else -> Ui.KEY_FN
                 }
                 val fg = when {
                     k == "=" -> Color.WHITE
