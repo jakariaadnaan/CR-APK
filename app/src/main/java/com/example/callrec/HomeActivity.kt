@@ -122,6 +122,10 @@ class HomeActivity : GuardedActivity() {
             return
         }
 
+        val dash = listRow(R.drawable.ic_wallet, tr("ড্যাশবোর্ড"), tr("আয় ও ব্যয়ের ছবি দেখুন"))
+        dash.setOnClickListener { startActivity(Intent(this, DashboardActivity::class.java)) }
+        content.addView(groupCard(listOf(dash)), lp(b = 14))
+
         val favs = Registry.favIds(this).mapNotNull { id -> Registry.tools.firstOrNull { it.id == id && it.id !in Registry.hidden } }
         content.addView(label(tr("প্রিয় টুল"), 14f, Ui.MUTED, true), lp(l = 6, b = 8))
         if (favs.isEmpty()) {

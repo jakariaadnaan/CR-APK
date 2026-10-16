@@ -109,6 +109,7 @@
         <activity android:name=".SciCalcActivity" android:exported="false" />
         <activity android:name=".HiddenToolsActivity" android:exported="false" />
         <activity android:name=".AppearanceActivity" android:exported="false" />
+        <activity android:name=".DashboardActivity" android:exported="false" />
         <activity android:name=".OnboardingActivity" android:exported="false" />
         <activity android:name=".ToolListActivity" android:exported="false" />
         <activity android:name=".TextCaseActivity" android:exported="false" />
