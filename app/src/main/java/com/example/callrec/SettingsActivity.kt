@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.text.InputType
 import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -40,15 +41,22 @@ class SettingsActivity : GuardedActivity() {
     }
 
     private fun row(title: String, sub: String, right: View?, onClick: () -> Unit): LinearLayout {
-        val c = card(16)
+        val c = card(0)
         c.orientation = LinearLayout.HORIZONTAL
         c.gravity = Gravity.CENTER_VERTICAL
+        c.setPadding(dp(18), dp(16), dp(18), dp(16))
         val left = LinearLayout(this)
         left.orientation = LinearLayout.VERTICAL
-        left.addView(label(title, 16f, Ui.TEXT, true))
-        if (sub.isNotEmpty()) left.addView(label(sub, 12f, Ui.MUTED))
+        val t = label(title, 17f, Ui.TEXT, true)
+        t.typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
+        left.addView(t)
+        if (sub.isNotEmpty()) left.addView(label(sub, 14f, Ui.MUTED), lp(t = 2))
         c.addView(left, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        if (right != null) c.addView(right)
+        if (right != null) {
+            c.addView(right, lp(width = ViewGroup.LayoutParams.WRAP_CONTENT, l = 12))
+        } else {
+            c.addView(iconView(R.drawable.ic_chevron, 20, android.graphics.Color.parseColor("#B3B8C0")), lp(width = dp(20), height = dp(20), l = 12))
+        }
         c.setOnClickListener { onClick() }
         return c
     }
@@ -57,6 +65,9 @@ class SettingsActivity : GuardedActivity() {
         val s = Switch(this)
         s.isChecked = on
         s.isClickable = false
+        val states = arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf())
+        s.thumbTintList = android.content.res.ColorStateList(states, intArrayOf(android.graphics.Color.WHITE, android.graphics.Color.WHITE))
+        s.trackTintList = android.content.res.ColorStateList(states, intArrayOf(Ui.PRIMARY, android.graphics.Color.parseColor("#C5C9D0")))
         return s
     }
 
