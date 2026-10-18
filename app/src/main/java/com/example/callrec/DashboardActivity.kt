@@ -224,6 +224,7 @@ class DashboardActivity : GuardedActivity() {
         leg.addView(legendDot(Ui.RED, tr("ব্যয়")), lp(l = 18))
         trend.addView(leg, lp(t = 8))
         box.addView(trend, lp(b = 12))
+        box.addView(budgetCard(), lp(b = 12))
         box.addView(debtCard(), lp(b = 12))
         box.addView(todoCard(), lp())
     }
@@ -255,6 +256,44 @@ class DashboardActivity : GuardedActivity() {
         l.addView(label(name, 14f, Ui.MUTED), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         l.addView(label(value, 14f, Ui.TEXT, true))
         return l
+    }
+
+    private fun budgetCard(): LinearLayout {
+        val c = card(16)
+        val head = LinearLayout(this)
+        head.gravity = Gravity.CENTER_VERTICAL
+        head.addView(label(tr("বাজেট"), 15f, Ui.TEXT, true), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        head.addView(label(tr("ঠিক করুন"), 14f, Ui.PRIMARY, true))
+        c.addView(head)
+        c.setOnClickListener { startActivity(android.content.Intent(this, BudgetActivity::class.java)) }
+        if (!BudgetStore.any(this)) {
+            c.addView(label(tr("ক্যাটাগরি ধরে মাসের খরচের সীমা ঠিক করুন।"), 13f, Ui.MUTED), lp(t = 6))
+            return c
+        }
+        val spent = BudgetStore.spent(this, year, month)
+        var shown = 0
+        for (cat in LedgerStore.EXPENSE_CATS) {
+            val limit = BudgetStore.get(this, cat)
+            if (limit <= 0) continue
+            val used = spent[cat] ?: 0.0
+            val ratio = used / limit
+            val line = LinearLayout(this)
+            line.gravity = Gravity.CENTER_VERTICAL
+            line.addView(label(tr(cat), 14f), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            line.addView(label(taka(used) + " / " + taka(limit), 13f, if (ratio >= 1.0) Ui.RED else Ui.MUTED))
+            c.addView(line, lp(t = 12))
+            val bar = LinearLayout(this)
+            bar.background = bg(Ui.LINE, 4)
+            bar.weightSum = 100f
+            val f = View(this)
+            f.background = bg(budgetColor(ratio), 4)
+            bar.addView(f, LinearLayout.LayoutParams(0, dp(8), Math.min(100.0, ratio * 100).toFloat()))
+            c.addView(bar, lp(height = dp(8), t = 6))
+            if (ratio >= 1.0) c.addView(label(tr("সীমা পার হয়েছে, ") + taka(used - limit) + tr(" বেশি"), 12f, Ui.RED), lp(t = 4))
+            else if (ratio >= 0.8) c.addView(label(tr("সীমার কাছাকাছি, মাত্র ") + taka(limit - used) + tr(" বাকি"), 12f, budgetColor(ratio)), lp(t = 4))
+            shown++
+        }
+        return c
     }
 
     private fun debtCard(): LinearLayout {

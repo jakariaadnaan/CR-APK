@@ -24,6 +24,8 @@ class SettingsActivity : GuardedActivity() {
 
     private val reqSave = 41
     private val reqOpen = 42
+    private val reqCsvLedger = 43
+    private val reqCsvDebt = 44
     private val dataKeys = listOf("ledger", "debts", "todos", "notes")
 
     private lateinit var box: LinearLayout
@@ -248,6 +250,9 @@ class SettingsActivity : GuardedActivity() {
         val lastText = if (last == 0L) tr("এখনো ব্যাকআপ নেওয়া হয়নি") else tr("সর্বশেষ: ") + bn(SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US).format(Date(last)))
         box.addView(row(tr("ব্যাকআপ তৈরি করুন"), lastText, null) { startBackup() }, lp(b = 8))
         box.addView(row(tr("ব্যাকআপ থেকে ফিরিয়ে আনুন"), tr("আগের ব্যাকআপ ফাইল বেছে নিন"), null) { startRestore() }, lp(b = 8))
+        section(tr("এক্সপোর্ট (CSV)"))
+        box.addView(row(tr("খরচের খাতা CSV"), tr("Excel বা Google Sheets-এ খোলা যায়"), null) { startCsv("ledger", reqCsvLedger) }, lp(b = 8))
+        box.addView(row(tr("বাকির খাতা CSV"), tr("Excel বা Google Sheets-এ খোলা যায়"), null) { startCsv("debts", reqCsvDebt) }, lp(b = 8))
 
         box.addView(
             label(
@@ -435,6 +440,45 @@ class SettingsActivity : GuardedActivity() {
         }
     }
 
+    private fun startCsv(kind: String, req: Int) {
+        val i = Intent(Intent.ACTION_CREATE_DOCUMENT)
+        i.addCategory(Intent.CATEGORY_OPENABLE)
+        i.type = "text/csv"
+        i.putExtra(Intent.EXTRA_TITLE, "amar-khata-" + kind + "-" + SimpleDateFormat("yyyyMMdd", Locale.US).format(Date()) + ".csv")
+        try {
+            startActivityForResult(i, req)
+        } catch (e: Exception) {
+            Toast.makeText(this, tr("ফাইল বেছে নেওয়ার অ্যাপ পাওয়া যায়নি"), Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun csvCell(s: String): String = "\"" + s.replace("\"", "\"\"") + "\""
+
+    private fun buildCsv(ledger: Boolean): String {
+        val df = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+        val sb = StringBuilder()
+        if (ledger) {
+            sb.append(listOf(tr("তারিখ"), tr("ধরন"), tr("ক্যাটাগরি"), tr("পরিমাণ"), tr("নোট")).joinToString(",") { csvCell(it) }).append("\r\n")
+            for (e in LedgerStore.all(this).sortedBy { it.date }) {
+                sb.append(csvCell(df.format(Date(e.date)))).append(',')
+                    .append(csvCell(if (e.income) tr("আয়") else tr("ব্যয়"))).append(',')
+                    .append(csvCell(tr(e.category))).append(',')
+                    .append(if (e.amount % 1.0 == 0.0) e.amount.toLong().toString() else e.amount.toString()).append(',')
+                    .append(csvCell(e.note)).append("\r\n")
+            }
+        } else {
+            sb.append(listOf(tr("তারিখ"), tr("ধরন"), tr("নাম"), tr("পরিমাণ"), tr("নোট")).joinToString(",") { csvCell(it) }).append("\r\n")
+            for (d in DebtStore.all(this).sortedBy { it.date }) {
+                sb.append(csvCell(df.format(Date(d.date)))).append(',')
+                    .append(csvCell(if (d.owe) tr("দেবো") else tr("পাবো"))).append(',')
+                    .append(csvCell(d.name)).append(',')
+                    .append(if (d.amount % 1.0 == 0.0) d.amount.toLong().toString() else d.amount.toString()).append(',')
+                    .append(csvCell(d.note)).append("\r\n")
+            }
+        }
+        return sb.toString()
+    }
+
     private fun startRestore() {
         val i = Intent(Intent.ACTION_OPEN_DOCUMENT)
         i.addCategory(Intent.CATEGORY_OPENABLE)
@@ -468,6 +512,17 @@ class SettingsActivity : GuardedActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         val uri = data?.data
         if (resultCode != RESULT_OK || uri == null) return
+        if (requestCode == reqCsvLedger || requestCode == reqCsvDebt) {
+            try {
+                val bytes = byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte()) + buildCsv(requestCode == reqCsvLedger).toByteArray(Charsets.UTF_8)
+                val out = contentResolver.openOutputStream(uri, "wt") ?: throw IllegalStateException()
+                out.use { it.write(bytes) }
+                Toast.makeText(this, tr("ফাইল সংরক্ষিত হয়েছে"), Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                Toast.makeText(this, tr("ফাইল সংরক্ষণ করা যায়নি"), Toast.LENGTH_LONG).show()
+            }
+            return
+        }
         if (requestCode == reqSave) {
             try {
                 val bytes = buildBackup().toByteArray(Charsets.UTF_8)
