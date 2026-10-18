@@ -93,6 +93,8 @@ class DebtActivity : GuardedActivity() {
             left.addView(label(d.name, 16f, Ui.TEXT, true))
             if (d.note.isNotBlank()) left.addView(label(d.note, 13f, Ui.MUTED))
             left.addView(label(dateText(d.date), 12f, Ui.MUTED))
+            if (d.pays.isNotEmpty()) left.addView(label(tr("পরিশোধ হয়েছে: ") + taka(d.pays.sumOf { it.second }), 12f, Ui.GREEN))
+            if (d.due != 0L) left.addView(label(tr("রিমাইন্ডার: ") + dateText(d.due), 12f, if (d.due < todayStart()) Ui.RED else Ui.PRIMARY))
             c.addView(left, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
 
             val right = LinearLayout(this)
@@ -119,18 +121,31 @@ class DebtActivity : GuardedActivity() {
     }
 
     private fun showActions(d: Debt) {
-        val options = arrayOf(tr("আংশিক পরিশোধ"), tr("পুরো পরিশোধ হয়েছে (মুছে ফেলুন)"), tr("সম্পাদনা"))
+        val options = arrayOf(tr("আংশিক পরিশোধ"), tr("পুরো পরিশোধ হয়েছে (মুছে ফেলুন)"), tr("সম্পাদনা"), tr("পরিশোধের ইতিহাস"))
         AlertDialog.Builder(this)
             .setTitle(d.name + " · " + taka(d.amount))
             .setItems(options) { _, which ->
                 when (which) {
                     0 -> showPartial(d)
                     1 -> confirmPaid(d)
+                    3 -> showHistory(d)
                     else -> showEditor(d)
                 }
             }
             .setNegativeButton(tr("বন্ধ"), null)
             .show()
+    }
+
+    private fun showHistory(d: Debt) {
+        val sb = StringBuilder()
+        if (d.pays.isEmpty()) {
+            sb.append(tr("এখনো কোনো পরিশোধ নেই।"))
+        } else {
+            for (p in d.pays) sb.append(dateText(p.first)).append(": ").append(taka(p.second)).append("\n")
+            sb.append("\n").append(tr("মোট পরিশোধ: ")).append(taka(d.pays.sumOf { it.second }))
+        }
+        sb.append("\n").append(tr("বাকি আছে: ")).append(taka(d.amount))
+        AlertDialog.Builder(this).setTitle(d.name).setMessage(sb.toString()).setPositiveButton(tr("ঠিক আছে"), null).show()
     }
 
     private fun confirmPaid(d: Debt) {
@@ -169,7 +184,7 @@ class DebtActivity : GuardedActivity() {
                         DebtStore.delete(this, d.id)
                         Toast.makeText(this, tr("পুরো পরিশোধ হয়েছে, তালিকা থেকে মুছে গেছে"), Toast.LENGTH_SHORT).show()
                     } else {
-                        DebtStore.upsert(this, d.copy(amount = Math.round(left * 100) / 100.0))
+                        DebtStore.upsert(this, d.copy(amount = Math.round(left * 100) / 100.0, pays = d.pays + Pair(todayStart(), v)))
                     }
                     dlg.dismiss()
                     render()
@@ -234,6 +249,34 @@ class DebtActivity : GuardedActivity() {
         }
         form.addView(dateBtn, lp(t = 12, b = 4))
 
+        var dueMs = old?.due ?: 0L
+        fun dueText() = if (dueMs == 0L) tr("রিমাইন্ডার: নেই") else tr("রিমাইন্ডার: ") + dateText(dueMs)
+        val dueBtn = pill(dueText(), Ui.BG, Ui.PRIMARY) {}
+        dueBtn.setOnClickListener {
+            val c = Calendar.getInstance()
+            if (dueMs != 0L) c.timeInMillis = dueMs
+            val dp = DatePickerDialog(
+                this,
+                DatePickerDialog.OnDateSetListener { _, y, m, d ->
+                    val n = Calendar.getInstance()
+                    n.clear()
+                    n.set(y, m, d)
+                    dueMs = n.timeInMillis
+                    dueBtn.text = dueText()
+                    if (android.os.Build.VERSION.SDK_INT >= 33 &&
+                        checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED
+                    ) requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 8)
+                },
+                c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)
+            )
+            dp.setButton(android.content.DialogInterface.BUTTON_NEUTRAL, tr("তারিখ সরান")) { _, _ ->
+                dueMs = 0L
+                dueBtn.text = dueText()
+            }
+            dp.show()
+        }
+        form.addView(dueBtn, lp(t = 8, b = 4))
+
         val dlg = AlertDialog.Builder(this)
             .setTitle(if (old == null) tr("নতুন বাকি") else tr("বাকি সম্পাদনা"))
             .setView(form)
@@ -251,7 +294,7 @@ class DebtActivity : GuardedActivity() {
                 } else {
                     DebtStore.upsert(
                         this,
-                        Debt(old?.id ?: System.currentTimeMillis(), owe, who, v, note.text.toString().trim(), dateMs)
+                        Debt(old?.id ?: System.currentTimeMillis(), owe, who, v, note.text.toString().trim(), dateMs, old?.pays ?: emptyList(), dueMs)
                     )
                     dlg.dismiss()
                     render()

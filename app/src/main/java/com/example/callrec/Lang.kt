@@ -12,6 +12,7 @@ object Lang {
         for (p in Dict3.pairs()) m[p.first] = p.second
         for (p in Dict4.pairs()) m[p.first] = p.second
         for (p in Dict5.pairs()) m[p.first] = p.second
+        for (p in Dict6.pairs()) m[p.first] = p.second
         m
     }
 
