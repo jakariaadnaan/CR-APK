@@ -97,6 +97,9 @@ class TodoActivity : GuardedActivity() {
                 val dueTxt = tr("শেষ তারিখ: ") + dateText(t.due) + if (late) tr(" (দেরি হয়েছে)") else if (t.due == today) tr(" (আজ)") else ""
                 mid.addView(label(dueTxt, 12f, if (late) Ui.RED else Ui.MUTED))
             }
+            if (t.remind != 0L && !t.done) {
+                mid.addView(label("⏰ " + remindText(t.remind), 12f, if (t.remind < System.currentTimeMillis()) Ui.MUTED else Ui.PRIMARY))
+            }
             c.addView(mid, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
 
             if (t.urgent && !t.done) {
@@ -111,8 +114,16 @@ class TodoActivity : GuardedActivity() {
         }
     }
 
+    private fun remindText(ms: Long): String {
+        val c = Calendar.getInstance()
+        c.timeInMillis = ms
+        return dateText(ms) + ", " + bn(String.format(java.util.Locale.US, "%d:%02d", if (c.get(Calendar.HOUR) == 0) 12 else c.get(Calendar.HOUR), c.get(Calendar.MINUTE))) +
+            " " + (if (c.get(Calendar.AM_PM) == Calendar.AM) "AM" else "PM")
+    }
+
     private fun showEditor(old: Todo?) {
         var dueMs = old?.due ?: 0L
+        var remindMs = old?.remind ?: 0L
 
         val form = LinearLayout(this)
         form.orientation = LinearLayout.VERTICAL
@@ -153,6 +164,35 @@ class TodoActivity : GuardedActivity() {
         }
         form.addView(dueBtn, lp(t = 10, b = 4))
 
+        fun remindLabel(): String = if (remindMs == 0L) tr("রিমাইন্ডার: নেই") else tr("রিমাইন্ডার: ") + remindText(remindMs)
+        val remindBtn = pill(remindLabel(), Ui.BG, Ui.PRIMARY) {}
+        remindBtn.setOnClickListener {
+            val c = Calendar.getInstance()
+            if (remindMs != 0L) c.timeInMillis = remindMs
+            val dpd = DatePickerDialog(
+                this,
+                DatePickerDialog.OnDateSetListener { _, y, m, d ->
+                    android.app.TimePickerDialog(this, { _, hh, mm ->
+                        val n = Calendar.getInstance()
+                        n.clear()
+                        n.set(y, m, d, hh, mm)
+                        remindMs = n.timeInMillis
+                        remindBtn.text = remindLabel()
+                        if (android.os.Build.VERSION.SDK_INT >= 33 &&
+                            checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED
+                        ) requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 9)
+                    }, c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE), false).show()
+                },
+                c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)
+            )
+            dpd.setButton(DialogInterface.BUTTON_NEUTRAL, tr("রিমাইন্ডার বাদ দিন")) { _, _ ->
+                remindMs = 0L
+                remindBtn.text = remindLabel()
+            }
+            dpd.show()
+        }
+        form.addView(remindBtn, lp(t = 8, b = 4))
+
         val builder = AlertDialog.Builder(this)
             .setTitle(if (old == null) tr("নতুন কাজ") else tr("কাজ সম্পাদনা"))
             .setView(form)
@@ -168,7 +208,7 @@ class TodoActivity : GuardedActivity() {
                 } else {
                     TodoStore.upsert(
                         this,
-                        Todo(old?.id ?: System.currentTimeMillis(), txt, old?.done ?: false, urgent.isChecked, dueMs)
+                        Todo(old?.id ?: System.currentTimeMillis(), txt, old?.done ?: false, urgent.isChecked, dueMs, remindMs)
                     )
                     dlg.dismiss()
                     render()

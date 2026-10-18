@@ -10,7 +10,9 @@ data class Todo(
     val title: String,
     val done: Boolean,
     val urgent: Boolean,
-    val due: Long
+    val due: Long,
+    /** Reminder moment in epoch millis, 0 = none. */
+    val remind: Long = 0L
 )
 
 object TodoStore {
@@ -24,7 +26,7 @@ object TodoStore {
             out.add(
                 Todo(
                     o.optLong("id"), o.optString("title"), o.optBoolean("done"),
-                    o.optBoolean("urgent"), o.optLong("due")
+                    o.optBoolean("urgent"), o.optLong("due"), o.optLong("remind")
                 )
             )
         }
@@ -40,6 +42,7 @@ object TodoStore {
             o.put("done", t.done)
             o.put("urgent", t.urgent)
             o.put("due", t.due)
+            o.put("remind", t.remind)
             a.put(o)
         }
         Store.write(c, KEY, a)
@@ -50,9 +53,11 @@ object TodoStore {
         val i = list.indexOfFirst { it.id == t.id }
         if (i >= 0) list[i] = t else list.add(t)
         save(c, list)
+        TodoReminder.schedule(c, t)
     }
 
     fun delete(c: Context, id: Long) {
+        TodoReminder.cancel(c, id)
         save(c, all(c).filter { it.id != id })
     }
 

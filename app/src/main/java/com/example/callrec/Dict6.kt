@@ -2,6 +2,8 @@ package com.example.callrec
 
 object Dict6 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        "করণীয়ের রিমাইন্ডার" to "To-do reminder",
+        "রিমাইন্ডার বাদ দিন" to "Remove reminder",
         "পরিশোধ হয়েছে: " to "Paid so far: ",
         "রিমাইন্ডার: " to "Reminder: ",
         "পরিশোধের ইতিহাস" to "Payment history",

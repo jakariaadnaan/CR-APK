@@ -123,6 +123,7 @@
             android:foregroundServiceType="microphone" />
 
         <receiver android:name=".DebtReminderReceiver" android:exported="false" />
+        <receiver android:name=".TodoReminderReceiver" android:exported="false" />
 
         <receiver
             android:name=".CallReceiver"
