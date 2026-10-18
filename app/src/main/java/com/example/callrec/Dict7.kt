@@ -2,6 +2,22 @@ package com.example.callrec
 
 object Dict7 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        "পাসওয়ার্ড (খালি রাখলে সুরক্ষা ছাড়া)" to "Password (leave empty for no protection)",
+        "পাসওয়ার্ড আবার লিখুন" to "Enter the password again",
+        "পাসওয়ার্ড দিলে ব্যাকআপ ফাইল আর কেউ পড়তে পারবে না। পাসওয়ার্ড ভুলে গেলে ব্যাকআপ খোলার উপায় নেই, তাই মনে রাখুন।" to "With a password nobody else can read the backup file. If you forget it, the backup cannot be opened, so remember it.",
+        "ব্যাকআপ সুরক্ষা" to "Backup protection",
+        "এগিয়ে যান" to "Continue",
+        "কমপক্ষে ৪ অক্ষরের পাসওয়ার্ড দিন" to "Use a password of at least 4 characters",
+        "দুটি পাসওয়ার্ড মেলেনি" to "The two passwords do not match",
+        "ব্যাকআপের পাসওয়ার্ড" to "Backup password",
+        "সুরক্ষিত ব্যাকআপ" to "Protected backup",
+        "খুলুন" to "Open",
+        "পাসওয়ার্ড ভুল বা ফাইল নষ্ট" to "Wrong password or damaged file",
+        "ব্যাকআপ নিন" to "Back up now",
+        "এখনো কোনো ব্যাকআপ নেওয়া হয়নি। ফোন হারালে বা অ্যাপ মুছলে ডেটা চলে যাবে।" to "No backup yet. If you lose the phone or remove the app, the data is gone.",
+        " দিন ধরে ব্যাকআপ নেওয়া হয়নি।" to " days since the last backup.",
+        "এখনই নিন" to "Do it now",
+        "পরে মনে করান" to "Remind me later",
         "সব" to "All",
         "আইটেম" to "Item",
         "+ চেকলিস্টে আইটেম যোগ করুন" to "+ Add checklist item",

@@ -107,6 +107,37 @@ class HomeActivity : GuardedActivity() {
         render()
     }
 
+    private fun hasData(): Boolean = listOf("ledger", "debts", "todos", "notes").any { Store.read(this, it).length() > 0 }
+
+    /** A gentle reminder when no backup exists, or the last one is old. */
+    private fun backupBanner(): View? {
+        if (!hasData()) return null
+        val sp = getSharedPreferences("settings", MODE_PRIVATE)
+        val now = System.currentTimeMillis()
+        if (now < sp.getLong("backupSnooze", 0L)) return null
+        val last = sp.getLong("lastBackup", 0L)
+        val days = if (last == 0L) -1 else ((now - last) / 86_400_000L).toInt()
+        if (last != 0L && days < 14) return null
+        val c = card(14)
+        c.background = bg(Ui.CARD, 20, Ui.PRIMARY, 1)
+        c.addView(label(tr("ব্যাকআপ নিন"), 15f, Ui.TEXT, true))
+        c.addView(label(if (last == 0L) tr("এখনো কোনো ব্যাকআপ নেওয়া হয়নি। ফোন হারালে বা অ্যাপ মুছলে ডেটা চলে যাবে।") else bn(days.toString()) + tr(" দিন ধরে ব্যাকআপ নেওয়া হয়নি।"), 13f, Ui.MUTED), lp(t = 4))
+        val row = LinearLayout(this)
+        val now2 = label(tr("এখনই নিন"), 14f, Ui.PRIMARY, true)
+        now2.setPadding(0, dp(10), dp(24), 0)
+        now2.setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java).putExtra("page", "backup")) }
+        val later = label(tr("পরে মনে করান"), 14f, Ui.MUTED)
+        later.setPadding(0, dp(10), 0, 0)
+        later.setOnClickListener {
+            sp.edit().putLong("backupSnooze", System.currentTimeMillis() + 3 * 86_400_000L).apply()
+            render()
+        }
+        row.addView(now2)
+        row.addView(later)
+        c.addView(row)
+        return c
+    }
+
     private fun render() {
         if (!::content.isInitialized) return
         content.removeAllViews()
@@ -135,6 +166,8 @@ class HomeActivity : GuardedActivity() {
         val mExp = monthItems.filter { !it.income }.sumOf { it.amount }
         val dashSub = if (monthItems.isEmpty()) tr("আয় ও ব্যয়ের ছবি দেখুন")
         else tr("এই মাসে ব্যয়: ") + taka(mExp) + tr("  ব্যালান্স: ") + taka(mInc - mExp)
+        val bk = backupBanner()
+        if (bk != null) content.addView(bk, lp(b = 12))
         val dash = listRow(R.drawable.ic_wallet, tr("ড্যাশবোর্ড"), dashSub)
         dash.setOnClickListener { startActivity(Intent(this, DashboardActivity::class.java)) }
         content.addView(groupCard(listOf(dash)), lp(b = 14))

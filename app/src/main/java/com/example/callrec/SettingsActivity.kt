@@ -427,8 +427,42 @@ class SettingsActivity : GuardedActivity() {
 
     // ------------------------------------------------------------------ backup / restore
 
+    private var pendingPass: CharArray? = null
+
     private fun startBackup() {
-        val name = "amar-khata-" + SimpleDateFormat("yyyyMMdd-HHmm", Locale.US).format(Date()) + ".json"
+        val a = EditText(this)
+        a.hint = tr("পাসওয়ার্ড (খালি রাখলে সুরক্ষা ছাড়া)")
+        a.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        val b = EditText(this)
+        b.hint = tr("পাসওয়ার্ড আবার লিখুন")
+        b.inputType = a.inputType
+        val w = LinearLayout(this)
+        w.orientation = LinearLayout.VERTICAL
+        w.setPadding(dp(20), dp(10), dp(20), 0)
+        w.addView(label(tr("পাসওয়ার্ড দিলে ব্যাকআপ ফাইল আর কেউ পড়তে পারবে না। পাসওয়ার্ড ভুলে গেলে ব্যাকআপ খোলার উপায় নেই, তাই মনে রাখুন।"), 12f, Ui.MUTED), lp(b = 8))
+        w.addView(a, lp())
+        w.addView(b, lp(t = 4))
+        val dlg = AlertDialog.Builder(this).setTitle(tr("ব্যাকআপ সুরক্ষা")).setView(w)
+            .setPositiveButton(tr("এগিয়ে যান"), null).setNegativeButton(tr("বাতিল"), null).create()
+        dlg.setOnShowListener {
+            dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val p1 = a.text.toString()
+                if (p1.isNotEmpty() && p1.length < 4) {
+                    Toast.makeText(this, tr("কমপক্ষে ৪ অক্ষরের পাসওয়ার্ড দিন"), Toast.LENGTH_SHORT).show()
+                } else if (p1 != b.text.toString()) {
+                    Toast.makeText(this, tr("দুটি পাসওয়ার্ড মেলেনি"), Toast.LENGTH_SHORT).show()
+                } else {
+                    pendingPass = if (p1.isEmpty()) null else p1.toCharArray()
+                    dlg.dismiss()
+                    pickBackupFile()
+                }
+            }
+        }
+        dlg.show()
+    }
+
+    private fun pickBackupFile() {
+        val name = "amar-khata-" + (if (pendingPass != null) "locked-" else "") + SimpleDateFormat("yyyyMMdd-HHmm", Locale.US).format(Date()) + ".json"
         val i = Intent(Intent.ACTION_CREATE_DOCUMENT)
         i.addCategory(Intent.CATEGORY_OPENABLE)
         i.type = "application/json"
@@ -504,7 +538,43 @@ class SettingsActivity : GuardedActivity() {
         o.put("created", System.currentTimeMillis())
         o.put("data", data)
         o.put("prefs", extra)
+        val more = JSONObject()
+        for (n in listOf("budget", "prayer")) more.put(n, dumpPrefs(n))
+        o.put("more", more)
         return o.toString(2)
+    }
+
+    private fun dumpPrefs(name: String): JSONObject {
+        val out = JSONObject()
+        for ((k, v) in getSharedPreferences(name, MODE_PRIVATE).all) {
+            val e = JSONObject()
+            when (v) {
+                is Boolean -> { e.put("t", "b"); e.put("v", v) }
+                is Int -> { e.put("t", "i"); e.put("v", v) }
+                is Float -> { e.put("t", "f"); e.put("v", v.toDouble()) }
+                is Long -> { e.put("t", "l"); e.put("v", v) }
+                is String -> { e.put("t", "s"); e.put("v", v) }
+                else -> continue
+            }
+            out.put(k, e)
+        }
+        return out
+    }
+
+    private fun restorePrefs(name: String, src: JSONObject?) {
+        if (src == null) return
+        val ed = getSharedPreferences(name, MODE_PRIVATE).edit().clear()
+        for (k in src.keys()) {
+            val e = src.optJSONObject(k) ?: continue
+            when (e.optString("t")) {
+                "b" -> ed.putBoolean(k, e.optBoolean("v"))
+                "i" -> ed.putInt(k, e.optInt("v"))
+                "f" -> ed.putFloat(k, e.optDouble("v").toFloat())
+                "l" -> ed.putLong(k, e.optLong("v"))
+                "s" -> ed.putString(k, e.optString("v"))
+            }
+        }
+        ed.apply()
     }
 
     @Deprecated("Uses the classic result callback")
@@ -525,7 +595,10 @@ class SettingsActivity : GuardedActivity() {
         }
         if (requestCode == reqSave) {
             try {
-                val bytes = buildBackup().toByteArray(Charsets.UTF_8)
+                val plain = buildBackup()
+                val pw = pendingPass
+                val bytes = (if (pw != null) BackupCrypto.encrypt(plain, pw) else plain).toByteArray(Charsets.UTF_8)
+                pendingPass = null
                 val out = contentResolver.openOutputStream(uri, "wt")
                 if (out == null) throw IllegalStateException()
                 out.use { it.write(bytes) }
@@ -550,6 +623,29 @@ class SettingsActivity : GuardedActivity() {
             if (text == null) null else JSONObject(text)
         } catch (e: Exception) {
             null
+        }
+        if (parsed != null && parsed.optString("app") == "amar-khata" && BackupCrypto.isEncrypted(parsed)) {
+            val f = EditText(this)
+            f.hint = tr("ব্যাকআপের পাসওয়ার্ড")
+            f.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            val w = LinearLayout(this)
+            w.setPadding(dp(20), dp(10), dp(20), 0)
+            w.addView(f, lp())
+            val d = AlertDialog.Builder(this).setTitle(tr("সুরক্ষিত ব্যাকআপ")).setView(w)
+                .setPositiveButton(tr("খুলুন"), null).setNegativeButton(tr("বাতিল"), null).create()
+            d.setOnShowListener {
+                d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                    val plain = BackupCrypto.decrypt(parsed, f.text.toString().toCharArray())
+                    if (plain == null) {
+                        Toast.makeText(this, tr("পাসওয়ার্ড ভুল বা ফাইল নষ্ট"), Toast.LENGTH_LONG).show()
+                    } else {
+                        d.dismiss()
+                        confirmRestore(plain)
+                    }
+                }
+            }
+            d.show()
+            return
         }
         val data = parsed?.optJSONObject("data")
         if (parsed == null || parsed.optString("app") != "amar-khata" || data == null) {
@@ -580,6 +676,14 @@ class SettingsActivity : GuardedActivity() {
                         .putInt("hijriAdj", p.optInt("hijriAdj", 0))
                         .apply()
                 }
+                val more = parsed.optJSONObject("more")
+                if (more != null) {
+                    restorePrefs("budget", more.optJSONObject("budget"))
+                    restorePrefs("prayer", more.optJSONObject("prayer"))
+                }
+                DebtReminder.rescheduleAll(this)
+                TodoReminder.rescheduleAll(this)
+                PrayerReminder.scheduleAll(this)
                 Toast.makeText(this, tr("ফিরিয়ে আনা হয়েছে"), Toast.LENGTH_LONG).show()
             }
             .setNegativeButton(tr("না"), null)
