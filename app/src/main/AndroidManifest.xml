@@ -109,6 +109,10 @@
         <activity android:name=".SciCalcActivity" android:exported="false" />
         <activity android:name=".HiddenToolsActivity" android:exported="false" />
         <activity android:name=".AppearanceActivity" android:exported="false" />
+        <activity android:name=".PdfGrayActivity" android:exported="false" />
+        <activity android:name=".PdfCropActivity" android:exported="false" />
+        <activity android:name=".PdfTextActivity" android:exported="false" />
+        <activity android:name=".PdfImagesActivity" android:exported="false" />
         <activity android:name=".PdfMergeActivity" android:exported="false" />
         <activity android:name=".PdfSignActivity" android:exported="false" />
         <activity android:name=".TextToPdfActivity" android:exported="false" />
