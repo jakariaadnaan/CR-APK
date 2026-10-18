@@ -2,6 +2,10 @@ package com.example.callrec
 
 object Dict7 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        "সব" to "All",
+        "আইটেম" to "Item",
+        "+ চেকলিস্টে আইটেম যোগ করুন" to "+ Add checklist item",
+        "ট্যাগ (কমা দিয়ে আলাদা করুন)" to "Tags (separate with commas)",
         "নামাজের সময়" to "Prayer times",
         "ঢাকা বা নিজের শহরের সময়" to "Times for Dhaka or your city",
         "ফজর" to "Fajr",
