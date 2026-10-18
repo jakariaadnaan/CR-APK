@@ -64,6 +64,8 @@ object Registry {
         Tool("pdforg", "পেজ সাজান", "ঘোরান, মুছুন, ক্রম বদলান", "pdf", PdfOrganizeActivity::class.java, keywords = "rotate remove delete rearrange reorder reverse pages pdf"),
         Tool("pdfcomp", "PDF ছোট করুন", "ফাইলের সাইজ কমান", "pdf", PdfCompressActivity::class.java, keywords = "compress reduce size shrink pdf"),
         Tool("pdfstamp", "PDF স্ট্যাম্প ও তথ্য", "পেজ নম্বর, ওয়াটারমার্ক, তথ্য", "pdf", PdfStampActivity::class.java, keywords = "page numbers watermark metadata info pdf"),
+        Tool("pdfsign", "PDF-এ সই ও লেখা", "সই আঁকুন, লেখা বসান", "pdf", PdfSignActivity::class.java, keywords = "sign signature write text fill form pdf সই"),
+        Tool("txt2pdf", "লেখা থেকে PDF", "বাংলা/ইংরেজি লেখা PDF করুন", "pdf", TextToPdfActivity::class.java, keywords = "text to pdf write document লেখা"),
         Tool("pdfsplit", "PDF ভাগ", "পেজ রেঞ্জ ধরে আলাদা ফাইল", "pdf", PdfSplitActivity::class.java, false, "pdf splitter split"),
         Tool("pdfextract", "পেজ এক্সট্র্যাক্টর", "দরকারি পেজ বেছে নতুন PDF", "pdf", PdfExtractActivity::class.java, false, "pdf page extractor"),
         Tool("pdf2img", "PDF → ছবি", "প্রতিটি পেজ ছবি হিসেবে", "pdf", PdfToImagesActivity::class.java, false, "pdf to images"),
