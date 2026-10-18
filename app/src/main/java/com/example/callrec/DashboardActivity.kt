@@ -99,6 +99,7 @@ class DashboardActivity : GuardedActivity() {
             e.setPadding(0, dp(24), 0, dp(24))
             box.addView(e, lp())
         } else if (exp > 0) {
+            box.addView(insightCard(items, exp), lp(b = 12))
             box.addView(categoryCard(items.filter { !it.income }, exp), lp(b = 12))
         }
 
@@ -121,7 +122,92 @@ class DashboardActivity : GuardedActivity() {
         leg.addView(legendDot(Ui.GREEN, tr("আয়")))
         leg.addView(legendDot(Ui.RED, tr("ব্যয়")), lp(l = 18))
         trend.addView(leg, lp(t = 8))
-        box.addView(trend, lp())
+        box.addView(trend, lp(b = 12))
+        box.addView(debtCard(), lp(b = 12))
+        box.addView(todoCard(), lp())
+    }
+
+    private fun insightCard(items: List<Entry>, exp: Double): LinearLayout {
+        val c = card(16)
+        c.addView(label(tr("এক নজরে"), 15f, Ui.TEXT, true), lp(b = 4))
+        val top = items.filter { !it.income }.groupBy { it.category }.map { Pair(it.key, it.value.sumOf { e -> e.amount }) }.maxByOrNull { it.second }
+        if (top != null) c.addView(insightLine(tr("সবচেয়ে বেশি ব্যয়"), tr(top.first) + " · " + taka(top.second)), lp(t = 8))
+        val now = Calendar.getInstance()
+        val days = if (year == now.get(Calendar.YEAR) && month == now.get(Calendar.MONTH)) now.get(Calendar.DAY_OF_MONTH)
+        else Calendar.getInstance().also { it.set(year, month, 1) }.getActualMaximum(Calendar.DAY_OF_MONTH)
+        c.addView(insightLine(tr("দৈনিক গড় ব্যয়"), taka(exp / days)), lp(t = 8))
+        val big = items.filter { !it.income }.maxByOrNull { it.amount }
+        if (big != null) c.addView(insightLine(tr("সবচেয়ে বড় একক ব্যয়"), taka(big.amount) + " · " + tr(big.category)), lp(t = 8))
+        return c
+    }
+
+    private fun insightLine(name: String, value: String): LinearLayout {
+        val l = LinearLayout(this)
+        l.gravity = Gravity.CENTER_VERTICAL
+        l.addView(label(name, 14f, Ui.MUTED), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        l.addView(label(value, 14f, Ui.TEXT, true))
+        return l
+    }
+
+    private fun debtCard(): LinearLayout {
+        val c = card(16)
+        c.addView(label(tr("বাকির চিত্র"), 15f, Ui.TEXT, true), lp(b = 8))
+        val debts = DebtStore.all(this)
+        if (debts.isEmpty()) {
+            c.addView(label(tr("কোনো বাকি নেই।"), 14f, Ui.MUTED))
+            return c
+        }
+        val get = debts.filter { !it.owe }.sumOf { it.amount }
+        val give = debts.filter { it.owe }.sumOf { it.amount }
+        val row = LinearLayout(this)
+        row.addView(statBlock(tr("পাবো"), taka(get), Ui.GREEN), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        row.addView(statBlock(tr("দেবো"), taka(give), Ui.RED), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        c.addView(row)
+        val tot = get + give
+        if (tot > 0) {
+            val bar = LinearLayout(this)
+            bar.background = bg(Ui.LINE, 4)
+            bar.weightSum = 100f
+            val g = View(this)
+            g.background = bg(Ui.GREEN, 4)
+            bar.addView(g, LinearLayout.LayoutParams(0, dp(8), (get / tot * 100).toFloat()))
+            c.addView(bar, lp(height = dp(8), t = 12))
+        }
+        val tops = debts.sortedByDescending { it.amount }.take(3)
+        c.addView(label(tr("সবচেয়ে বড় বাকি"), 13f, Ui.MUTED, true), lp(t = 16, b = 2))
+        for (d in tops) {
+            val l = LinearLayout(this)
+            l.gravity = Gravity.CENTER_VERTICAL
+            l.addView(label(d.name, 14f), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            l.addView(label((if (d.owe) tr("দেবো") else tr("পাবো")) + "  ", 12f, Ui.MUTED))
+            l.addView(label(taka(d.amount), 14f, if (d.owe) Ui.RED else Ui.GREEN, true))
+            c.addView(l, lp(t = 8))
+        }
+        return c
+    }
+
+    private fun todoCard(): LinearLayout {
+        val c = card(16)
+        c.addView(label(tr("করণীয়"), 15f, Ui.TEXT, true), lp(b = 8))
+        val todos = TodoStore.all(this)
+        if (todos.isEmpty()) {
+            c.addView(label(tr("কোনো কাজ নেই।"), 14f, Ui.MUTED))
+            return c
+        }
+        val done = todos.count { it.done }
+        val today = todayStart()
+        val late = todos.count { !it.done && it.due != 0L && it.due < today }
+        val row = LinearLayout(this)
+        row.gravity = Gravity.CENTER_VERTICAL
+        row.addView(RingView(this, done.toFloat() / todos.size), LinearLayout.LayoutParams(dp(84), dp(84)))
+        val txt = LinearLayout(this)
+        txt.orientation = LinearLayout.VERTICAL
+        txt.addView(label(tr("শেষ: ") + bn(done.toString()) + " / " + bn(todos.size.toString()), 16f, Ui.TEXT, true))
+        txt.addView(label(tr("বাকি: ") + bn((todos.size - done).toString()), 14f, Ui.MUTED), lp(t = 4))
+        txt.addView(label(tr("সময় পার: ") + bn(late.toString()), 14f, if (late > 0) Ui.RED else Ui.MUTED), lp(t = 2))
+        row.addView(txt, lp(l = 18))
+        c.addView(row)
+        return c
     }
 
     private fun statBlock(name: String, value: String, color: Int): LinearLayout {
@@ -229,5 +315,28 @@ class BarsView(ctx: Context, private val data: List<Triple<String, Double, Doubl
             p.typeface = Typeface.DEFAULT
             c.drawText(d.first, cx, height - labelH * 0.25f, p)
         }
+    }
+}
+
+/** Progress ring with a percentage in the middle. */
+class RingView(ctx: Context, private val fraction: Float) : View(ctx) {
+    private val p = Paint(Paint.ANTI_ALIAS_FLAG)
+    override fun onDraw(c: Canvas) {
+        val size = Math.min(width, height).toFloat()
+        val stroke = size * 0.14f
+        val r = RectF((width - size) / 2 + stroke / 2, (height - size) / 2 + stroke / 2, (width + size) / 2 - stroke / 2, (height + size) / 2 - stroke / 2)
+        p.style = Paint.Style.STROKE
+        p.strokeWidth = stroke
+        p.color = Ui.LINE
+        c.drawArc(r, 0f, 360f, false, p)
+        p.color = Ui.PRIMARY
+        p.strokeCap = Paint.Cap.ROUND
+        if (fraction > 0f) c.drawArc(r, -90f, 360f * fraction, false, p)
+        p.style = Paint.Style.FILL
+        p.textAlign = Paint.Align.CENTER
+        p.color = Ui.TEXT
+        p.typeface = Typeface.DEFAULT_BOLD
+        p.textSize = size * 0.22f
+        c.drawText(bn(Math.round(fraction * 100).toString()) + "%", width / 2f, height / 2f + size * 0.08f, p)
     }
 }
