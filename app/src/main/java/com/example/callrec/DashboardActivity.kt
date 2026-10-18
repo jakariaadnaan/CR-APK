@@ -8,6 +8,7 @@ import android.graphics.RectF
 import android.graphics.Typeface
 import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import java.util.Calendar
@@ -17,7 +18,10 @@ class DashboardActivity : GuardedActivity() {
 
     private var year = 0
     private var month = 0
-    private var mode = 0 // 0 month, 1 three months, 2 year
+    private var mode = 0 // 0 month, 1 three months, 2 year, 3 custom dates
+    private var customFrom = 0L
+    private var customTo = 0L
+    private val DAY = 86_400_000L
     private lateinit var box: LinearLayout
     private val shortBn = listOf("জানু", "ফেব্রু", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টে", "অক্টো", "নভে", "ডিসে")
 
@@ -26,6 +30,11 @@ class DashboardActivity : GuardedActivity() {
         val now = Calendar.getInstance()
         year = now.get(Calendar.YEAR)
         month = now.get(Calendar.MONTH)
+        val first = Calendar.getInstance()
+        first.set(year, month, 1, 0, 0, 0)
+        first.set(Calendar.MILLISECOND, 0)
+        customFrom = first.timeInMillis
+        customTo = todayStart()
         val scroll = ScrollView(this)
         box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
@@ -43,10 +52,61 @@ class DashboardActivity : GuardedActivity() {
         return c.get(Calendar.YEAR) == y && c.get(Calendar.MONTH) == m
     }
 
-    private fun len(): Int = when (mode) { 0 -> 1; 1 -> 3; else -> 12 }
+    private fun len(): Int = when (mode) { 0 -> 1; 1 -> 3; 2 -> 12; else -> 1 }
+
+    private fun pickDate(initial: Long, onPicked: (Long) -> Unit) {
+        val c = Calendar.getInstance()
+        c.timeInMillis = initial
+        android.app.DatePickerDialog(this, { _, y, m, d ->
+            val r = Calendar.getInstance()
+            r.set(y, m, d, 0, 0, 0)
+            r.set(Calendar.MILLISECOND, 0)
+            onPicked(r.timeInMillis)
+        }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show()
+    }
+
+    private fun syncEnd() {
+        val c = Calendar.getInstance()
+        c.timeInMillis = customTo
+        year = c.get(Calendar.YEAR)
+        month = c.get(Calendar.MONTH)
+    }
+
+    private fun dateRow(): LinearLayout {
+        val row = LinearLayout(this)
+        row.gravity = Gravity.CENTER_VERTICAL
+        val from = pill(dateText(customFrom), Ui.CARD, Ui.TEXT) {
+            pickDate(customFrom) { ms ->
+                customFrom = ms
+                if (customTo < ms) customTo = ms
+                syncEnd(); render()
+            }
+        }
+        val to = pill(dateText(customTo), Ui.CARD, Ui.TEXT) {
+            pickDate(customTo) { ms ->
+                customTo = ms
+                if (customFrom > ms) customFrom = ms
+                syncEnd(); render()
+            }
+        }
+        from.background = bg(Ui.CARD, 16, Ui.LINE, 1)
+        to.background = bg(Ui.CARD, 16, Ui.LINE, 1)
+        from.textSize = 14f
+        to.textSize = 14f
+        from.setPadding(dp(8), dp(11), dp(8), dp(11))
+        to.setPadding(dp(8), dp(11), dp(8), dp(11))
+        row.addView(from, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        row.addView(label("→", 18f, Ui.MUTED, true), lp(width = ViewGroup.LayoutParams.WRAP_CONTENT, l = 10, r = 10))
+        row.addView(to, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        return row
+    }
 
     /** [back] 0 = the chosen period, 1 = the period just before it. */
     private fun inRange(e: Entry, back: Int): Boolean {
+        if (mode == 3) {
+            val span = customTo - customFrom + DAY
+            return if (back == 0) e.date in customFrom..customTo else e.date >= customFrom - span && e.date < customFrom
+        }
         val c = Calendar.getInstance()
         c.timeInMillis = e.date
         val idx = c.get(Calendar.YEAR) * 12 + c.get(Calendar.MONTH)
@@ -71,19 +131,20 @@ class DashboardActivity : GuardedActivity() {
             if (sm < 0) { sm += 12; sy-- }
             shortMonth(sm) + (if (sy != year) " " + bn(sy.toString()) else "") + " – " + shortMonth(month) + " " + bn(year.toString())
         }
-        else -> bn(year.toString())
+        2 -> bn(year.toString())
+        else -> dateText(customFrom) + " – " + dateText(customTo)
     }
 
     private fun chips(): LinearLayout {
         val row = LinearLayout(this)
         row.gravity = Gravity.CENTER
-        val names = listOf(tr("মাস"), tr("৩ মাস"), tr("বছর"))
-        for (i in 0..2) {
+        val names = listOf(tr("মাস"), tr("৩ মাস"), tr("বছর"), tr("তারিখ"))
+        for (i in 0..3) {
             val sel = i == mode
             val tv = label(names[i], 14f, if (sel) Color.WHITE else Ui.MUTED, sel)
             tv.gravity = Gravity.CENTER
             tv.background = if (sel) bg(Ui.PRIMARY, 18) else bg(Ui.CARD, 18, Ui.LINE, 1)
-            tv.setOnClickListener { if (mode != i) { mode = i; render() } }
+            tv.setOnClickListener { if (mode != i) { mode = i; if (i == 3) syncEnd(); render() } }
             row.addView(tv, LinearLayout.LayoutParams(0, dp(38), 1f).also { it.setMargins(dp(4), 0, dp(4), 0) })
         }
         return row
@@ -111,7 +172,7 @@ class DashboardActivity : GuardedActivity() {
         nav.addView(title, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         nav.addView(next, LinearLayout.LayoutParams(dp(48), dp(44)))
         box.addView(chips(), lp(b = 4))
-        box.addView(nav, lp(b = 6))
+        if (mode == 3) box.addView(dateRow(), lp(t = 8, b = 8)) else box.addView(nav, lp(b = 6))
 
         // summary card
         val sum = card(18)
@@ -173,7 +234,10 @@ class DashboardActivity : GuardedActivity() {
         val top = items.filter { !it.income }.groupBy { it.category }.map { Pair(it.key, it.value.sumOf { e -> e.amount }) }.maxByOrNull { it.second }
         if (top != null) c.addView(insightLine(tr("সবচেয়ে বেশি ব্যয়"), tr(top.first) + " · " + taka(top.second)), lp(t = 8))
         val now = Calendar.getInstance()
-        if (mode == 0) {
+        if (mode == 3) {
+            val days = Math.max(1L, (customTo - customFrom) / DAY + 1)
+            c.addView(insightLine(tr("দৈনিক গড় ব্যয়"), taka(exp / days)), lp(t = 8))
+        } else if (mode == 0) {
             val days = if (year == now.get(Calendar.YEAR) && month == now.get(Calendar.MONTH)) now.get(Calendar.DAY_OF_MONTH)
             else Calendar.getInstance().also { it.set(year, month, 1) }.getActualMaximum(Calendar.DAY_OF_MONTH)
             c.addView(insightLine(tr("দৈনিক গড় ব্যয়"), taka(exp / days)), lp(t = 8))
