@@ -26,6 +26,7 @@ class SettingsActivity : GuardedActivity() {
     private val reqOpen = 42
     private val reqCsvLedger = 43
     private val reqCsvDebt = 44
+    private val reqTree = 45
     private val dataKeys = listOf("ledger", "debts", "todos", "notes")
 
     private lateinit var box: LinearLayout
@@ -250,6 +251,10 @@ class SettingsActivity : GuardedActivity() {
         val lastText = if (last == 0L) tr("এখনো ব্যাকআপ নেওয়া হয়নি") else tr("সর্বশেষ: ") + bn(SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US).format(Date(last)))
         box.addView(row(tr("ব্যাকআপ তৈরি করুন"), lastText, null) { startBackup() }, lp(b = 8))
         box.addView(row(tr("ব্যাকআপ থেকে ফিরিয়ে আনুন"), tr("আগের ব্যাকআপ ফাইল বেছে নিন"), null) { startRestore() }, lp(b = 8))
+        val freqNames = arrayOf(tr("বন্ধ রাখুন"), tr("প্রতিদিন"), tr("প্রতি সপ্তাহে"), tr("প্রতি মাসে"))
+        val af = AutoBackup.freq(this)
+        val autoSub = if (af == 0 || AutoBackup.tree(this) == null) tr("বন্ধ আছে") else freqNames[af] + (if (AutoBackup.last(this) != 0L) " · " + tr("সর্বশেষ: ") + bn(SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US).format(Date(AutoBackup.last(this)))) else "") + (if (AutoBackup.status(this) == "fail") " · " + tr("ব্যর্থ হয়েছে") else "")
+        box.addView(row(tr("স্বয়ংক্রিয় ব্যাকআপ"), autoSub, null) { autoDialog() }, lp(b = 8))
         section(tr("এক্সপোর্ট (CSV)"))
         box.addView(row(tr("খরচের খাতা CSV"), tr("Excel বা Google Sheets-এ খোলা যায়"), null) { startCsv("ledger", reqCsvLedger) }, lp(b = 8))
         box.addView(row(tr("বাকির খাতা CSV"), tr("Excel বা Google Sheets-এ খোলা যায়"), null) { startCsv("debts", reqCsvDebt) }, lp(b = 8))
@@ -474,6 +479,53 @@ class SettingsActivity : GuardedActivity() {
         }
     }
 
+    private var pickedFreq = 0
+    private var pickedPass = ""
+
+    private fun autoDialog() {
+        val names = arrayOf(tr("বন্ধ রাখুন"), tr("প্রতিদিন"), tr("প্রতি সপ্তাহে"), tr("প্রতি মাসে"))
+        val w = LinearLayout(this)
+        w.orientation = LinearLayout.VERTICAL
+        w.setPadding(dp(20), dp(10), dp(20), 0)
+        val group = android.widget.RadioGroup(this)
+        for ((i, n) in names.withIndex()) {
+            val rb = android.widget.RadioButton(this)
+            rb.text = n
+            rb.id = 100 + i
+            group.addView(rb)
+        }
+        group.check(100 + AutoBackup.freq(this))
+        w.addView(group)
+        val pw = EditText(this)
+        pw.hint = tr("পাসওয়ার্ড (ঐচ্ছিক)")
+        pw.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        pw.setText(AutoBackup.pass(this))
+        w.addView(pw, lp(t = 8))
+        w.addView(label(tr("রাতে ৩টার দিকে ফোল্ডারে নতুন ফাইল জমা হবে, সর্বশেষ ৫টি রাখা হবে। পাসওয়ার্ড দিলে ফাইল এনক্রিপ্ট হয়; সেই পাসওয়ার্ড এই ফোনের অ্যাপেই রাখা হয়, তাই ভুলবেন না।"), 12f, Ui.MUTED), lp(t = 8))
+        AlertDialog.Builder(this).setTitle(tr("স্বয়ংক্রিয় ব্যাকআপ")).setView(w)
+            .setPositiveButton(tr("সংরক্ষণ")) { _, _ ->
+                val f = group.checkedRadioButtonId - 100
+                val p = pw.text.toString()
+                if (p.isNotEmpty() && p.length < 4) {
+                    Toast.makeText(this, tr("কমপক্ষে ৪ অক্ষরের পাসওয়ার্ড দিন"), Toast.LENGTH_SHORT).show()
+                } else if (f == 0) {
+                    AutoBackup.save(this, 0, AutoBackup.tree(this), p)
+                    render()
+                } else {
+                    pickedFreq = f
+                    pickedPass = p
+                    val i = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+                    i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+                    try {
+                        startActivityForResult(i, reqTree)
+                    } catch (e: Exception) {
+                        Toast.makeText(this, tr("ফাইল বেছে নেওয়ার অ্যাপ পাওয়া যায়নি"), Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+            .setNegativeButton(tr("বাতিল"), null).show()
+    }
+
     private fun startCsv(kind: String, req: Int) {
         val i = Intent(Intent.ACTION_CREATE_DOCUMENT)
         i.addCategory(Intent.CATEGORY_OPENABLE)
@@ -524,42 +576,7 @@ class SettingsActivity : GuardedActivity() {
         }
     }
 
-    private fun buildBackup(): String {
-        val data = JSONObject()
-        for (k in dataKeys) data.put(k, Store.read(this, k))
-        val extra = JSONObject()
-        val land = getSharedPreferences("land_prefs", MODE_PRIVATE)
-        extra.put("katha", land.getString("katha", "720"))
-        extra.put("bigha", land.getString("bigha", "20"))
-        extra.put("hijriAdj", getSharedPreferences("date_prefs", MODE_PRIVATE).getInt("hijriAdj", 0))
-        val o = JSONObject()
-        o.put("app", "amar-khata")
-        o.put("version", 1)
-        o.put("created", System.currentTimeMillis())
-        o.put("data", data)
-        o.put("prefs", extra)
-        val more = JSONObject()
-        for (n in listOf("budget", "prayer")) more.put(n, dumpPrefs(n))
-        o.put("more", more)
-        return o.toString(2)
-    }
-
-    private fun dumpPrefs(name: String): JSONObject {
-        val out = JSONObject()
-        for ((k, v) in getSharedPreferences(name, MODE_PRIVATE).all) {
-            val e = JSONObject()
-            when (v) {
-                is Boolean -> { e.put("t", "b"); e.put("v", v) }
-                is Int -> { e.put("t", "i"); e.put("v", v) }
-                is Float -> { e.put("t", "f"); e.put("v", v.toDouble()) }
-                is Long -> { e.put("t", "l"); e.put("v", v) }
-                is String -> { e.put("t", "s"); e.put("v", v) }
-                else -> continue
-            }
-            out.put(k, e)
-        }
-        return out
-    }
+    private fun buildBackup(): String = BackupData.build(this)
 
     private fun restorePrefs(name: String, src: JSONObject?) {
         if (src == null) return
@@ -582,6 +599,22 @@ class SettingsActivity : GuardedActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         val uri = data?.data
         if (resultCode != RESULT_OK || uri == null) return
+        if (requestCode == reqTree) {
+            try {
+                contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                AutoBackup.save(this, pickedFreq, uri.toString(), pickedPass)
+                Thread {
+                    val ok = AutoBackup.run(this)
+                    runOnUiThread {
+                        Toast.makeText(this, if (ok) tr("প্রথম ব্যাকআপ জমা হয়েছে") else tr("ফোল্ডারে ব্যাকআপ রাখা যায়নি"), Toast.LENGTH_LONG).show()
+                        render()
+                    }
+                }.start()
+            } catch (e: Exception) {
+                Toast.makeText(this, tr("ফোল্ডারে ব্যাকআপ রাখা যায়নি"), Toast.LENGTH_LONG).show()
+            }
+            return
+        }
         if (requestCode == reqCsvLedger || requestCode == reqCsvDebt) {
             try {
                 val bytes = byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte()) + buildCsv(requestCode == reqCsvLedger).toByteArray(Charsets.UTF_8)

@@ -2,6 +2,17 @@ package com.example.callrec
 
 object Dict7 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        "বন্ধ রাখুন" to "Off",
+        "প্রতিদিন" to "Every day",
+        "প্রতি সপ্তাহে" to "Every week",
+        "প্রতি মাসে" to "Every month",
+        "বন্ধ আছে" to "Off",
+        "ব্যর্থ হয়েছে" to "failed",
+        "স্বয়ংক্রিয় ব্যাকআপ" to "Automatic backup",
+        "পাসওয়ার্ড (ঐচ্ছিক)" to "Password (optional)",
+        "রাতে ৩টার দিকে ফোল্ডারে নতুন ফাইল জমা হবে, সর্বশেষ ৫টি রাখা হবে। পাসওয়ার্ড দিলে ফাইল এনক্রিপ্ট হয়; সেই পাসওয়ার্ড এই ফোনের অ্যাপেই রাখা হয়, তাই ভুলবেন না।" to "A new file is saved to the folder around 3 AM; the latest 5 are kept. With a password the file is encrypted; that password is kept inside this app on this phone, so don't forget it.",
+        "প্রথম ব্যাকআপ জমা হয়েছে" to "First backup saved",
+        "ফোল্ডারে ব্যাকআপ রাখা যায়নি" to "Could not save the backup to the folder",
         "পাসওয়ার্ড (খালি রাখলে সুরক্ষা ছাড়া)" to "Password (leave empty for no protection)",
         "পাসওয়ার্ড আবার লিখুন" to "Enter the password again",
         "পাসওয়ার্ড দিলে ব্যাকআপ ফাইল আর কেউ পড়তে পারবে না। পাসওয়ার্ড ভুলে গেলে ব্যাকআপ খোলার উপায় নেই, তাই মনে রাখুন।" to "With a password nobody else can read the backup file. If you forget it, the backup cannot be opened, so remember it.",

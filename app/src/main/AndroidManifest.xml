@@ -124,6 +124,7 @@
             android:foregroundServiceType="microphone" />
 
         <receiver android:name=".DebtReminderReceiver" android:exported="false" />
+        <receiver android:name=".AutoBackupReceiver" android:exported="false" />
         <receiver android:name=".PrayerReminderReceiver" android:exported="false" />
         <receiver android:name=".TodoReminderReceiver" android:exported="false" />
 
