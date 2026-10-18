@@ -109,6 +109,7 @@
         <activity android:name=".SciCalcActivity" android:exported="false" />
         <activity android:name=".HiddenToolsActivity" android:exported="false" />
         <activity android:name=".AppearanceActivity" android:exported="false" />
+        <activity android:name=".PrayerActivity" android:exported="false" />
         <activity android:name=".BudgetActivity" android:exported="false" />
         <activity android:name=".DashboardActivity" android:exported="false" />
         <activity android:name=".OnboardingActivity" android:exported="false" />
@@ -123,6 +124,7 @@
             android:foregroundServiceType="microphone" />
 
         <receiver android:name=".DebtReminderReceiver" android:exported="false" />
+        <receiver android:name=".PrayerReminderReceiver" android:exported="false" />
         <receiver android:name=".TodoReminderReceiver" android:exported="false" />
 
         <receiver

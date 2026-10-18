@@ -44,6 +44,7 @@ object Registry {
         Tool("words", "টাকা কথায়", "চেক ও রশিদের জন্য", "khata", WordsActivity::class.java, keywords = "taka in words cheque amount"),
         Tool("currency", "কারেন্সি কনভার্টার", "টাকা, ডলার ও অন্যান্য মুদ্রা", "khata", CurrencyActivity::class.java, true, "currency exchange dollar rate"),
         // সময় ও নোট
+        Tool("prayer", "নামাজের সময়", "ঢাকা বা নিজের শহরের সময়", "time", PrayerActivity::class.java, keywords = "prayer namaz salat salah azan fajr zuhr asr maghrib isha নামাজ"),
         Tool("todo", "করণীয়", "দিনের কাজের তালিকা", "time", TodoActivity::class.java, keywords = "todo task কাজ"),
         Tool("notes", "দ্রুত নোট", "নোট, নম্বর, আইডিয়া", "time", NotesActivity::class.java, keywords = "note memo"),
         Tool("date", "তারিখ ও বয়স", "বাংলা, হিজরি, বয়স", "time", DateActivity::class.java, keywords = "date age calculator hijri bangla birthday"),

@@ -31,6 +31,7 @@ class HomeActivity : GuardedActivity() {
         }
         DebtReminder.rescheduleAll(this)
         TodoReminder.rescheduleAll(this)
+        PrayerReminder.scheduleAll(this)
         window.statusBarColor = Ui.BG
         window.navigationBarColor = Ui.NAV
         window.decorView.systemUiVisibility = if (Ui.dark) 0 else View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
