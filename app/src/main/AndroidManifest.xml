@@ -109,6 +109,12 @@
         <activity android:name=".SciCalcActivity" android:exported="false" />
         <activity android:name=".HiddenToolsActivity" android:exported="false" />
         <activity android:name=".AppearanceActivity" android:exported="false" />
+        <activity android:name=".PdfMergeActivity" android:exported="false" />
+        <activity android:name=".PdfOrganizeActivity" android:exported="false" />
+        <activity android:name=".PdfCompressActivity" android:exported="false" />
+        <activity android:name=".PdfStampActivity" android:exported="false" />
+        <activity android:name=".PdfMergeActivity" android:exported="false" />
+        <activity android:name=".PdfOrganizeActivity" android:exported="false" />
         <activity android:name=".PrayerActivity" android:exported="false" />
         <activity android:name=".BudgetActivity" android:exported="false" />
         <activity android:name=".DashboardActivity" android:exported="false" />
