@@ -122,7 +122,17 @@ class HomeActivity : GuardedActivity() {
             return
         }
 
-        val dash = listRow(R.drawable.ic_wallet, tr("ড্যাশবোর্ড"), tr("আয় ও ব্যয়ের ছবি দেখুন"))
+        val nowC = java.util.Calendar.getInstance()
+        val monthItems = LedgerStore.all(this).filter {
+            val c = java.util.Calendar.getInstance()
+            c.timeInMillis = it.date
+            c.get(java.util.Calendar.YEAR) == nowC.get(java.util.Calendar.YEAR) && c.get(java.util.Calendar.MONTH) == nowC.get(java.util.Calendar.MONTH)
+        }
+        val mInc = monthItems.filter { it.income }.sumOf { it.amount }
+        val mExp = monthItems.filter { !it.income }.sumOf { it.amount }
+        val dashSub = if (monthItems.isEmpty()) tr("আয় ও ব্যয়ের ছবি দেখুন")
+        else tr("এই মাসে ব্যয়: ") + taka(mExp) + tr("  ব্যালান্স: ") + taka(mInc - mExp)
+        val dash = listRow(R.drawable.ic_wallet, tr("ড্যাশবোর্ড"), dashSub)
         dash.setOnClickListener { startActivity(Intent(this, DashboardActivity::class.java)) }
         content.addView(groupCard(listOf(dash)), lp(b = 14))
 

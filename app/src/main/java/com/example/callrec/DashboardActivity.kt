@@ -17,6 +17,7 @@ class DashboardActivity : GuardedActivity() {
 
     private var year = 0
     private var month = 0
+    private var mode = 0 // 0 month, 1 three months, 2 year
     private lateinit var box: LinearLayout
     private val shortBn = listOf("জানু", "ফেব্রু", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টে", "অক্টো", "নভে", "ডিসে")
 
@@ -42,16 +43,56 @@ class DashboardActivity : GuardedActivity() {
         return c.get(Calendar.YEAR) == y && c.get(Calendar.MONTH) == m
     }
 
+    private fun len(): Int = when (mode) { 0 -> 1; 1 -> 3; else -> 12 }
+
+    /** [back] 0 = the chosen period, 1 = the period just before it. */
+    private fun inRange(e: Entry, back: Int): Boolean {
+        val c = Calendar.getInstance()
+        c.timeInMillis = e.date
+        val idx = c.get(Calendar.YEAR) * 12 + c.get(Calendar.MONTH)
+        val end = if (mode == 2) year * 12 + 11 else year * 12 + month
+        val l = len()
+        val hi = end - back * l
+        return idx in (hi - l + 1)..hi
+    }
+
     private fun shift(delta: Int) {
-        month += delta
-        if (month < 0) { month = 11; year-- } else if (month > 11) { month = 0; year++ }
+        var idx = year * 12 + month + delta * (if (mode == 2) 12 else len())
+        year = idx / 12
+        month = idx % 12
         render()
+    }
+
+    private fun rangeTitle(): String = when (mode) {
+        0 -> BN_MONTHS[month] + " " + bn(year.toString())
+        1 -> {
+            var sm = month - 2
+            var sy = year
+            if (sm < 0) { sm += 12; sy-- }
+            shortMonth(sm) + (if (sy != year) " " + bn(sy.toString()) else "") + " – " + shortMonth(month) + " " + bn(year.toString())
+        }
+        else -> bn(year.toString())
+    }
+
+    private fun chips(): LinearLayout {
+        val row = LinearLayout(this)
+        row.gravity = Gravity.CENTER
+        val names = listOf(tr("মাস"), tr("৩ মাস"), tr("বছর"))
+        for (i in 0..2) {
+            val sel = i == mode
+            val tv = label(names[i], 14f, if (sel) Color.WHITE else Ui.MUTED, sel)
+            tv.gravity = Gravity.CENTER
+            tv.background = if (sel) bg(Ui.PRIMARY, 18) else bg(Ui.CARD, 18, Ui.LINE, 1)
+            tv.setOnClickListener { if (mode != i) { mode = i; render() } }
+            row.addView(tv, LinearLayout.LayoutParams(0, dp(38), 1f).also { it.setMargins(dp(4), 0, dp(4), 0) })
+        }
+        return row
     }
 
     private fun render() {
         box.removeAllViews()
         val all = LedgerStore.all(this)
-        val items = all.filter { inMonth(it, year, month) }
+        val items = all.filter { inRange(it, 0) }
         val inc = items.filter { it.income }.sumOf { it.amount }
         val exp = items.filter { !it.income }.sumOf { it.amount }
 
@@ -64,11 +105,12 @@ class DashboardActivity : GuardedActivity() {
         val next = label("›", 26f, Ui.PRIMARY, true)
         next.gravity = Gravity.CENTER
         next.setOnClickListener { shift(1) }
-        val title = label(BN_MONTHS[month] + " " + bn(year.toString()), 17f, Ui.TEXT, true)
+        val title = label(rangeTitle(), 17f, Ui.TEXT, true)
         title.gravity = Gravity.CENTER
         nav.addView(prev, LinearLayout.LayoutParams(dp(48), dp(44)))
         nav.addView(title, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         nav.addView(next, LinearLayout.LayoutParams(dp(48), dp(44)))
+        box.addView(chips(), lp(b = 4))
         box.addView(nav, lp(b = 6))
 
         // summary card
@@ -80,21 +122,19 @@ class DashboardActivity : GuardedActivity() {
         row.addView(statBlock(tr("আয়"), taka(inc), Ui.GREEN), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         row.addView(statBlock(tr("ব্যয়"), taka(exp), Ui.RED), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         sum.addView(row, lp(t = 14))
-        // compare with previous month
-        val pm = if (month == 0) 11 else month - 1
-        val py = if (month == 0) year - 1 else year
-        val prevExp = all.filter { !it.income && inMonth(it, py, pm) }.sumOf { it.amount }
+        // compare with the period before
+        val prevExp = all.filter { !it.income && inRange(it, 1) }.sumOf { it.amount }
         if (prevExp > 0 && exp > 0) {
             val diff = Math.round((exp - prevExp) / prevExp * 100).toInt()
-            val txt = if (diff > 0) bn(diff.toString()) + tr("% বেশি ব্যয় গত মাসের চেয়ে")
-            else if (diff < 0) bn((-diff).toString()) + tr("% কম ব্যয় গত মাসের চেয়ে")
-            else tr("গত মাসের সমান ব্যয়")
+            val txt = if (diff > 0) bn(diff.toString()) + tr("% বেশি ব্যয় আগের সময়ের চেয়ে")
+            else if (diff < 0) bn((-diff).toString()) + tr("% কম ব্যয় আগের সময়ের চেয়ে")
+            else tr("আগের সময়ের সমান ব্যয়")
             sum.addView(label(txt, 13f, if (diff > 0) Ui.RED else Ui.GREEN), lp(t = 12))
         }
         box.addView(sum, lp(b = 12))
 
         if (items.isEmpty()) {
-            val e = label(tr("এই মাসে এখনো কোনো লেনদেন নেই।"), 14f, Ui.MUTED)
+            val e = label(tr("এই সময়ে এখনো কোনো লেনদেন নেই।"), 14f, Ui.MUTED)
             e.gravity = Gravity.CENTER
             e.setPadding(0, dp(24), 0, dp(24))
             box.addView(e, lp())
@@ -133,9 +173,13 @@ class DashboardActivity : GuardedActivity() {
         val top = items.filter { !it.income }.groupBy { it.category }.map { Pair(it.key, it.value.sumOf { e -> e.amount }) }.maxByOrNull { it.second }
         if (top != null) c.addView(insightLine(tr("সবচেয়ে বেশি ব্যয়"), tr(top.first) + " · " + taka(top.second)), lp(t = 8))
         val now = Calendar.getInstance()
-        val days = if (year == now.get(Calendar.YEAR) && month == now.get(Calendar.MONTH)) now.get(Calendar.DAY_OF_MONTH)
-        else Calendar.getInstance().also { it.set(year, month, 1) }.getActualMaximum(Calendar.DAY_OF_MONTH)
-        c.addView(insightLine(tr("দৈনিক গড় ব্যয়"), taka(exp / days)), lp(t = 8))
+        if (mode == 0) {
+            val days = if (year == now.get(Calendar.YEAR) && month == now.get(Calendar.MONTH)) now.get(Calendar.DAY_OF_MONTH)
+            else Calendar.getInstance().also { it.set(year, month, 1) }.getActualMaximum(Calendar.DAY_OF_MONTH)
+            c.addView(insightLine(tr("দৈনিক গড় ব্যয়"), taka(exp / days)), lp(t = 8))
+        } else {
+            c.addView(insightLine(tr("মাসিক গড় ব্যয়"), taka(exp / len())), lp(t = 8))
+        }
         val big = items.filter { !it.income }.maxByOrNull { it.amount }
         if (big != null) c.addView(insightLine(tr("সবচেয়ে বড় একক ব্যয়"), taka(big.amount) + " · " + tr(big.category)), lp(t = 8))
         return c
