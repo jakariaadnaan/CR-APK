@@ -2,6 +2,9 @@ package com.example.callrec
 
 object Dict7 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        " এর সময় হতে " to " is in ",
+        " মিনিট বাকি" to " minutes",
+        " দিন পরে " to " days from now: ",
         "অ্যাপ সম্পর্কে" to "About",
         "আপনার হিসাব, নোট ও দরকারি টুল, এক অ্যাপে।" to "Your accounts, notes and handy tools, in one app.",
         "অ্যাপে কী আছে" to "What's inside",
@@ -35,7 +38,7 @@ object Dict7 {
         "পিন বা প্যাটার্ন ভুলে গেলে কী হবে?" to "What if I forget my PIN or pattern?",
         "ফোনের Settings থেকে এই অ্যাপের ডেটা মুছে নতুন করে শুরু করতে হবে। এতে অ্যাপের সব ডেটা মুছে যায়, তাই আগে ব্যাকআপ রাখুন।" to "You will have to clear this app's data from your phone's Settings and start again. That erases all data in the app, so keep a backup.",
         "রিমাইন্ডার বা নামাজের অ্যালার্ম বাজছে না কেন?" to "Why are reminders or prayer alerts not ringing?",
-        "নোটিফিকেশনের অনুমতি দিন, ফোনের ব্যাটারি সেটিংসে এই অ্যাপকে “সীমাহীন” (No restrictions) করুন, আর অ্যাপটি অন্তত একবার খুলুন। ফোন রিস্টার্টের পর একবার অ্যাপ খুলতে হয়।" to "Allow notifications, set this app to “No restrictions” in your phone's battery settings, and open the app at least once. After a phone restart the app needs to be opened once.",
+        "নোটিফিকেশনের অনুমতি দিন, ফোনের ব্যাটারি সেটিংসে এই অ্যাপকে “সীমাহীন” (No restrictions) করুন, আর অ্যাপটি অন্তত একবার খুলুন। Xiaomi ফোনে “Autostart”-ও চালু করুন।" to "Allow notifications, set this app to “No restrictions” in your phone's battery settings, and open the app at least once. On Xiaomi phones, also turn on “Autostart”.",
         "ব্যাকআপ কীভাবে নেব ও ফেরাব?" to "How do I back up and restore?",
         "Settings > Backup & Restore-এ গিয়ে “ব্যাকআপ তৈরি করুন” চাপুন, চাইলে পাসওয়ার্ড দিন, আর ফাইলটি Drive বা ফোনের ফোল্ডারে রাখুন। ফেরাতে “ব্যাকআপ থেকে ফিরিয়ে আনুন” চাপুন। ফেরালে এখনকার ডেটা মুছে ব্যাকআপের ডেটা বসে।" to "Go to Settings > Backup & Restore and tap “Create backup”, add a password if you like, and save the file to Drive or a phone folder. To restore, tap “Restore from backup”. Restoring replaces the current data with the backup.",
         "নতুন ফোনে ডেটা কীভাবে নেব?" to "How do I move to a new phone?",

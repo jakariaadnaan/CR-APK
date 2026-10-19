@@ -31,7 +31,7 @@ object PrayerReminder {
             for (add in 0..1) {
                 val day = Calendar.getInstance()
                 day.add(Calendar.DAY_OF_YEAR, add)
-                val ms = PrayerCalc.toMillis(day, PrayerCalc.forDay(c, day).at(IDX[k]))
+                val ms = PrayerCalc.toMillis(day, PrayerCalc.forDay(c, day).at(IDX[k])) - NotifPrefs.prayerLead(c) * 60_000L
                 if (ms > now) { when0 = ms; break }
             }
             if (when0 == 0L) continue
@@ -47,7 +47,7 @@ class PrayerReminderReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
         val k = intent.getIntExtra("k", 0)
         val idx = PrayerReminder.IDX.getOrNull(k) ?: return
-        if (!NotifPrefs.on(ctx, NotifPrefs.PRAYER)) {
+        if (!NotifPrefs.shouldShow(ctx, NotifPrefs.PRAYER)) {
             PrayerReminder.scheduleAll(ctx)
             return
         }
@@ -59,7 +59,10 @@ class PrayerReminderReceiver : BroadcastReceiver() {
         )
         val n = Notification.Builder(ctx, "prayer")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle(tr(PRAYER_NAMES[idx]) + tr(" এর সময় হয়েছে"))
+            .setContentTitle(
+                if (NotifPrefs.prayerLead(ctx) > 0) tr(PRAYER_NAMES[idx]) + tr(" এর সময় হতে ") + bn(NotifPrefs.prayerLead(ctx).toString()) + tr(" মিনিট বাকি")
+                else tr(PRAYER_NAMES[idx]) + tr(" এর সময় হয়েছে")
+            )
             .setContentText(PrayerCalc.location(ctx).first.let { tr(it) })
             .setContentIntent(open)
             .setAutoCancel(true)

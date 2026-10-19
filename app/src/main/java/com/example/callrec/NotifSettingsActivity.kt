@@ -26,6 +26,32 @@ object NotifPrefs {
         val p = c.getSharedPreferences("settings", Context.MODE_PRIVATE)
         return p.getBoolean(ALL, true) && p.getBoolean(key, true)
     }
+
+    private fun minutesNow(): Int {
+        val cal = java.util.Calendar.getInstance()
+        return cal.get(java.util.Calendar.HOUR_OF_DAY) * 60 + cal.get(java.util.Calendar.MINUTE)
+    }
+
+    /** True while the "quiet hours" window is on and the clock is inside it. */
+    fun quietNow(c: Context): Boolean {
+        val p = c.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        if (!p.getBoolean("quietOn", false)) return false
+        val from = p.getInt("quietFrom", 23 * 60)
+        val to = p.getInt("quietTo", 5 * 60)
+        val now = minutesNow()
+        return if (from <= to) now in from until to else now >= from || now < to
+    }
+
+    /** Switch on, and not silenced by quiet hours (prayers can be excused from quiet hours). */
+    fun shouldShow(c: Context, key: String): Boolean {
+        if (!on(c, key)) return false
+        if (!quietNow(c)) return true
+        val p = c.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        return key == PRAYER && p.getBoolean("quietPrayerOk", true)
+    }
+
+    fun prayerLead(c: Context): Int = c.getSharedPreferences("settings", Context.MODE_PRIVATE).getInt("prayerLead", 0)
+    fun debtLead(c: Context): Int = c.getSharedPreferences("settings", Context.MODE_PRIVATE).getInt("debtLead", 0)
 }
 
 /** Notifications: one place to switch reminders on or off and to check that they can reach the phone. */
@@ -78,6 +104,32 @@ class NotifSettingsActivity : GuardedActivity() {
             it.tapFx()
             prefs.edit().putBoolean(key, !on).apply()
             render()
+        }
+        return r
+    }
+
+    private fun choose(title: String, items: Array<String>, cur: Int, onPick: (Int) -> Unit) {
+        android.app.AlertDialog.Builder(this).setTitle(title)
+            .setSingleChoiceItems(items, cur) { d, i -> d.dismiss(); onPick(i) }
+            .setNegativeButton("Cancel", null).show()
+    }
+
+    private fun clock(min: Int): String {
+        val h = min / 60
+        val m = min % 60
+        val h12 = if (h % 12 == 0) 12 else h % 12
+        return h12.toString() + ":" + (if (m < 10) "0$m" else "$m") + (if (h < 12) " AM" else " PM")
+    }
+
+    private fun timeRow(icon: Int, title: String, key: String, def: Int): LinearLayout {
+        val v = prefs.getInt(key, def)
+        val r = listRow(icon, title, "", Ui.TEXT, label(clock(v), 13f, Ui.MUTED), true)
+        r.setOnClickListener {
+            it.tapFx()
+            android.app.TimePickerDialog(this, { _, h, m ->
+                prefs.edit().putInt(key, h * 60 + m).apply()
+                render()
+            }, v / 60, v % 60, false).show()
         }
         return r
     }
@@ -143,6 +195,76 @@ class NotifSettingsActivity : GuardedActivity() {
             toggle(R.drawable.ic_backup, "Backup reminder", "A banner on Home when a backup is due", NotifPrefs.BACKUP, master)
         )), lp())
 
+        section("Prayer alerts")
+        val pn = listOf("Fajr", "Dhuhr", "Asr", "Maghrib", "Isha")
+        val prows = ArrayList<View>()
+        for (k in pn.indices) {
+            val idx = PrayerReminder.IDX[k]
+            val on = PrayerCalc.notify(this, idx)
+            val r = listRow(R.drawable.ic_clock, pn[k], "", if (master) Ui.TEXT else Ui.MUTED, styledSwitch(on && master), false)
+            r.setOnClickListener {
+                it.tapFx()
+                PrayerCalc.setNotify(this, idx, !on)
+                PrayerReminder.scheduleAll(this)
+                render()
+            }
+            prows.add(r)
+        }
+        val leads = intArrayOf(0, 5, 10, 15, 30)
+        val leadNames = arrayOf("On time", "5 minutes before", "10 minutes before", "15 minutes before", "30 minutes before")
+        val pl = NotifPrefs.prayerLead(this)
+        val plIdx = leads.indexOf(pl).let { if (it < 0) 0 else it }
+        val lr = listRow(R.drawable.ic_bell, "Alert before time", "", Ui.TEXT, label(leadNames[plIdx], 13f, Ui.MUTED), true)
+        lr.setOnClickListener {
+            it.tapFx()
+            choose("Alert before time", leadNames, plIdx) { i ->
+                prefs.edit().putInt("prayerLead", leads[i]).apply()
+                PrayerReminder.scheduleAll(this)
+                render()
+            }
+        }
+        prows.add(lr)
+        box.addView(groupCard(prows), lp())
+
+        section("Debt reminders")
+        val dl = intArrayOf(0, 1, 3)
+        val dlNames = arrayOf("On the due date", "1 day before", "3 days before")
+        val dlIdx = dl.indexOf(NotifPrefs.debtLead(this)).let { if (it < 0) 0 else it }
+        val dr = listRow(R.drawable.ic_wallet, "Remind me", "", Ui.TEXT, label(dlNames[dlIdx], 13f, Ui.MUTED), true)
+        dr.setOnClickListener {
+            it.tapFx()
+            choose("Debt reminder", dlNames, dlIdx) { i ->
+                prefs.edit().putInt("debtLead", dl[i]).apply()
+                DebtReminder.rescheduleAll(this)
+                render()
+            }
+        }
+        box.addView(groupCard(listOf(dr)), lp())
+
+        section("Quiet hours")
+        val qOn = prefs.getBoolean("quietOn", false)
+        val qrows = ArrayList<View>()
+        val qr = listRow(R.drawable.ic_moon, "Quiet hours", "Reminders in this time are skipped", Ui.TEXT, styledSwitch(qOn), false)
+        qr.setOnClickListener {
+            it.tapFx()
+            prefs.edit().putBoolean("quietOn", !qOn).apply()
+            render()
+        }
+        qrows.add(qr)
+        if (qOn) {
+            qrows.add(timeRow(R.drawable.ic_clock, "From", "quietFrom", 23 * 60))
+            qrows.add(timeRow(R.drawable.ic_clock, "To", "quietTo", 5 * 60))
+            val pOk = prefs.getBoolean("quietPrayerOk", true)
+            val pr = listRow(R.drawable.ic_shield, "Prayer alerts still ring", "Prayers ignore quiet hours", Ui.TEXT, styledSwitch(pOk), false)
+            pr.setOnClickListener {
+                it.tapFx()
+                prefs.edit().putBoolean("quietPrayerOk", !pOk).apply()
+                render()
+            }
+            qrows.add(pr)
+        }
+        box.addView(groupCard(qrows), lp())
+
         section("Sound & vibration")
         box.addView(groupCard(listOf(
             listRow(R.drawable.ic_volume, "Phone notification settings", "Choose sound and vibration for each type").also {
@@ -150,7 +272,7 @@ class NotifSettingsActivity : GuardedActivity() {
             }
         )), lp())
         box.addView(
-            label("If reminders come late on Xiaomi, set this app's battery to “No restrictions” and open the app once after a restart.", 12f, Ui.MUTED),
+            label("Reminders are set again automatically after a restart. On Xiaomi, also allow Autostart and set this app's battery to “No restrictions”, or alarms may come late.", 12f, Ui.MUTED),
             lp(l = 6, t = 12)
         )
     }

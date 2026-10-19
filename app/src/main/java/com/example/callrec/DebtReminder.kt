@@ -14,12 +14,13 @@ import java.util.Calendar
 object DebtReminder {
     private fun code(id: Long): Int = (id % 1_000_000_000L).toInt()
 
-    private fun pending(c: Context, d: Debt?, id: Long, flags: Int): PendingIntent? {
+    private fun pending(c: Context, d: Debt?, id: Long, flags: Int, lead: Int = 0): PendingIntent? {
         val i = Intent(c, DebtReminderReceiver::class.java)
         i.putExtra("id", id)
         if (d != null) {
             i.putExtra("name", d.name)
             i.putExtra("owe", d.owe)
+            i.putExtra("lead", lead)
         }
         return PendingIntent.getBroadcast(c, code(id), i, flags or PendingIntent.FLAG_IMMUTABLE)
     }
@@ -32,13 +33,22 @@ object DebtReminder {
     fun schedule(c: Context, d: Debt) {
         cancel(c, d.id)
         if (d.due == 0L) return
+        var lead = NotifPrefs.debtLead(c)
         val cal = Calendar.getInstance()
         cal.timeInMillis = d.due
         cal.set(Calendar.HOUR_OF_DAY, 9)
         cal.set(Calendar.MINUTE, 0)
+        cal.add(Calendar.DAY_OF_YEAR, -lead)
+        if (cal.timeInMillis <= System.currentTimeMillis() && lead > 0) {
+            // the early reminder time has passed, so keep the one on the due date itself
+            lead = 0
+            cal.timeInMillis = d.due
+            cal.set(Calendar.HOUR_OF_DAY, 9)
+            cal.set(Calendar.MINUTE, 0)
+        }
         if (cal.timeInMillis <= System.currentTimeMillis()) return
         val am = c.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val pi = pending(c, d, d.id, PendingIntent.FLAG_UPDATE_CURRENT) ?: return
+        val pi = pending(c, d, d.id, PendingIntent.FLAG_UPDATE_CURRENT, lead) ?: return
         am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pi)
     }
 
@@ -50,7 +60,7 @@ object DebtReminder {
 
 class DebtReminderReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
-        if (!NotifPrefs.on(ctx, NotifPrefs.DEBT)) return
+        if (!NotifPrefs.shouldShow(ctx, NotifPrefs.DEBT)) return
         val id = intent.getLongExtra("id", 0L)
         val d = DebtStore.all(ctx).firstOrNull { it.id == id } ?: return
         val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -59,8 +69,10 @@ class DebtReminderReceiver : BroadcastReceiver() {
             ctx, 300, Intent(ctx, DebtActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val text = if (d.owe) tr("আজ ") + d.name + tr(" কে দেওয়ার দিন: ") + taka(d.amount)
-        else tr("আজ ") + d.name + tr(" এর কাছ থেকে নেওয়ার দিন: ") + taka(d.amount)
+        val lead = intent.getIntExtra("lead", 0)
+        val day = if (lead > 0) bn(lead.toString()) + tr(" দিন পরে ") else tr("আজ ")
+        val text = if (d.owe) day + d.name + tr(" কে দেওয়ার দিন: ") + taka(d.amount)
+        else day + d.name + tr(" এর কাছ থেকে নেওয়ার দিন: ") + taka(d.amount)
         val n = Notification.Builder(ctx, "debt_reminder")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(tr("বাকির রিমাইন্ডার"))
