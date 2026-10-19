@@ -21,7 +21,7 @@ fun Activity.openTool(t: Tool) {
 fun Activity.toolRow(t: Tool, onFavChanged: () -> Unit): View {
     val cat = Registry.cat(t.cat)
     val ready = t.target != null
-    val showDesc = getSharedPreferences("settings", MODE_PRIVATE).getBoolean("toolDesc", true)
+    val showDesc = getSharedPreferences("settings", android.content.Context.MODE_PRIVATE).getBoolean("toolDesc", true)
     val sub = if (!showDesc) "" else if (t.online) t.sub + tr(" · ইন্টারনেট লাগে") else t.sub
     var extra: View? = null
     if (Registry.isFav(this, t.id)) {
