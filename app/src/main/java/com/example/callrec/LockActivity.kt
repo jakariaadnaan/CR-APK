@@ -1,6 +1,8 @@
 package com.example.callrec
 
 import android.app.Activity
+import android.app.AlertDialog
+import android.view.View
 import android.content.DialogInterface
 import android.graphics.Color
 import android.hardware.biometrics.BiometricPrompt
@@ -23,7 +25,7 @@ class LockActivity : Activity() {
     private var signal: CancellationSignal? = null
     private var pattern: PatternView? = null
 
-    private lateinit var dots: TextView
+    private lateinit var dotRow: LinearLayout
     private lateinit var msg: TextView
 
     private val isPattern: Boolean get() = Lock.type(this) == "pattern"
@@ -33,28 +35,62 @@ class LockActivity : Activity() {
         Ui.apply(this)
         Lock.showing = true
         if (screenHidden(this)) window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
-        window.statusBarColor = Ui.PRIMARY
 
         val root = LinearLayout(this)
         root.orientation = LinearLayout.VERTICAL
         root.gravity = Gravity.CENTER_HORIZONTAL
-        root.setBackgroundColor(Ui.PRIMARY)
-        root.setPadding(dp(24), dp(40), dp(24), dp(24))
+        root.setPadding(dp(24), dp(28), dp(24), dp(16))
 
-        val lock = label("🔒", 40f, Color.WHITE)
-        lock.gravity = Gravity.CENTER
-        root.addView(lock, lp())
-        val title = label(tr("আমার খাতা"), 22f, Color.WHITE, true)
-        title.gravity = Gravity.CENTER
-        root.addView(title, lp(t = 8))
+        val ink = Color.parseColor("#0A0A12")
+        val topCol = Ui.mix(Ui.PRIMARY, ink, 0.62f)
+        root.background = android.graphics.drawable.GradientDrawable(
+            android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(topCol, ink)
+        )
+        window.statusBarColor = topCol
+        window.navigationBarColor = ink
+        val soft = Color.argb(170, 255, 255, 255)
+        val timeStyle = Lock.style(this) == 1 && !isPattern
 
-        dots = label("", 30f, Color.WHITE, true)
-        dots.gravity = Gravity.CENTER
-        msg = label(if (isPattern) tr("প্যাটার্ন আঁকুন") else tr("পিন দিন"), 14f, Ui.mix(Ui.PRIMARY, Color.WHITE, 0.82f))
+        if (timeStyle) {
+            val clock = android.widget.TextClock(this)
+            clock.format12Hour = "hh:mm"
+            clock.format24Hour = "HH:mm"
+            clock.setTextColor(Color.WHITE)
+            clock.textSize = 58f
+            clock.typeface = android.graphics.Typeface.create("sans-serif-thin", android.graphics.Typeface.NORMAL)
+            clock.gravity = Gravity.CENTER
+            root.addView(clock, lp(t = 16))
+            val date = android.widget.TextClock(this)
+            date.format12Hour = "EEEE, d MMMM"
+            date.format24Hour = "EEEE, d MMMM"
+            date.setTextColor(soft)
+            date.textSize = 15f
+            date.gravity = Gravity.CENTER
+            root.addView(date, lp(t = 2))
+        } else {
+            val sp = getSharedPreferences("settings", MODE_PRIVATE)
+            val iconRes = when (sp.getString("appIcon", "IconA")) {
+                "IconB" -> R.mipmap.ic_launcher_b
+                "IconC" -> R.mipmap.ic_launcher_c
+                else -> R.mipmap.ic_launcher_a
+            }
+            val iv = android.widget.ImageView(this)
+            iv.setImageResource(iconRes)
+            iv.clipToOutline = true
+            iv.outlineProvider = object : android.view.ViewOutlineProvider() {
+                override fun getOutline(v: android.view.View, o: android.graphics.Outline) { o.setRoundRect(0, 0, v.width, v.height, v.width * 0.24f) }
+            }
+            root.addView(iv, lp(width = dp(68), height = dp(68), t = 20))
+            val title = label(tr("আমার খাতা"), 20f, Color.WHITE, true)
+            title.gravity = Gravity.CENTER
+            root.addView(title, lp(t = 12))
+        }
+
+        msg = label(if (isPattern) tr("প্যাটার্ন আঁকুন") else tr("পিন দিন"), 15f, soft)
         msg.gravity = Gravity.CENTER
 
         if (isPattern) {
-            root.addView(msg, lp(t = 16, b = 16))
+            root.addView(msg, lp(t = 24, b = 16))
             val pv = PatternView(this)
             pv.baseColor = Ui.mix(Ui.PRIMARY, Color.WHITE, 0.6f)
             pv.activeColor = Color.WHITE
@@ -66,12 +102,15 @@ class LockActivity : Activity() {
                 val bio = label(tr("👆  ফিঙ্গারপ্রিন্ট ব্যবহার করুন"), 15f, Color.WHITE, true)
                 bio.gravity = Gravity.CENTER
                 bio.setPadding(dp(16), dp(12), dp(16), dp(12))
-                bio.setOnClickListener { showBiometric() }
+                bio.setOnClickListener { it.tapFx(); showBiometric() }
                 root.addView(bio, lp(t = 16))
             }
         } else {
-            root.addView(dots, lp(t = 24))
-            root.addView(msg, lp(t = 6, b = 16))
+            root.addView(msg, lp(t = if (timeStyle) 20 else 26))
+            dotRow = LinearLayout(this)
+            dotRow.orientation = LinearLayout.HORIZONTAL
+            dotRow.gravity = Gravity.CENTER
+            root.addView(dotRow, lp(t = 16, b = 18))
             val keys = listOf(
                 listOf("1", "2", "3"),
                 listOf("4", "5", "6"),
@@ -80,15 +119,18 @@ class LockActivity : Activity() {
             )
             val pad = LinearLayout(this)
             pad.orientation = LinearLayout.VERTICAL
+            val circle = Color.argb(36, 255, 255, 255)
             for (r in keys) {
                 val line = LinearLayout(this)
                 line.orientation = LinearLayout.HORIZONTAL
+                line.gravity = Gravity.CENTER
                 for (k in r) {
                     val isBioKey = k == "👆"
-                    val b = label(if (isBioKey) (if (bioReady()) k else "") else bn(k), 26f, Color.WHITE, true)
+                    val b = label(if (isBioKey) (if (bioReady()) k else "") else if (k == "⌫") k else bn(k), 26f, Color.WHITE, true)
                     b.gravity = Gravity.CENTER
-                    if (!isBioKey || bioReady()) b.background = bg(Ui.mix(Ui.PRIMARY, Color.WHITE, 0.15f), 40)
+                    if (!isBioKey || bioReady()) b.background = bg(if (isBioKey) Color.TRANSPARENT else circle, 36)
                     b.setOnClickListener {
+                        it.tapFx()
                         when (k) {
                             "👆" -> if (bioReady()) showBiometric()
                             "⌫" -> {
@@ -98,15 +140,29 @@ class LockActivity : Activity() {
                             else -> press(k)
                         }
                     }
-                    val p = LinearLayout.LayoutParams(0, dp(68), 1f)
-                    p.setMargins(dp(8), dp(6), dp(8), dp(6))
+                    val p = LinearLayout.LayoutParams(dp(72), dp(72))
+                    p.setMargins(dp(11), dp(7), dp(11), dp(7))
                     line.addView(b, p)
                 }
                 pad.addView(line, lp())
             }
-            root.addView(pad, lp(l = 12, r = 12))
+            root.addView(pad, lp())
             refreshDots()
         }
+
+        root.addView(View(this), LinearLayout.LayoutParams(0, 0, 1f))
+        val forgot = label(if (isPattern) tr("প্যাটার্ন ভুলে গেছেন?") else tr("পিন ভুলে গেছেন?"), 14f, soft)
+        forgot.gravity = Gravity.CENTER
+        forgot.setPadding(dp(16), dp(12), dp(16), dp(8))
+        forgot.setOnClickListener {
+            it.tapFx()
+            AlertDialog.Builder(this)
+                .setTitle(tr("ভুলে গেলে কী করবেন"))
+                .setMessage(tr("পিন বা প্যাটার্ন ফোনেই থাকে, তাই আমরা ফিরিয়ে দিতে পারি না। ফোনের Settings > Apps > আমার খাতা > Storage থেকে ডেটা মুছে নতুন করে শুরু করতে হবে। আগে ব্যাকআপ নেওয়া থাকলে তা ফিরিয়ে আনা যাবে।"))
+                .setPositiveButton(tr("ঠিক আছে"), null)
+                .show()
+        }
+        root.addView(forgot, lp())
         setContentView(root)
     }
 
@@ -137,9 +193,25 @@ class LockActivity : Activity() {
 
     private fun refreshDots() {
         val n = maxOf(Lock.pinLength(this), input.length)
-        val sb = StringBuilder()
-        for (i in 0 until n) sb.append(if (i < input.length) "●" else "○").append(' ')
-        dots.text = sb.toString().trim()
+        dotRow.removeAllViews()
+        for (i in 0 until n) {
+            val d = View(this)
+            val g = android.graphics.drawable.GradientDrawable()
+            g.shape = android.graphics.drawable.GradientDrawable.OVAL
+            if (i < input.length) g.setColor(Color.WHITE) else { g.setColor(Color.TRANSPARENT); g.setStroke(dp(2), Color.argb(150, 255, 255, 255)) }
+            d.background = g
+            val p = LinearLayout.LayoutParams(dp(13), dp(13))
+            p.setMargins(dp(8), 0, dp(8), 0)
+            dotRow.addView(d, p)
+        }
+    }
+
+    private fun shake() {
+        val a = android.view.animation.TranslateAnimation(-14f, 14f, 0f, 0f)
+        a.duration = 60
+        a.repeatCount = 5
+        a.repeatMode = android.view.animation.Animation.REVERSE
+        if (::dotRow.isInitialized) dotRow.startAnimation(a)
     }
 
     private fun success() {
@@ -182,6 +254,7 @@ class LockActivity : Activity() {
             } else {
                 input = ""
                 refreshDots()
+                shake()
                 registerFail(tr("পিন"))
             }
         }

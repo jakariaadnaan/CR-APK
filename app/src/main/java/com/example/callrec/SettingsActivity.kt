@@ -316,6 +316,22 @@ class SettingsActivity : GuardedActivity() {
                 },
                 lp(b = 8)
             )
+            if (Lock.type(this) == "pin") {
+                val st = Lock.style(this)
+                box.addView(
+                    row(tr("লক স্ক্রিনের ধরন"), if (st == 1) tr("সময় ও পিন") else tr("ক্লাসিক"), null) {
+                        AlertDialog.Builder(this)
+                            .setTitle(tr("লক স্ক্রিনের ধরন"))
+                            .setSingleChoiceItems(arrayOf(tr("ক্লাসিক"), tr("সময় ও পিন")), st) { d, i ->
+                                Lock.setStyle(this, i)
+                                d.dismiss()
+                                render()
+                            }
+                            .show()
+                    },
+                    lp(b = 8)
+                )
+            }
             if (Lock.biometricAvailable(this)) {
                 val bio = Lock.bioEnabled(this)
                 box.addView(

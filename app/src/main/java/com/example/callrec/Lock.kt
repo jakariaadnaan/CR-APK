@@ -27,6 +27,9 @@ object Lock {
     fun enabled(c: Context): Boolean = sp(c).getBoolean("on", false) && sp(c).getString("hash", null) != null
     /** "pin" or "pattern". */
     fun type(c: Context): String = sp(c).getString("type", "pin") ?: "pin"
+    /** 0 = classic, 1 = big clock above the PIN pad. */
+    fun style(c: Context): Int = sp(c).getInt("style", 0)
+    fun setStyle(c: Context, s: Int) { sp(c).edit().putInt("style", s).apply() }
     fun pinLength(c: Context): Int = sp(c).getInt("len", 4)
     fun bioEnabled(c: Context): Boolean = sp(c).getBoolean("bio", false)
     fun graceMs(c: Context): Long = sp(c).getLong("grace", 30_000L)

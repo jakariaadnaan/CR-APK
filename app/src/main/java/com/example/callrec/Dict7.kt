@@ -2,6 +2,13 @@ package com.example.callrec
 
 object Dict7 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        "পিন ভুলে গেছেন?" to "Forgot PIN?",
+        "প্যাটার্ন ভুলে গেছেন?" to "Forgot pattern?",
+        "ভুলে গেলে কী করবেন" to "If you forget it",
+        "পিন বা প্যাটার্ন ফোনেই থাকে, তাই আমরা ফিরিয়ে দিতে পারি না। ফোনের Settings > Apps > আমার খাতা > Storage থেকে ডেটা মুছে নতুন করে শুরু করতে হবে। আগে ব্যাকআপ নেওয়া থাকলে তা ফিরিয়ে আনা যাবে।" to "Your PIN or pattern stays only on this phone, so it cannot be recovered. You will have to clear the data from your phone's Settings > Apps > আমার খাতা > Storage and start again. If you took a backup earlier, you can restore it.",
+        "লক স্ক্রিনের ধরন" to "Lock screen style",
+        "ক্লাসিক" to "Classic",
+        "সময় ও পিন" to "Time + PIN",
         "আজকের সারাংশ" to "Today's summary",
         "দৈনিক সারাংশ" to "Daily summary",
         "টি করণীয়" to " to-dos",
