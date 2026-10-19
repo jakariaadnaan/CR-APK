@@ -27,6 +27,10 @@ class InfoPageActivity : GuardedActivity() {
                 setScreen(tr("গোপনীয়তা নীতি"), scroll)
                 privacy()
             }
+            "help" -> {
+                setScreen(tr("সাহায্য ও সহায়তা"), scroll)
+                help()
+            }
             else -> {
                 setScreen(tr("গোপনীয়তা নীতি"), scroll)
                 privacy()
@@ -145,5 +149,78 @@ class InfoPageActivity : GuardedActivity() {
             )
         )
         for ((i, s) in secs.withIndex()) section(i + 1, s)
+    }
+
+    private fun faq(q: String, a: String) {
+        val c = card(0)
+        val head = LinearLayout(this)
+        head.orientation = LinearLayout.HORIZONTAL
+        head.gravity = Gravity.CENTER_VERTICAL
+        head.setPadding(dp(16), dp(14), dp(16), dp(14))
+        head.addView(label(q, 15f, Ui.TEXT, true), LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        val sign = label("+", 20f, Ui.PRIMARY, true)
+        head.addView(sign, lp(width = ViewGroup.LayoutParams.WRAP_CONTENT, l = 10))
+        c.addView(head)
+        val ans = body(a, Ui.MUTED)
+        ans.setPadding(dp(16), 0, dp(16), dp(16))
+        ans.visibility = android.view.View.GONE
+        c.addView(ans)
+        head.setOnClickListener {
+            val open = ans.visibility == android.view.View.VISIBLE
+            ans.visibility = if (open) android.view.View.GONE else android.view.View.VISIBLE
+            sign.text = if (open) "+" else "–"
+        }
+        box.addView(c, lp(b = 8))
+    }
+
+    private fun help() {
+        val ver = try { packageManager.getPackageInfo(packageName, 0).versionName ?: "" } catch (e: Exception) { "" }
+        hero(
+            R.drawable.ic_help,
+            tr("সাহায্য ও সহায়তা"),
+            tr("সংস্করণ: ") + bn(ver),
+            tr("সাধারণ প্রশ্ন ও সমাধান এক জায়গায়।")
+        )
+        section(1, Sec(
+            tr("শুরু করার গাইড"),
+            bullets = listOf(
+                tr("হোমে খরচ, বাকি, করণীয় ও নোটের শর্টকাট আছে। সব টুল দেখতে নিচের “সব টুল” ট্যাবে যান।"),
+                tr("টুল খুঁজতে হোমের ওপরের সার্চ বোতাম চাপুন।"),
+                tr("প্রিয় টুল বানাতে টুলের ওপর কিছুক্ষণ চেপে ধরুন।"),
+                tr("চেহারা, ভাষা ও লেখার আকার Settings > Appearance-এ বদলানো যায়।")
+            )
+        ))
+        box.addView(label(tr("সাধারণ প্রশ্ন"), 16f, Ui.TEXT, true), lp(l = 4, t = 6, b = 8))
+        faq(tr("ডেটা হারিয়ে গেলে কী করব?"), tr("আগে ব্যাকআপ নেওয়া থাকলে Settings > Backup & Restore থেকে ব্যাকআপ ফাইল বেছে ফিরিয়ে আনুন। ব্যাকআপ না থাকলে ডেটা ফেরানোর উপায় নেই, তাই নিয়মিত ব্যাকআপ নিন।"))
+        faq(tr("পিন বা প্যাটার্ন ভুলে গেলে কী হবে?"), tr("ফোনের Settings থেকে এই অ্যাপের ডেটা মুছে নতুন করে শুরু করতে হবে। এতে অ্যাপের সব ডেটা মুছে যায়, তাই আগে ব্যাকআপ রাখুন।"))
+        faq(tr("রিমাইন্ডার বা নামাজের অ্যালার্ম বাজছে না কেন?"), tr("নোটিফিকেশনের অনুমতি দিন, ফোনের ব্যাটারি সেটিংসে এই অ্যাপকে “সীমাহীন” (No restrictions) করুন, আর অ্যাপটি অন্তত একবার খুলুন। ফোন রিস্টার্টের পর একবার অ্যাপ খুলতে হয়।"))
+        faq(tr("ব্যাকআপ কীভাবে নেব ও ফেরাব?"), tr("Settings > Backup & Restore-এ গিয়ে “ব্যাকআপ তৈরি করুন” চাপুন, চাইলে পাসওয়ার্ড দিন, আর ফাইলটি Drive বা ফোনের ফোল্ডারে রাখুন। ফেরাতে “ব্যাকআপ থেকে ফিরিয়ে আনুন” চাপুন। ফেরালে এখনকার ডেটা মুছে ব্যাকআপের ডেটা বসে।"))
+        faq(tr("নতুন ফোনে ডেটা কীভাবে নেব?"), tr("পুরোনো ফোনে ব্যাকআপ নিয়ে ফাইলটি নতুন ফোনে পাঠান, তারপর নতুন ফোনের অ্যাপে ফিরিয়ে আনুন।"))
+        faq(tr("PDF ফাইল সংরক্ষণ হচ্ছে না কেন?"), tr("ফাইল সংরক্ষণের পর্দায় এমন ফোল্ডার বাছুন যেখানে লেখা যায়, যেমন Download বা Documents। পাসওয়ার্ড দেওয়া PDF হলে আগে “PDF লক / আনলক” টুলে খুলে নিন।"))
+        faq(tr("ভাষা, থিম ও লেখার আকার কোথায় বদলাব?"), tr("Settings > Appearance পেজে থিম, রং ও লেখার আকার আছে। একদম নিচে ভাষা ও সংখ্যার ধরন আছে।"))
+        section(2, Sec(
+            tr("সমস্যা সমাধান"),
+            bullets = listOf(
+                tr("অ্যাপ ধীর লাগলে Settings থেকে Clear Cache করুন।"),
+                tr("আইকন বদলাতে কয়েক সেকেন্ড লাগতে পারে, একটু অপেক্ষা করুন।"),
+                tr("অনলাইন টুল কাজ না করলে ইন্টারনেট সংযোগ দেখুন।")
+            )
+        ))
+        val c = card(16)
+        val head = LinearLayout(this)
+        head.orientation = LinearLayout.HORIZONTAL
+        head.gravity = Gravity.CENTER_VERTICAL
+        val num = label(bn("3"), 13f, Color.WHITE, true)
+        num.gravity = Gravity.CENTER
+        num.background = bg(Ui.PRIMARY, 12)
+        head.addView(num, lp(width = dp(24), height = dp(24), r = 10))
+        head.addView(label(tr("যোগাযোগ"), 16f, Ui.TEXT, true), LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        c.addView(head)
+        c.addView(body(tr("যোগাযোগের ব্যবস্থা শীঘ্রই আসছে")), lp(t = 10))
+        c.addView(body(tr("সমস্যা জানানোর সময় অ্যাপের সংস্করণ ও ফোনের মডেল সাথে রাখুন।"), Ui.MUTED), lp(t = 6))
+        c.addView(pill(tr("তথ্য কপি করুন")) {
+            copyText("Amar Khata v" + ver + " · " + android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL + " · Android " + android.os.Build.VERSION.RELEASE)
+        }, lp(t = 12))
+        box.addView(c, lp(b = 10))
     }
 }

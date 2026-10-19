@@ -260,13 +260,7 @@ class SettingsActivity : GuardedActivity() {
         secTitle("Support & About")
         box.addView(groupCard(listOf(
             rowOf(R.drawable.ic_help, "Help & Support", "") {
-                simpleDialog(
-                    "Help & Support",
-                    "• Lost data? Restore from a backup under Backup & Restore.\n" +
-                        "• Forgot the lock? Without a backup the only way is to clear the app data, so take backups regularly.\n" +
-                        "• Reminders not ringing? Allow notifications and set battery to unrestricted for this app, then open the app once.\n" +
-                        "• A tool not needed? Hide it from Quick Access."
-                )
+                startActivity(Intent(this, InfoPageActivity::class.java).putExtra("page", "help"))
             },
             rowOf(R.drawable.ic_star, "Rate Us", "") {
                 try {
