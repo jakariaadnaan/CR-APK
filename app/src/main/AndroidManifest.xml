@@ -148,6 +148,7 @@
         <activity android:name=".PdfNupActivity" android:exported="false" />
         <activity android:name=".PdfPageSizeActivity" android:exported="false" />
         <activity android:name=".CollageActivity" android:exported="false" />
+        <activity android:name=".InfoPageActivity" android:exported="false" />
         <activity android:name=".PdfMergeActivity" android:exported="false" />
         <activity android:name=".PdfSignActivity" android:exported="false" />
         <activity android:name=".TextToPdfActivity" android:exported="false" />

@@ -247,14 +247,7 @@ class SettingsActivity : GuardedActivity() {
                     .setNegativeButton("Cancel", null).show()
             },
             rowOf(R.drawable.ic_doc, "Privacy Policy", "") {
-                simpleDialog(
-                    "Privacy Policy",
-                    "• Your ledger, debts, to-dos and notes are stored only on this phone.\n" +
-                        "• The app has no account, no ads and no analytics. Nothing is uploaded automatically.\n" +
-                        "• The internet is used only by the online tools you open (currency rates, dictionary, IP lookup, webpage to PDF and similar).\n" +
-                        "• Backups are files you save yourself. A backup password encrypts the file; if you forget it the backup cannot be opened.\n" +
-                        "• Camera, notification and storage-folder access are used only for the feature you open."
-                )
+                startActivity(Intent(this, InfoPageActivity::class.java).putExtra("page", "privacy"))
             }
         )), lp())
 
