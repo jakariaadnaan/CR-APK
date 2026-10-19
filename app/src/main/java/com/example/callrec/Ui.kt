@@ -121,12 +121,21 @@ fun Context.lp(
     return p
 }
 
+/** Small vibration and click sound on a tap, each controlled from Settings. */
+fun View.tapFx() {
+    try {
+        val p = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        if (p.getBoolean("haptic", true)) performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
+        if (p.getBoolean("sound", true)) playSoundEffect(android.view.SoundEffectConstants.CLICK)
+    } catch (e: Throwable) { }
+}
+
 fun Context.pill(text: String, color: Int = Ui.PRIMARY, fg: Int = Color.WHITE, onClick: () -> Unit): TextView {
     val t = label(text, 15f, fg, true)
     t.gravity = Gravity.CENTER
     t.background = bg(color, 16)
     t.setPadding(dp(18), dp(11), dp(18), dp(11))
-    t.setOnClickListener { onClick() }
+    t.setOnClickListener { t.tapFx(); onClick() }
     return t
 }
 
@@ -419,6 +428,7 @@ fun Activity.navBar(selected: Int): View {
         tv.typeface = if (on) Typeface.DEFAULT_BOLD else Typeface.create("sans-serif-medium", Typeface.NORMAL)
         item.addView(tv, lp(width = ViewGroup.LayoutParams.WRAP_CONTENT, t = 4))
         item.setOnClickListener {
+            item.tapFx()
             if (!on) {
                 val intent = when (i) {
                     0 -> Intent(this, HomeActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)

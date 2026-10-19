@@ -3,6 +3,7 @@ package com.example.callrec
 import android.app.AlertDialog
 import android.content.Intent
 import android.graphics.Color
+import android.net.Uri
 import android.text.InputType
 import android.view.Gravity
 import android.view.View
@@ -27,6 +28,7 @@ class SettingsActivity : GuardedActivity() {
     private val reqCsvLedger = 43
     private val reqCsvDebt = 44
     private val reqTree = 45
+    private val reqDefFolder = 46
     private val dataKeys = listOf("ledger", "debts", "todos", "notes")
 
     private lateinit var box: LinearLayout
@@ -44,7 +46,7 @@ class SettingsActivity : GuardedActivity() {
             "lock" -> tr("অ্যাপ লক")
             "backup" -> tr("ব্যাকআপ")
             "data" -> tr("ডেটা ও অ্যাপ")
-            else -> tr("সেটিংস")
+            else -> "Settings"
         }
         if (page == "main") setScreen(title, scroll, back = false, bottom = navBar(2)) else setScreen(title, scroll)
         render()
@@ -143,67 +145,156 @@ class SettingsActivity : GuardedActivity() {
         box.addView(label(s, 13f, Ui.PRIMARY, true), lp(l = 6, t = 14, b = 8))
     }
 
+    private fun cacheSize(): Long {
+        fun size(f: java.io.File?): Long {
+            if (f == null || !f.exists()) return 0L
+            if (f.isFile) return f.length()
+            var n = 0L
+            f.listFiles()?.forEach { n += size(it) }
+            return n
+        }
+        return size(cacheDir) + size(externalCacheDir)
+    }
+
+    private fun clearDir(f: java.io.File?) {
+        f?.listFiles()?.forEach { if (it.isDirectory) { clearDir(it); it.delete() } else it.delete() }
+    }
+
+    private fun folderName(): String {
+        val s = prefs.getString("defFolder", null) ?: return "Internal Storage"
+        return try {
+            val id = android.provider.DocumentsContract.getTreeDocumentId(Uri.parse(s))
+            val n = id.substringAfter(":", id).substringAfterLast("/")
+            if (n.isEmpty()) "Internal Storage" else n
+        } catch (e: Throwable) { "Selected folder" }
+    }
+
+    private fun simpleDialog(title: String, msg: String, extra: String? = null, extraClick: (() -> Unit)? = null) {
+        val b = AlertDialog.Builder(this).setTitle(title).setMessage(msg).setPositiveButton("OK", null)
+        if (extra != null) b.setNeutralButton(extra) { _, _ -> extraClick?.invoke() }
+        b.show()
+    }
+
     private fun renderMain() {
-        val themeNames = arrayOf(tr("ফোনের সেটিং অনুযায়ী"), tr("হালকা"), tr("গাঢ় (ডার্ক)"))
+        val themeNames = arrayOf("System", "Light Mode", "Dark Mode")
         val ver = try {
             packageManager.getPackageInfo(packageName, 0).versionName ?: ""
         } catch (e: Exception) {
             ""
         }
         val last = prefs.getLong("lastBackup", 0L)
-        val lastText = if (last == 0L) tr("এখনো নেওয়া হয়নি") else bn(SimpleDateFormat("dd/MM/yyyy", Locale.US).format(Date(last)))
+        val lastText = if (last == 0L) "Never" else SimpleDateFormat("dd/MM/yyyy", Locale.US).format(Date(last))
 
-        // top card
+        // profile card
         val top = card(14)
         top.orientation = LinearLayout.HORIZONTAL
         top.gravity = Gravity.CENTER_VERTICAL
-        top.addView(iconBox(R.drawable.ic_shield, Ui.PRIMARY, Color.WHITE, 48, 26, 24, 14))
+        top.addView(iconBox(R.drawable.ic_user, Ui.PRIMARY, Color.WHITE, 48, 26, 24, 14))
         val mid = LinearLayout(this)
         mid.orientation = LinearLayout.VERTICAL
-        mid.addView(label(tr("আমার খাতা"), 17f, Ui.TEXT, true))
-        mid.addView(label(tr("আপনার ডেটা শুধু এই ফোনে থাকে"), 12f, Ui.MUTED), lp(t = 2))
+        mid.addView(label("Guest User", 17f, Ui.TEXT, true))
+        mid.addView(label("Sign in to sync your data", 12f, Ui.MUTED), lp(t = 2))
         top.addView(mid, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        top.addView(pill(tr("ব্যাকআপ")) { go("backup") }, lp(width = ViewGroup.LayoutParams.WRAP_CONTENT, l = 8))
+        top.addView(pill("Sign In") {
+            simpleDialog(
+                "Sign In",
+                "Online sign-in and sync are not available yet. All your data is safely stored on this phone only. Use Backup to keep a copy.",
+                "Open Backup"
+            ) { go("backup") }
+        }, lp(width = ViewGroup.LayoutParams.WRAP_CONTENT, l = 8))
         box.addView(top, lp())
 
-        secTitle(tr("পছন্দ"))
+        secTitle("Preferences")
+        val hap = prefs.getBoolean("haptic", true)
+        val snd = prefs.getBoolean("sound", true)
         box.addView(groupCard(listOf(
-            rowOf(R.drawable.ic_palette, tr("চেহারা"), "", extra = value(themeNames[prefs.getInt("theme", 0).coerceIn(0, 2)])) {
+            rowOf(R.drawable.ic_palette, "Appearance", "", extra = value(themeNames[prefs.getInt("theme", 0).coerceIn(0, 2)])) {
                 startActivity(Intent(this, AppearanceActivity::class.java))
             },
-            rowOf(R.drawable.ic_globe, tr("ভাষা"), "", extra = value(if (Lang.en) "English" else "বাংলা")) {
+            rowOf(R.drawable.ic_globe, "Language", "", extra = value(if (Lang.en) "English" else "বাংলা")) {
                 startActivity(Intent(this, AppearanceActivity::class.java))
             },
-            rowOf(R.drawable.ic_eye_off, tr("টুল দেখানো বা লুকানো"), tr("যে টুল লাগে না সেটি লুকিয়ে রাখুন")) {
+            rowOf(R.drawable.ic_folder, "Default Folder", "", extra = value(folderName())) {
+                val i = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+                defaultFolderUri(this)?.let { i.putExtra(android.provider.DocumentsContract.EXTRA_INITIAL_URI, it) }
+                startActivityForResult(i, reqDefFolder)
+            },
+            rowOf(R.drawable.ic_bolt, "Quick Access", "") {
                 startActivity(Intent(this, HiddenToolsActivity::class.java))
+            },
+            rowOf(R.drawable.ic_vibrate, "Haptic Feedback", "", extra = switchView(hap), chevron = false) {
+                prefs.edit().putBoolean("haptic", !hap).apply()
+                render()
+            },
+            rowOf(R.drawable.ic_volume, "Sound", "", extra = switchView(snd), chevron = false) {
+                prefs.edit().putBoolean("sound", !snd).apply()
+                render()
             }
         )), lp())
 
-        secTitle(tr("নিরাপত্তা ও গোপনীয়তা"))
-        val hide = screenHidden(this)
+        secTitle("Security & Privacy")
         box.addView(groupCard(listOf(
-            rowOf(R.drawable.ic_lock, tr("অ্যাপ লক"), "", extra = value(if (Lock.enabled(this)) tr("চালু") else tr("বন্ধ"))) { go("lock") },
-            rowOf(R.drawable.ic_shield, tr("স্ক্রিনশট লুকান"), tr("স্ক্রিনশট ও রিসেন্ট প্রিভিউ বন্ধ"), extra = switchView(hide), chevron = false) {
-                prefs.edit().putBoolean("secure", !hide).apply()
-                Ui.stamp++
-                recreate()
+            rowOf(R.drawable.ic_lock, "App Lock", "", extra = value(if (Lock.enabled(this)) "On" else "Off")) { go("lock") },
+            rowOf(R.drawable.ic_trash, "Clear Cache", "", extra = value(Img.human(cacheSize()))) {
+                AlertDialog.Builder(this).setTitle("Clear Cache")
+                    .setMessage("Temporary files will be deleted. Your ledger, notes and other data are not touched.")
+                    .setPositiveButton("Clear") { _, _ ->
+                        clearDir(cacheDir)
+                        clearDir(externalCacheDir)
+                        Toast.makeText(this, "Cache cleared", Toast.LENGTH_SHORT).show()
+                        render()
+                    }
+                    .setNegativeButton("Cancel", null).show()
             },
-            rowOf(R.drawable.ic_backup, tr("ব্যাকআপ"), tr("সর্বশেষ: ") + lastText) { go("backup") }
+            rowOf(R.drawable.ic_doc, "Privacy Policy", "") {
+                simpleDialog(
+                    "Privacy Policy",
+                    "• Your ledger, debts, to-dos and notes are stored only on this phone.\n" +
+                        "• The app has no account, no ads and no analytics. Nothing is uploaded automatically.\n" +
+                        "• The internet is used only by the online tools you open (currency rates, dictionary, IP lookup, webpage to PDF and similar).\n" +
+                        "• Backups are files you save yourself. A backup password encrypts the file; if you forget it the backup cannot be opened.\n" +
+                        "• Camera, notification and storage-folder access are used only for the feature you open."
+                )
+            }
         )), lp())
 
-        secTitle(tr("ডেটা ও সহায়তা"))
+        secTitle("Backup & Data")
         box.addView(groupCard(listOf(
-            rowOf(R.drawable.ic_trash, tr("ডেটা মুছুন"), tr("খাতা, নোট ইত্যাদি মুছে ফেলুন")) { go("data") },
-            rowOf(R.drawable.ic_info, tr("অ্যাপ সম্পর্কে"), "", extra = value("v" + bn(ver))) { showAbout() }
+            rowOf(R.drawable.ic_backup, "Backup & Restore", "", extra = value(lastText)) { go("backup") },
+            rowOf(R.drawable.ic_eye_off, "Delete Data", "") { go("data") }
+        )), lp())
+
+        secTitle("Support & About")
+        box.addView(groupCard(listOf(
+            rowOf(R.drawable.ic_help, "Help & Support", "") {
+                simpleDialog(
+                    "Help & Support",
+                    "• Lost data? Restore from a backup under Backup & Restore.\n" +
+                        "• Forgot the lock? Without a backup the only way is to clear the app data, so take backups regularly.\n" +
+                        "• Reminders not ringing? Allow notifications and set battery to unrestricted for this app, then open the app once.\n" +
+                        "• A tool not needed? Hide it from Quick Access."
+                )
+            },
+            rowOf(R.drawable.ic_star, "Rate Us", "") {
+                try {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$packageName")))
+                } catch (e: Throwable) {
+                    Toast.makeText(this, "Rating opens once the app is on a store", Toast.LENGTH_LONG).show()
+                }
+            },
+            rowOf(R.drawable.ic_share, "Share App", "") {
+                val i = Intent(Intent.ACTION_SEND)
+                i.type = "text/plain"
+                i.putExtra(Intent.EXTRA_TEXT, "Amar Khata — ledger, debts, notes and many handy tools in one app.")
+                startActivity(Intent.createChooser(i, "Share App"))
+            },
+            rowOf(R.drawable.ic_info, "About", "", extra = value("v$ver")) { showAbout() }
         )), lp(b = 12))
-        val foot = label(tr("আমার খাতা · সংস্করণ ") + bn(ver), 12f, Ui.MUTED)
-        foot.gravity = Gravity.CENTER
-        box.addView(foot, lp())
     }
 
     private fun rowOf(icon: Int, title: String, sub: String, extra: View? = null, chevron: Boolean = true, onClick: () -> Unit): LinearLayout {
         val v = listRow(icon, title, sub, Ui.TEXT, extra, chevron)
-        v.setOnClickListener { onClick() }
+        v.setOnClickListener { v.tapFx(); onClick() }
         return v
     }
 
@@ -637,6 +728,14 @@ class SettingsActivity : GuardedActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         val uri = data?.data
         if (resultCode != RESULT_OK || uri == null) return
+        if (requestCode == reqDefFolder) {
+            try {
+                contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            } catch (e: Throwable) { }
+            prefs.edit().putString("defFolder", uri.toString()).apply()
+            render()
+            return
+        }
         if (requestCode == reqTree) {
             try {
                 contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)

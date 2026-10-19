@@ -88,12 +88,15 @@ abstract class PdfBase : GuardedActivity() {
         i.addCategory(Intent.CATEGORY_OPENABLE)
         i.type = "application/pdf"
         i.putExtra(Intent.EXTRA_TITLE, name)
+        defaultFolderUri(this)?.let { i.putExtra(android.provider.DocumentsContract.EXTRA_INITIAL_URI, it) }
         startActivityForResult(i, 86)
     }
 
     protected fun askTree(then: (Uri) -> Unit) {
         onTree = then
-        startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), 87)
+        val ti = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+        defaultFolderUri(this)?.let { ti.putExtra(android.provider.DocumentsContract.EXTRA_INITIAL_URI, it) }
+        startActivityForResult(ti, 87)
     }
 
     /** Runs [block] off the main thread; it returns the message to show, or throws. */
@@ -340,4 +343,10 @@ class PdfLockActivity : PdfBase() {
             }
         }
     }
+}
+
+/** The folder chosen under Settings > Default Folder, used as the starting point of save pickers. */
+fun defaultFolderUri(ctx: android.content.Context): Uri? {
+    val s = ctx.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE).getString("defFolder", null) ?: return null
+    return try { Uri.parse(s) } catch (e: Throwable) { null }
 }
