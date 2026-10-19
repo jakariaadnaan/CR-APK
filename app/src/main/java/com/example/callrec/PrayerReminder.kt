@@ -57,17 +57,18 @@ class PrayerReminderReceiver : BroadcastReceiver() {
             ctx, 302, Intent(ctx, PrayerActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+        val ttl = if (NotifPrefs.prayerLead(ctx) > 0) tr(PRAYER_NAMES[idx]) + tr(" এর সময় হতে ") + bn(NotifPrefs.prayerLead(ctx).toString()) + tr(" মিনিট বাকি")
+        else tr(PRAYER_NAMES[idx]) + tr(" এর সময় হয়েছে")
+        val place = PrayerCalc.location(ctx).first.let { tr(it) }
         val n = Notification.Builder(ctx, "prayer")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle(
-                if (NotifPrefs.prayerLead(ctx) > 0) tr(PRAYER_NAMES[idx]) + tr(" এর সময় হতে ") + bn(NotifPrefs.prayerLead(ctx).toString()) + tr(" মিনিট বাকি")
-                else tr(PRAYER_NAMES[idx]) + tr(" এর সময় হয়েছে")
-            )
-            .setContentText(PrayerCalc.location(ctx).first.let { tr(it) })
+            .setContentTitle(ttl)
+            .setContentText(place)
             .setContentIntent(open)
             .setAutoCancel(true)
             .build()
         nm.notify(4100 + k, n)
+        NotifLog.add(ctx, ttl, place)
         PrayerReminder.scheduleAll(ctx)
     }
 }

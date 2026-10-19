@@ -12,6 +12,7 @@ class BootReceiver : BroadcastReceiver() {
         try { DebtReminder.rescheduleAll(ctx) } catch (e: Throwable) { }
         try { TodoReminder.rescheduleAll(ctx) } catch (e: Throwable) { }
         try { PrayerReminder.scheduleAll(ctx) } catch (e: Throwable) { }
+        try { DailySummary.schedule(ctx) } catch (e: Throwable) { }
         try { AutoBackup.schedule(ctx) } catch (e: Throwable) { }
     }
 }

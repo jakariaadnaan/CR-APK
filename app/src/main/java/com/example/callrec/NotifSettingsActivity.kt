@@ -265,6 +265,81 @@ class NotifSettingsActivity : GuardedActivity() {
         }
         box.addView(groupCard(qrows), lp())
 
+        section("Daily summary")
+        val sOn = prefs.getBoolean("sumOn", false)
+        val srows = ArrayList<View>()
+        val sr = listRow(R.drawable.ic_sparkle, "Daily summary", "One notification each morning with today's tasks and due debts", Ui.TEXT, styledSwitch(sOn && master), false)
+        sr.setOnClickListener {
+            it.tapFx()
+            prefs.edit().putBoolean("sumOn", !sOn).apply()
+            DailySummary.schedule(this)
+            render()
+        }
+        srows.add(sr)
+        if (sOn) {
+            val v = prefs.getInt("sumTime", 8 * 60)
+            val tr0 = listRow(R.drawable.ic_clock, "Send at", "", Ui.TEXT, label(clock(v), 13f, Ui.MUTED), true)
+            tr0.setOnClickListener {
+                it.tapFx()
+                android.app.TimePickerDialog(this, { _, h, m ->
+                    prefs.edit().putInt("sumTime", h * 60 + m).apply()
+                    DailySummary.schedule(this)
+                    render()
+                }, v / 60, v % 60, false).show()
+            }
+            srows.add(tr0)
+        }
+        box.addView(groupCard(srows), lp())
+
+        section("Keep reminders reliable")
+        val pm = getSystemService(POWER_SERVICE) as android.os.PowerManager
+        val unrestricted = pm.isIgnoringBatteryOptimizations(packageName)
+        val rel = ArrayList<View>()
+        val br = listRow(R.drawable.ic_backup, "Battery", "Let alarms ring on time", Ui.TEXT, label(if (unrestricted) "Unrestricted" else "Optimised", 13f, if (unrestricted) Ui.GREEN else Ui.MUTED), true)
+        br.setOnClickListener {
+            it.tapFx()
+            try {
+                startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+            } catch (e: Throwable) {
+                startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).setData(android.net.Uri.parse("package:$packageName")))
+            }
+        }
+        rel.add(br)
+        val brand = android.os.Build.MANUFACTURER.lowercase()
+        if (brand.contains("xiaomi") || brand.contains("redmi") || brand.contains("poco")) {
+            val ar = listRow(R.drawable.ic_bolt, "Autostart (Xiaomi)", "Needed to restore reminders after a restart")
+            ar.setOnClickListener {
+                it.tapFx()
+                try {
+                    startActivity(Intent().setComponent(android.content.ComponentName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity")))
+                } catch (e: Throwable) {
+                    try {
+                        startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).setData(android.net.Uri.parse("package:$packageName")))
+                    } catch (x: Throwable) { }
+                }
+            }
+            rel.add(ar)
+        }
+        box.addView(groupCard(rel), lp())
+
+        section("Recent notifications")
+        val log = NotifLog.list(this)
+        if (log.isEmpty()) {
+            val e = label("Nothing yet. Reminders you receive will be listed here.", 13f, Ui.MUTED)
+            e.setPadding(dp(6), 0, dp(6), 0)
+            box.addView(e, lp())
+        } else {
+            val lrows = ArrayList<View>()
+            for (en in log) {
+                val when0 = java.text.SimpleDateFormat("dd MMM, h:mm a", java.util.Locale.US).format(java.util.Date(en.first))
+                lrows.add(listRow(R.drawable.ic_bell, en.second, en.third + "  ·  " + when0, Ui.TEXT, null, false))
+            }
+            val clr = listRow(R.drawable.ic_trash, "Clear history", "", Ui.RED, null, false)
+            clr.setOnClickListener { it.tapFx(); NotifLog.clear(this); render() }
+            lrows.add(clr)
+            box.addView(groupCard(lrows), lp())
+        }
+
         section("Sound & vibration")
         box.addView(groupCard(listOf(
             listRow(R.drawable.ic_volume, "Phone notification settings", "Choose sound and vibration for each type").also {

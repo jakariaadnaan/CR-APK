@@ -81,5 +81,6 @@ class DebtReminderReceiver : BroadcastReceiver() {
             .setAutoCancel(true)
             .build()
         nm.notify(2000 + (id % 100000L).toInt(), n)
+        NotifLog.add(ctx, tr("বাকির রিমাইন্ডার"), text)
     }
 }

@@ -32,6 +32,7 @@ class HomeActivity : GuardedActivity() {
         DebtReminder.rescheduleAll(this)
         TodoReminder.rescheduleAll(this)
         PrayerReminder.scheduleAll(this)
+        DailySummary.schedule(this)
         Thread { AutoBackup.runIfDue(applicationContext) }.start()
         window.statusBarColor = Ui.BG
         window.navigationBarColor = Ui.NAV

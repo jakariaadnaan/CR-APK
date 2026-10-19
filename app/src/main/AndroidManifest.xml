@@ -151,6 +151,7 @@
         <activity android:name=".CollageActivity" android:exported="false" />
         <activity android:name=".InfoPageActivity" android:exported="false" />
         <activity android:name=".NotifSettingsActivity" android:exported="false" />
+        <receiver android:name=".DailySummaryReceiver" android:exported="false" />
         <receiver android:name=".BootReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

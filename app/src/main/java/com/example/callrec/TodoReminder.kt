@@ -57,5 +57,6 @@ class TodoReminderReceiver : BroadcastReceiver() {
             .setAutoCancel(true)
             .build()
         nm.notify(3000 + (id % 100000L).toInt(), n)
+        NotifLog.add(ctx, if (t.urgent) tr("জরুরি কাজ") else tr("করণীয়"), t.title)
     }
 }
