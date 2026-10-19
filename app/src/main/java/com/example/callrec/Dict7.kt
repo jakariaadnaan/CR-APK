@@ -2,6 +2,16 @@ package com.example.callrec
 
 object Dict7 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        "পছন্দ" to "Preferences",
+        "আপনার ডেটা শুধু এই ফোনে থাকে" to "Your data stays only on this phone",
+        "চেহারা" to "Appearance",
+        "ভাষা" to "Language",
+        "নিরাপত্তা ও গোপনীয়তা" to "Security & privacy",
+        "চালু" to "On",
+        "স্ক্রিনশট লুকান" to "Hide screenshots",
+        "স্ক্রিনশট ও রিসেন্ট প্রিভিউ বন্ধ" to "Block screenshots and recent preview",
+        "এখনো নেওয়া হয়নি" to "Not taken yet",
+        "ডেটা ও সহায়তা" to "Data & help",
         "এক শিটে একাধিক পেজ" to "Pages per sheet",
         "২/৪/৬/৯ পেজ বা বুকলেট" to "2/4/6/9 pages or a booklet",
         "পেজ সাইজ বদলান" to "Change page size",

@@ -139,37 +139,75 @@ class SettingsActivity : GuardedActivity() {
         startActivity(Intent(this, SettingsActivity::class.java).putExtra("page", p))
     }
 
+    private fun secTitle(s: String) {
+        box.addView(label(s, 13f, Ui.PRIMARY, true), lp(l = 6, t = 14, b = 8))
+    }
+
     private fun renderMain() {
         val themeNames = arrayOf(tr("ফোনের সেটিং অনুযায়ী"), tr("হালকা"), tr("গাঢ় (ডার্ক)"))
-        box.addView(
-            row(tr("চেহারা ও ভাষা"), themeNames[prefs.getInt("theme", 0).coerceIn(0, 2)] + " · " + (if (Lang.en) "English" else "বাংলা"), null) {
-                startActivity(Intent(this, AppearanceActivity::class.java))
-            },
-            lp(b = 8)
-        )
-
-        box.addView(
-            row(tr("অ্যাপ লক"), if (Lock.enabled(this)) tr("চালু আছে (") + (if (Lock.type(this) == "pattern") tr("প্যাটার্ন") else tr("পিন")) + ")" else tr("বন্ধ আছে (পিন বা প্যাটার্ন)"), null) { go("lock") },
-            lp(b = 8)
-        )
-        box.addView(
-            row(tr("টুল দেখানো বা লুকানো"), tr("যে টুল লাগে না সেটি লুকিয়ে রাখুন"), null) {
-                startActivity(Intent(this, HiddenToolsActivity::class.java))
-            },
-            lp(b = 8)
-        )
-
-        val last = prefs.getLong("lastBackup", 0L)
-        val lastText = if (last == 0L) tr("এখনো ব্যাকআপ নেওয়া হয়নি") else tr("সর্বশেষ: ") + bn(SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US).format(Date(last)))
-        box.addView(row(tr("ব্যাকআপ"), lastText, null) { go("backup") }, lp(b = 8))
-        box.addView(row(tr("ডেটা ও অ্যাপ"), tr("ডেটা মুছুন") + " · " + tr("অ্যাপ সম্পর্কে"), null) { go("data") }, lp(b = 8))
         val ver = try {
             packageManager.getPackageInfo(packageName, 0).versionName ?: ""
         } catch (e: Exception) {
             ""
         }
-        box.addView(label(tr("আমার খাতা · সংস্করণ ") + bn(ver), 13f, Ui.MUTED), lp(l = 4))
+        val last = prefs.getLong("lastBackup", 0L)
+        val lastText = if (last == 0L) tr("এখনো নেওয়া হয়নি") else bn(SimpleDateFormat("dd/MM/yyyy", Locale.US).format(Date(last)))
+
+        // top card
+        val top = card(14)
+        top.orientation = LinearLayout.HORIZONTAL
+        top.gravity = Gravity.CENTER_VERTICAL
+        top.addView(iconBox(R.drawable.ic_shield, Ui.PRIMARY, Color.WHITE, 48, 26, 24, 14))
+        val mid = LinearLayout(this)
+        mid.orientation = LinearLayout.VERTICAL
+        mid.addView(label(tr("আমার খাতা"), 17f, Ui.TEXT, true))
+        mid.addView(label(tr("আপনার ডেটা শুধু এই ফোনে থাকে"), 12f, Ui.MUTED), lp(t = 2))
+        top.addView(mid, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        top.addView(pill(tr("ব্যাকআপ")) { go("backup") }, lp(width = ViewGroup.LayoutParams.WRAP_CONTENT, l = 8))
+        box.addView(top, lp())
+
+        secTitle(tr("পছন্দ"))
+        box.addView(groupCard(listOf(
+            rowOf(R.drawable.ic_palette, tr("চেহারা"), "", extra = value(themeNames[prefs.getInt("theme", 0).coerceIn(0, 2)])) {
+                startActivity(Intent(this, AppearanceActivity::class.java))
+            },
+            rowOf(R.drawable.ic_globe, tr("ভাষা"), "", extra = value(if (Lang.en) "English" else "বাংলা")) {
+                startActivity(Intent(this, AppearanceActivity::class.java))
+            },
+            rowOf(R.drawable.ic_eye_off, tr("টুল দেখানো বা লুকানো"), tr("যে টুল লাগে না সেটি লুকিয়ে রাখুন")) {
+                startActivity(Intent(this, HiddenToolsActivity::class.java))
+            }
+        )), lp())
+
+        secTitle(tr("নিরাপত্তা ও গোপনীয়তা"))
+        val hide = screenHidden(this)
+        box.addView(groupCard(listOf(
+            rowOf(R.drawable.ic_lock, tr("অ্যাপ লক"), "", extra = value(if (Lock.enabled(this)) tr("চালু") else tr("বন্ধ"))) { go("lock") },
+            rowOf(R.drawable.ic_shield, tr("স্ক্রিনশট লুকান"), tr("স্ক্রিনশট ও রিসেন্ট প্রিভিউ বন্ধ"), extra = switchView(hide), chevron = false) {
+                prefs.edit().putBoolean("secure", !hide).apply()
+                Ui.stamp++
+                recreate()
+            },
+            rowOf(R.drawable.ic_backup, tr("ব্যাকআপ"), tr("সর্বশেষ: ") + lastText) { go("backup") }
+        )), lp())
+
+        secTitle(tr("ডেটা ও সহায়তা"))
+        box.addView(groupCard(listOf(
+            rowOf(R.drawable.ic_trash, tr("ডেটা মুছুন"), tr("খাতা, নোট ইত্যাদি মুছে ফেলুন")) { go("data") },
+            rowOf(R.drawable.ic_info, tr("অ্যাপ সম্পর্কে"), "", extra = value("v" + bn(ver))) { showAbout() }
+        )), lp(b = 12))
+        val foot = label(tr("আমার খাতা · সংস্করণ ") + bn(ver), 12f, Ui.MUTED)
+        foot.gravity = Gravity.CENTER
+        box.addView(foot, lp())
     }
+
+    private fun rowOf(icon: Int, title: String, sub: String, extra: View? = null, chevron: Boolean = true, onClick: () -> Unit): LinearLayout {
+        val v = listRow(icon, title, sub, Ui.TEXT, extra, chevron)
+        v.setOnClickListener { onClick() }
+        return v
+    }
+
+    private fun value(s: String): TextView = label(s, 13f, Ui.MUTED)
 
     private fun renderLock() {
         val on = Lock.enabled(this)
