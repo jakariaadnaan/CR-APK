@@ -39,6 +39,7 @@ object TodoReminder {
 
 class TodoReminderReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
+        if (!NotifPrefs.on(ctx, NotifPrefs.TODO)) return
         val id = intent.getLongExtra("id", 0L)
         val t = TodoStore.all(ctx).firstOrNull { it.id == id } ?: return
         if (t.done) return

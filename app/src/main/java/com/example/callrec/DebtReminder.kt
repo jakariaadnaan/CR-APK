@@ -50,6 +50,7 @@ object DebtReminder {
 
 class DebtReminderReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
+        if (!NotifPrefs.on(ctx, NotifPrefs.DEBT)) return
         val id = intent.getLongExtra("id", 0L)
         val d = DebtStore.all(ctx).firstOrNull { it.id == id } ?: return
         val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

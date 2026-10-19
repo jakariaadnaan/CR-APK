@@ -47,6 +47,10 @@ class PrayerReminderReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
         val k = intent.getIntExtra("k", 0)
         val idx = PrayerReminder.IDX.getOrNull(k) ?: return
+        if (!NotifPrefs.on(ctx, NotifPrefs.PRAYER)) {
+            PrayerReminder.scheduleAll(ctx)
+            return
+        }
         val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.createNotificationChannel(NotificationChannel("prayer", tr("নামাজের সময়"), NotificationManager.IMPORTANCE_HIGH))
         val open = PendingIntent.getActivity(

@@ -126,6 +126,7 @@ class HomeActivity : GuardedActivity() {
     /** A gentle reminder when no backup exists, or the last one is old. */
     private fun backupBanner(): View? {
         if (!hasData()) return null
+        if (!NotifPrefs.on(this, NotifPrefs.BACKUP)) return null
         val sp = getSharedPreferences("settings", MODE_PRIVATE)
         val now = System.currentTimeMillis()
         if (now < sp.getLong("backupSnooze", 0L)) return null

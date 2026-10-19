@@ -222,6 +222,9 @@ class SettingsActivity : GuardedActivity() {
             rowOf(R.drawable.ic_bolt, "Quick Access", "") {
                 startActivity(Intent(this, HiddenToolsActivity::class.java))
             },
+            rowOf(R.drawable.ic_bell, "Notifications", "", extra = value(if (prefs.getBoolean("notifAll", true)) "On" else "Off")) {
+                startActivity(Intent(this, NotifSettingsActivity::class.java))
+            },
             rowOf(R.drawable.ic_vibrate, "Haptic Feedback", "", extra = switchView(hap), chevron = false) {
                 prefs.edit().putBoolean("haptic", !hap).apply()
                 render()
