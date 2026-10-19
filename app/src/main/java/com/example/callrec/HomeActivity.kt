@@ -103,6 +103,19 @@ class HomeActivity : GuardedActivity() {
         render()
     }
 
+    override fun onBackPressed() {
+        if (getSharedPreferences("settings", MODE_PRIVATE).getBoolean("confirmExit", false)) {
+            android.app.AlertDialog.Builder(this)
+                .setTitle("Exit")
+                .setMessage("Do you want to close the app?")
+                .setPositiveButton("Exit") { _, _ -> finish() }
+                .setNegativeButton("Cancel", null)
+                .show()
+        } else {
+            super.onBackPressed()
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         render()

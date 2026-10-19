@@ -116,6 +116,18 @@ open class GuardedActivity : Activity() {
         }
     }
 
+    private fun animsOff() = !getSharedPreferences("settings", Context.MODE_PRIVATE).getBoolean("anim", true)
+
+    override fun startActivity(intent: Intent?) {
+        super.startActivity(intent)
+        if (animsOff()) overridePendingTransition(0, 0)
+    }
+
+    override fun finish() {
+        super.finish()
+        if (animsOff()) overridePendingTransition(0, 0)
+    }
+
     override fun onResume() {
         super.onResume()
         if (stamp != Ui.stamp) {

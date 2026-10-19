@@ -110,7 +110,7 @@ abstract class PdfBase : GuardedActivity() {
             } catch (e: Throwable) {
                 tr("কাজটি করা যায়নি")
             }
-            runOnUiThread { status.text = res }
+            runOnUiThread { status.text = res; actionBuzz() }
         }.start()
     }
 

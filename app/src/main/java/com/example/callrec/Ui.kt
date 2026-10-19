@@ -58,8 +58,10 @@ object Ui {
             CHEV = Color.parseColor("#B3B8C0"); KEY_OP = Color.parseColor("#DDE6FB"); KEY_FN = Color.parseColor("#E8EAEE")
             PREVIEW = Color.parseColor("#ECEEF1"); GREEN = Color.parseColor("#2E8B57"); RED = Color.parseColor("#C0392B")
         }
-        val ai = p.getInt("accent", 0).coerceIn(0, ACCENTS.size - 1)
-        PRIMARY = Color.parseColor(if (dark) ACCENTS[ai].dark else ACCENTS[ai].light)
+        val ai = p.getInt("accent", 0).coerceIn(0, ACCENTS.size)
+        PRIMARY = if (ai >= ACCENTS.size) {
+            try { Color.parseColor(p.getString("accentHex", "#2D5BE3")) } catch (e: Throwable) { Color.parseColor("#2D5BE3") }
+        } else Color.parseColor(if (dark) ACCENTS[ai].dark else ACCENTS[ai].light)
         KEY_OP = if (dark) mix(PRIMARY, CARD, 0.75f) else mix(PRIMARY, Color.WHITE, 0.87f)
     }
 
@@ -119,6 +121,26 @@ fun Context.lp(
     val p = LinearLayout.LayoutParams(width, height)
     p.setMargins(dp(l), dp(t), dp(r), dp(b))
     return p
+}
+
+/** A styled on/off switch that follows the accent colour. */
+fun Context.styledSwitch(on: Boolean): android.widget.Switch {
+    val s = android.widget.Switch(this)
+    s.isChecked = on
+    s.isClickable = false
+    val states = arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf())
+    s.thumbTintList = android.content.res.ColorStateList(states, intArrayOf(Color.WHITE, Color.WHITE))
+    s.trackTintList = android.content.res.ColorStateList(states, intArrayOf(Ui.PRIMARY, Ui.GREY))
+    return s
+}
+
+/** One short buzz when a job finishes, if "Vibration on Action" is on. */
+fun Context.actionBuzz() {
+    try {
+        if (!getSharedPreferences("settings", Context.MODE_PRIVATE).getBoolean("vibAction", true)) return
+        val v = getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
+        v.vibrate(android.os.VibrationEffect.createOneShot(45, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+    } catch (e: Throwable) { }
 }
 
 /** Small vibration and click sound on a tap, each controlled from Settings. */
