@@ -113,6 +113,9 @@
         <activity android:name=".PdfCropActivity" android:exported="false" />
         <activity android:name=".PdfTextActivity" android:exported="false" />
         <activity android:name=".PdfImagesActivity" android:exported="false" />
+        <activity android:name=".WebToPdfActivity" android:exported="false" />
+        <activity android:name=".CameraPdfActivity" android:exported="false" />
+        <activity android:name=".InvoicePdfActivity" android:exported="false" />
         <activity android:name=".PdfMergeActivity" android:exported="false" />
         <activity android:name=".PdfSignActivity" android:exported="false" />
         <activity android:name=".TextToPdfActivity" android:exported="false" />
