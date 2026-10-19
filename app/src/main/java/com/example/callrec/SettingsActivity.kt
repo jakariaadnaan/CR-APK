@@ -275,7 +275,9 @@ class SettingsActivity : GuardedActivity() {
                 i.putExtra(Intent.EXTRA_TEXT, "Amar Khata — ledger, debts, notes and many handy tools in one app.")
                 startActivity(Intent.createChooser(i, "Share App"))
             },
-            rowOf(R.drawable.ic_info, "About", "", extra = value("v$ver")) { showAbout() }
+            rowOf(R.drawable.ic_info, "About", "", extra = value("v$ver")) {
+                startActivity(Intent(this, InfoPageActivity::class.java).putExtra("page", "about"))
+            }
         )), lp(b = 12))
     }
 

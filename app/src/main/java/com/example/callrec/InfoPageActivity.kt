@@ -31,6 +31,10 @@ class InfoPageActivity : GuardedActivity() {
                 setScreen(tr("সাহায্য ও সহায়তা"), scroll)
                 help()
             }
+            "about" -> {
+                setScreen(tr("অ্যাপ সম্পর্কে"), scroll)
+                about()
+            }
             else -> {
                 setScreen(tr("গোপনীয়তা নীতি"), scroll)
                 privacy()
@@ -222,5 +226,88 @@ class InfoPageActivity : GuardedActivity() {
             copyText("Amar Khata v" + ver + " · " + android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL + " · Android " + android.os.Build.VERSION.RELEASE)
         }, lp(t = 12))
         box.addView(c, lp(b = 10))
+    }
+
+    private fun secTitle(s: String) {
+        box.addView(label(s, 13f, Ui.PRIMARY, true), lp(l = 6, t = 14, b = 8))
+    }
+
+    private fun about() {
+        val ver = try { packageManager.getPackageInfo(packageName, 0).versionName ?: "" } catch (e: Exception) { "" }
+        val prefs = getSharedPreferences("settings", MODE_PRIVATE)
+        val iconRes = when (prefs.getString("appIcon", "IconA")) {
+            "IconB" -> R.mipmap.ic_launcher_b
+            "IconC" -> R.mipmap.ic_launcher_c
+            else -> R.mipmap.ic_launcher_a
+        }
+        val c = card(20)
+        c.gravity = Gravity.CENTER_HORIZONTAL
+        val iv = android.widget.ImageView(this)
+        iv.setImageResource(iconRes)
+        iv.clipToOutline = true
+        iv.outlineProvider = object : android.view.ViewOutlineProvider() {
+            override fun getOutline(v: android.view.View, o: android.graphics.Outline) { o.setRoundRect(0, 0, v.width, v.height, v.width * 0.24f) }
+        }
+        c.addView(iv, lp(width = dp(76), height = dp(76)))
+        val name = label(tr("আমার খাতা"), 22f, Ui.TEXT, true)
+        name.gravity = Gravity.CENTER
+        c.addView(name, lp(t = 12))
+        val v = label(tr("সংস্করণ: ") + bn(ver), 13f, Ui.MUTED)
+        v.gravity = Gravity.CENTER
+        c.addView(v, lp(t = 4))
+        val tag = body(tr("আপনার হিসাব, নোট ও দরকারি টুল, এক অ্যাপে।"))
+        tag.gravity = Gravity.CENTER
+        c.addView(tag, lp(t = 12))
+        box.addView(c, lp())
+
+        secTitle(tr("অ্যাপে কী আছে"))
+        fun feat(icon: Int, title: String, sub: String) = listRow(icon, title, sub, Ui.TEXT, null, false)
+        box.addView(groupCard(listOf(
+            feat(R.drawable.ic_wallet, tr("খাতা ও বাকি"), tr("আয়-ব্যয়, বাকি ও আংশিক পরিশোধ, বাজেট")),
+            feat(R.drawable.ic_text, tr("করণীয় ও নোট"), tr("রিমাইন্ডারসহ তালিকা, রঙিন নোট ও চেকলিস্ট")),
+            feat(R.drawable.ic_clock, tr("নামাজের সময়"), tr("অফলাইনে সময়সূচি ও রিমাইন্ডার")),
+            feat(R.drawable.ic_grid, tr("ড্যাশবোর্ড"), tr("মাস অনুযায়ী সারাংশ, চার্ট ও বাজেটের অবস্থা")),
+            feat(R.drawable.ic_pdf, tr("PDF ও ছবির টুল"), tr("জোড়া, ভাগ, ছোট করা, সই, রূপান্তর ও আরও অনেক কিছু")),
+            feat(R.drawable.ic_shield, tr("নিরাপত্তা ও ব্যাকআপ"), tr("অ্যাপ লক, এনক্রিপ্টেড ও স্বয়ংক্রিয় ব্যাকআপ"))
+        )), lp())
+
+        secTitle(tr("আপনার ডেটা"))
+        val names = listOf(tr("খরচের খাতা"), tr("বাকির খাতা"), tr("করণীয় তালিকা"), tr("দ্রুত নোট"))
+        val keys = listOf("ledger", "debts", "todos", "notes")
+        val dc = card(16)
+        var total = 0
+        for (i in keys.indices) {
+            val n = try { Store.read(this, keys[i]).length() } catch (e: Throwable) { 0 }
+            total += n
+            val r = LinearLayout(this)
+            r.orientation = LinearLayout.HORIZONTAL
+            r.addView(label(names[i], 14f, Ui.TEXT), LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            r.addView(label(bn(n.toString()), 14f, Ui.MUTED, true))
+            dc.addView(r, lp(b = 8))
+        }
+        val size = try { java.io.File(applicationInfo.dataDir, "shared_prefs/appdata.xml").length() } catch (e: Throwable) { 0L }
+        val tr1 = LinearLayout(this)
+        tr1.orientation = LinearLayout.HORIZONTAL
+        tr1.addView(label(tr("মোট এন্ট্রি"), 14f, Ui.TEXT, true), LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        tr1.addView(label(bn(total.toString()), 14f, Ui.PRIMARY, true))
+        dc.addView(tr1, lp(t = 4, b = 8))
+        val tr2 = LinearLayout(this)
+        tr2.orientation = LinearLayout.HORIZONTAL
+        tr2.addView(label(tr("জমানো ডেটার আকার"), 14f, Ui.TEXT, true), LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        tr2.addView(label(Img.human(size), 14f, Ui.PRIMARY, true))
+        dc.addView(tr2)
+        dc.addView(body(tr("ডেটা শুধু এই ফোনেই থাকে। ব্যাকআপ না নিলে অ্যাপ মুছলে ডেটাও যাবে।"), Ui.MUTED), lp(t = 12))
+        box.addView(dc, lp())
+
+        secTitle(tr("আরও"))
+        val pr = listRow(R.drawable.ic_doc, tr("গোপনীয়তা নীতি"))
+        pr.setOnClickListener { startActivity(android.content.Intent(this, InfoPageActivity::class.java).putExtra("page", "privacy")) }
+        val hp = listRow(R.drawable.ic_help, tr("সাহায্য ও সহায়তা"))
+        hp.setOnClickListener { startActivity(android.content.Intent(this, InfoPageActivity::class.java).putExtra("page", "help")) }
+        box.addView(groupCard(listOf(pr, hp)), lp())
+
+        val foot = label(tr("© ২০২৬ আমার খাতা"), 12f, Ui.MUTED)
+        foot.gravity = Gravity.CENTER
+        box.addView(foot, lp(t = 16))
     }
 }
