@@ -2,6 +2,13 @@ package com.example.callrec
 
 object Dict7 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        "দ্রুত অ্যাক্সেস" to "Quick Access",
+        "সব দেখুন" to "View All",
+        "বিজ্ঞপ্তি" to "Notifications",
+        "কোনো বিজ্ঞপ্তি নেই" to "No notifications yet",
+        "বন্ধ করুন" to "Close",
+        "সেটিংস" to "Settings",
+        "লগ মুছে ফেলুন" to "Clear log",
         "আপনার প্রথম স্কুলের নাম কী?" to "What was the name of your first school?",
         "আপনার শৈশবের প্রিয় বন্ধুর নাম কী?" to "What was your childhood best friend's name?",
         "আপনার মায়ের জন্মস্থান কোথায়?" to "Where was your mother born?",

@@ -15,6 +15,7 @@ class HomeActivity : GuardedActivity() {
 
     private lateinit var content: LinearLayout
     private lateinit var search: EditText
+    private lateinit var badge: android.widget.TextView
 
     @Suppress("DEPRECATION")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,16 +50,43 @@ class HomeActivity : GuardedActivity() {
         val top = LinearLayout(this)
         top.orientation = LinearLayout.HORIZONTAL
         top.gravity = Gravity.CENTER_VERTICAL
+        val spIcon = getSharedPreferences("settings", MODE_PRIVATE)
+        val iconRes = when (spIcon.getString("appIcon", "IconA")) {
+            "IconB" -> R.mipmap.ic_launcher_b
+            "IconC" -> R.mipmap.ic_launcher_c
+            else -> R.mipmap.ic_launcher_a
+        }
+        val logo = android.widget.ImageView(this)
+        logo.setImageResource(iconRes)
+        logo.clipToOutline = true
+        logo.outlineProvider = object : android.view.ViewOutlineProvider() {
+            override fun getOutline(v: View, o: android.graphics.Outline) { o.setRoundRect(0, 0, v.width, v.height, v.width * 0.26f) }
+        }
+        top.addView(logo, lp(width = dp(46), height = dp(46), r = 12))
         val titles = LinearLayout(this)
         titles.orientation = LinearLayout.VERTICAL
-        titles.addView(label(tr("আমার খাতা"), 32f, Ui.TEXT, true))
-        titles.addView(label(tr("সব দরকারি টুল এক জায়গায়"), 15f, Ui.MUTED), lp(b = 4))
+        titles.addView(label(tr("আমার খাতা"), 22f, Ui.TEXT, true))
+        titles.addView(label(tr("সব দরকারি টুল এক জায়গায়"), 13f, Ui.MUTED), lp(t = 1))
         top.addView(titles, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         val sBtn = LinearLayout(this)
         sBtn.gravity = Gravity.CENTER
         sBtn.background = bg(Ui.CARD, 24, Ui.LINE, 1)
         sBtn.addView(iconView(R.drawable.ic_search, 22, Ui.TEXT))
-        top.addView(sBtn, lp(width = dp(48), height = dp(48), l = 12))
+        top.addView(sBtn, lp(width = dp(46), height = dp(46), l = 8))
+        val bellWrap = android.widget.FrameLayout(this)
+        val bell = LinearLayout(this)
+        bell.gravity = Gravity.CENTER
+        bell.background = bg(Ui.CARD, 24, Ui.LINE, 1)
+        bell.addView(iconView(R.drawable.ic_bell, 22, Ui.TEXT))
+        bellWrap.addView(bell, android.widget.FrameLayout.LayoutParams(dp(46), dp(46)))
+        badge = label("", 10f, Color.WHITE, true)
+        badge.gravity = Gravity.CENTER
+        badge.background = bg(Color.parseColor("#E53935"), 9)
+        val bp = android.widget.FrameLayout.LayoutParams(dp(18), dp(18))
+        bp.gravity = Gravity.TOP or Gravity.END
+        bellWrap.addView(badge, bp)
+        bell.setOnClickListener { it.tapFx(); showNotifs() }
+        top.addView(bellWrap, lp(width = dp(46), height = dp(46), l = 8))
         header.addView(top, lp())
 
         val box = LinearLayout(this)
@@ -119,7 +147,48 @@ class HomeActivity : GuardedActivity() {
 
     override fun onResume() {
         super.onResume()
+        updateBadge()
         render()
+    }
+
+    private fun unseen(): Int {
+        val seen = getSharedPreferences("settings", MODE_PRIVATE).getLong("notifSeen", 0L)
+        return NotifLog.list(this).count { it.first > seen }
+    }
+
+    private fun updateBadge() {
+        if (!::badge.isInitialized) return
+        val n = unseen()
+        badge.visibility = if (n > 0) View.VISIBLE else View.GONE
+        badge.text = if (n > 9) "9+" else bn(n.toString())
+    }
+
+    private fun showNotifs() {
+        val list = NotifLog.list(this)
+        getSharedPreferences("settings", MODE_PRIVATE).edit().putLong("notifSeen", System.currentTimeMillis()).apply()
+        updateBadge()
+        val w = LinearLayout(this)
+        w.orientation = LinearLayout.VERTICAL
+        w.setPadding(dp(20), dp(8), dp(20), dp(4))
+        if (list.isEmpty()) {
+            w.addView(label(tr("কোনো বিজ্ঞপ্তি নেই"), 14f, Ui.MUTED), lp(t = 8, b = 8))
+        } else {
+            val fmt = java.text.SimpleDateFormat("d MMM, HH:mm", java.util.Locale.getDefault())
+            for (e in list.take(15)) {
+                w.addView(label(e.second, 14f, Ui.TEXT, true), lp(t = 10))
+                if (e.third.isNotBlank()) w.addView(label(e.third, 13f, Ui.MUTED), lp(t = 1))
+                w.addView(label(bn(fmt.format(java.util.Date(e.first))), 11f, Ui.MUTED), lp(t = 1))
+            }
+        }
+        val sc = ScrollView(this)
+        sc.addView(w)
+        val b = android.app.AlertDialog.Builder(this)
+            .setTitle(tr("বিজ্ঞপ্তি"))
+            .setView(sc)
+            .setPositiveButton(tr("বন্ধ করুন"), null)
+            .setNeutralButton(tr("সেটিংস")) { _, _ -> startActivity(Intent(this, NotifSettingsActivity::class.java)) }
+        if (list.isNotEmpty()) b.setNegativeButton(tr("লগ মুছে ফেলুন")) { _, _ -> NotifLog.clear(this) }
+        b.show()
     }
 
     private fun hasData(): Boolean = listOf("ledger", "debts", "todos", "notes").any { Store.read(this, it).length() > 0 }
@@ -188,49 +257,68 @@ class HomeActivity : GuardedActivity() {
         dash.setOnClickListener { startActivity(Intent(this, DashboardActivity::class.java)) }
         content.addView(groupCard(listOf(dash)), lp(b = 14))
 
-        val favs = Registry.favIds(this).mapNotNull { id -> Registry.tools.firstOrNull { it.id == id && it.id !in Registry.hidden } }
-        content.addView(label(tr("প্রিয় টুল"), 14f, Ui.MUTED, true), lp(l = 6, b = 8))
-        if (favs.isEmpty()) {
-            content.addView(label(tr("কোনো টুলে চেপে ধরে রাখলে সেটি এখানে যোগ হবে।"), 13f, Ui.MUTED), lp(l = 6, b = 6))
-        } else {
-            val grid = LinearLayout(this)
-            grid.orientation = LinearLayout.HORIZONTAL
-            val shown = favs.take(4)
-            for (t in shown) {
-                val p = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                p.setMargins(dp(4), 0, dp(4), 0)
-                grid.addView(favTile(t), p)
-            }
-            for (i in shown.size until 4) {
-                val p = LinearLayout.LayoutParams(0, 1, 1f)
-                p.setMargins(dp(4), 0, dp(4), 0)
-                grid.addView(View(this), p)
-            }
-            content.addView(grid, lp(b = 6))
-        }
+        val hdr = LinearLayout(this)
+        hdr.gravity = Gravity.CENTER_VERTICAL
+        hdr.addView(label(tr("দ্রুত অ্যাক্সেস"), 17f, Ui.TEXT, true), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        val all = label(tr("সব দেখুন") + "  ›", 13f, Ui.PRIMARY, true)
+        all.setPadding(dp(8), dp(6), dp(4), dp(6))
+        all.setOnClickListener { startActivity(Intent(this, ToolListActivity::class.java).putExtra("cat", "all")) }
+        hdr.addView(all)
+        content.addView(hdr, lp(l = 4, b = 8))
 
-        content.addView(label(tr("ক্যাটাগরি"), 14f, Ui.MUTED, true), lp(l = 6, t = 14, b = 8))
-        val rows = Registry.cats.filter { Registry.inCat(it.id).isNotEmpty() }.map { c ->
-            val r = listRow(c.icon, c.name, bn(Registry.inCat(c.id).size.toString()) + tr("টি টুল"))
-            r.setOnClickListener {
-                startActivity(Intent(this, ToolListActivity::class.java).putExtra("cat", c.id))
+        val grid = quickTools()
+        var idx = 0
+        while (idx < grid.size) {
+            val line = LinearLayout(this)
+            line.orientation = LinearLayout.HORIZONTAL
+            for (k in 0 until 3) {
+                val p = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                p.setMargins(dp(4), dp(4), dp(4), dp(4))
+                if (idx + k < grid.size) line.addView(favTile(grid[idx + k]), p) else line.addView(View(this), p)
             }
-            r as View
+            content.addView(line, lp())
+            idx += 3
         }
-        content.addView(groupCard(rows), lp())
         content.addView(label(tr("প্রিয় করতে বা সরাতে যেকোনো টুলে চেপে ধরে রাখুন।"), 12f, Ui.MUTED), lp(l = 6, t = 10))
+    }
+
+    /** Up to nine tools: the favourites first, then one from each category in turn. */
+    private fun quickTools(): List<Tool> {
+        val out = ArrayList<Tool>()
+        for (id in Registry.favIds(this)) {
+            val t = Registry.tools.firstOrNull { it.id == id && it.id !in Registry.hidden }
+            if (t != null && t !in out && out.size < 9) out.add(t)
+        }
+        val per = Registry.cats.map { c -> Registry.inCat(c.id).filter { it.id !in Registry.hidden } }
+        var round = 0
+        while (out.size < 9 && round < 20) {
+            for (l in per) {
+                if (out.size >= 9) break
+                val t = l.getOrNull(round)
+                if (t != null && t !in out) out.add(t)
+            }
+            round++
+        }
+        return out
     }
 
     private fun favTile(t: Tool): View {
         val cat = Registry.cat(t.cat)
-        val col = card(10)
+        val col = LinearLayout(this)
+        col.orientation = LinearLayout.VERTICAL
         col.gravity = Gravity.CENTER_HORIZONTAL
-        col.addView(iconView(cat.icon, 28, Ui.ICON))
+        col.background = bg(Ui.CARD, 16, Ui.LINE, 1)
+        col.setPadding(dp(6), dp(14), dp(6), dp(12))
+        val ib = LinearLayout(this)
+        ib.gravity = Gravity.CENTER
+        ib.background = bg(if (Ui.dark) Ui.mix(cat.fg, Color.BLACK, 0.15f) else cat.fg, 14)
+        ib.addView(iconView(cat.icon, 26, Color.WHITE))
+        col.addView(ib, lp(width = dp(50), height = dp(50)))
         val name = label(t.title, 12f, Ui.TEXT)
         name.gravity = Gravity.CENTER
         name.maxLines = 2
-        col.addView(name, lp(t = 6))
-        col.setOnClickListener { openTool(t) }
+        col.addView(name, lp(t = 8))
+        col.setOnClickListener { it.tapFx(); openTool(t) }
         col.setOnLongClickListener {
             Registry.toggleFav(this, t.id)
             render()
