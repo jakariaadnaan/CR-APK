@@ -2,6 +2,18 @@ package com.example.callrec
 
 object Dict7 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        "পাসকোড দিন" to "Enter passcode",
+        "পাসকোড" to "Passcode",
+        "আনলক" to "Unlock",
+        "পাসকোড ভুলে গেছেন?" to "Forgot passcode?",
+        "পাসকোড ব্যবহার করুন" to "Use passcode",
+        "নতুন পাসকোড (কমপক্ষে ৬ অক্ষর)" to "New passcode (at least 6 characters)",
+        "নতুন পাসকোড" to "New passcode",
+        "৬ থেকে ৩২ অক্ষরের পাসকোড দিন" to "Enter a passcode of 6 to 32 characters",
+        "দুটো পাসকোড মেলেনি" to "The two passcodes do not match",
+        "ভুল পাসকোড" to "Wrong passcode",
+        "পাসকোড (অক্ষর ও সংখ্যা)" to "Passcode (letters and numbers)",
+        "বন্ধ আছে (পিন, প্যাটার্ন বা পাসকোড)" to "Off (PIN, pattern or passcode)",
         "ফিঙ্গারপ্রিন্ট ব্যবহার করুন" to "Use fingerprint",
         "পিন ভুলে গেছেন?" to "Forgot PIN?",
         "প্যাটার্ন ভুলে গেছেন?" to "Forgot pattern?",

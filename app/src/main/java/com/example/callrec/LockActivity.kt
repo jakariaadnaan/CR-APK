@@ -29,6 +29,20 @@ class LockActivity : Activity() {
     private lateinit var msg: TextView
 
     private val isPattern: Boolean get() = Lock.type(this) == "pattern"
+    private val isPass: Boolean get() = Lock.type(this) == "password"
+    private lateinit var passField: android.widget.EditText
+
+    private fun prompt(): String = when {
+        isPattern -> tr("প্যাটার্ন আঁকুন")
+        isPass -> tr("পাসকোড দিন")
+        else -> tr("পিন দিন")
+    }
+
+    private fun typeName(): String = when {
+        isPattern -> tr("প্যাটার্ন")
+        isPass -> tr("পাসকোড")
+        else -> tr("পিন")
+    }
 
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,7 +63,7 @@ class LockActivity : Activity() {
         window.statusBarColor = topCol
         window.navigationBarColor = ink
         val soft = Color.argb(170, 255, 255, 255)
-        val timeStyle = Lock.style(this) == 1 && !isPattern
+        val timeStyle = Lock.style(this) == 1 && Lock.type(this) == "pin"
 
         if (timeStyle) {
             val clock = android.widget.TextClock(this)
@@ -86,7 +100,7 @@ class LockActivity : Activity() {
             root.addView(title, lp(t = 12))
         }
 
-        msg = label(if (isPattern) tr("প্যাটার্ন আঁকুন") else tr("পিন দিন"), 15f, soft)
+        msg = label(prompt(), 15f, soft)
         msg.gravity = Gravity.CENTER
 
         if (isPattern) {
@@ -111,6 +125,34 @@ class LockActivity : Activity() {
                 val hint = label(tr("ফিঙ্গারপ্রিন্ট ব্যবহার করুন"), 13f, soft)
                 hint.gravity = Gravity.CENTER
                 root.addView(hint, lp(t = 6))
+            }
+        } else if (isPass) {
+            root.addView(msg, lp(t = 26))
+            val et = android.widget.EditText(this)
+            passField = et
+            et.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+            et.hint = tr("পাসকোড")
+            et.setHintTextColor(Color.argb(110, 255, 255, 255))
+            et.setTextColor(Color.WHITE)
+            et.textSize = 18f
+            et.gravity = Gravity.CENTER
+            et.setSingleLine(true)
+            et.imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_DONE
+            et.background = bg(Color.argb(36, 255, 255, 255), 14)
+            et.setPadding(dp(16), dp(14), dp(16), dp(14))
+            et.setOnEditorActionListener { _, _, _ -> submitPass(); true }
+            root.addView(et, lp(width = dp(290), t = 18))
+            val go = label(tr("আনলক"), 16f, Color.WHITE, true)
+            go.gravity = Gravity.CENTER
+            go.background = bg(Ui.PRIMARY, 14)
+            go.setOnClickListener { it.tapFx(); submitPass() }
+            root.addView(go, lp(width = dp(290), height = dp(50), t = 14))
+            if (bioReady()) {
+                val bio = label("👆", 26f, Color.WHITE, true)
+                bio.gravity = Gravity.CENTER
+                bio.background = bg(Color.argb(36, 255, 255, 255), 32)
+                bio.setOnClickListener { it.tapFx(); showBiometric() }
+                root.addView(bio, lp(width = dp(64), height = dp(64), t = 22))
             }
         } else {
             root.addView(msg, lp(t = if (timeStyle) 20 else 26))
@@ -158,7 +200,7 @@ class LockActivity : Activity() {
         }
 
         root.addView(View(this), LinearLayout.LayoutParams(0, 0, 1f))
-        val forgot = label(if (isPattern) tr("প্যাটার্ন ভুলে গেছেন?") else tr("পিন ভুলে গেছেন?"), 14f, soft)
+        val forgot = label(if (isPattern) tr("প্যাটার্ন ভুলে গেছেন?") else if (isPass) tr("পাসকোড ভুলে গেছেন?") else tr("পিন ভুলে গেছেন?"), 14f, soft)
         forgot.gravity = Gravity.CENTER
         forgot.setPadding(dp(16), dp(12), dp(16), dp(8))
         forgot.setOnClickListener {
@@ -250,6 +292,23 @@ class LockActivity : Activity() {
         }
     }
 
+    private fun submitPass() {
+        if (System.currentTimeMillis() < lockedUntil) return
+        val t = passField.text.toString()
+        if (t.isEmpty()) return
+        if (Lock.check(this, t)) {
+            success()
+        } else {
+            passField.setText("")
+            val a = android.view.animation.TranslateAnimation(-14f, 14f, 0f, 0f)
+            a.duration = 60
+            a.repeatCount = 5
+            a.repeatMode = android.view.animation.Animation.REVERSE
+            passField.startAnimation(a)
+            registerFail(tr("পাসকোড"))
+        }
+    }
+
     private fun press(d: String) {
         if (System.currentTimeMillis() < lockedUntil) return
         if (input.length >= 8) return
@@ -270,7 +329,7 @@ class LockActivity : Activity() {
     private fun countdown() {
         val left = (lockedUntil - System.currentTimeMillis() + 999) / 1000
         if (left <= 0) {
-            msg.text = if (isPattern) tr("প্যাটার্ন আঁকুন") else tr("পিন দিন")
+            msg.text = prompt()
             return
         }
         msg.text = tr("অনেকবার ভুল হয়েছে। ") + bn(left.toString()) + tr(" সেকেন্ড পরে চেষ্টা করুন")
@@ -285,7 +344,7 @@ class LockActivity : Activity() {
             val prompt = BiometricPrompt.Builder(this)
                 .setTitle(tr("আনলক করুন"))
                 .setNegativeButton(
-                    if (isPattern) tr("প্যাটার্ন ব্যবহার করুন") else tr("পিন ব্যবহার করুন"),
+                    if (isPattern) tr("প্যাটার্ন ব্যবহার করুন") else if (isPass) tr("পাসকোড ব্যবহার করুন") else tr("পিন ব্যবহার করুন"),
                     mainExecutor,
                     DialogInterface.OnClickListener { _, _ -> signal = null }
                 )

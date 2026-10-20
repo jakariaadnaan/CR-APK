@@ -295,7 +295,7 @@ class SettingsActivity : GuardedActivity() {
     private fun renderLock() {
         val on = Lock.enabled(this)
         box.addView(
-            row(tr("অ্যাপ লক"), if (on) tr("চালু আছে (") + (if (Lock.type(this) == "pattern") tr("প্যাটার্ন") else tr("পিন")) + ")" else tr("বন্ধ আছে (পিন বা প্যাটার্ন)"), switchView(on)) {
+            row(tr("অ্যাপ লক"), if (on) tr("চালু আছে (") + lockTypeName() + ")" else tr("বন্ধ আছে (পিন, প্যাটার্ন বা পাসকোড)"), switchView(on)) {
                 if (on) askCurrent(tr("লক বন্ধ করতে বর্তমান লক দিন")) {
                     Lock.disable(this)
                     render()
@@ -309,7 +309,7 @@ class SettingsActivity : GuardedActivity() {
             box.addView(
                 row(
                     tr("লক বদলান"),
-                    tr("বর্তমান: ") + (if (Lock.type(this) == "pattern") tr("প্যাটার্ন") else tr("পিন")),
+                    tr("বর্তমান: ") + lockTypeName(),
                     null
                 ) {
                     askCurrent(tr("বর্তমান লক দিন")) { chooseType { render() } }
@@ -413,6 +413,13 @@ class SettingsActivity : GuardedActivity() {
 
     // ------------------------------------------------------------------ PIN dialogs
 
+    private fun passField(hint: String): EditText {
+        val e = EditText(this)
+        e.hint = hint
+        e.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        return e
+    }
+
     private fun pinField(hint: String): EditText {
         val e = EditText(this)
         e.hint = hint
@@ -422,7 +429,8 @@ class SettingsActivity : GuardedActivity() {
 
     /** Asks for the current PIN and runs [onOk] when it is right. */
     private fun askPin(title: String, onOk: () -> Unit) {
-        val f = pinField(tr("পিন"))
+        val isPw = Lock.type(this) == "password"
+        val f = if (isPw) passField(tr("পাসকোড")) else pinField(tr("পিন"))
         val wrap = LinearLayout(this)
         wrap.setPadding(dp(20), dp(10), dp(20), 0)
         wrap.addView(f, lp())
@@ -434,11 +442,12 @@ class SettingsActivity : GuardedActivity() {
             .create()
         dlg.setOnShowListener {
             dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                if (Lock.check(this, asciiDigits(f.text.toString()))) {
+                val typed = if (isPw) f.text.toString() else asciiDigits(f.text.toString())
+                if (Lock.check(this, typed)) {
                     dlg.dismiss()
                     onOk()
                 } else {
-                    Toast.makeText(this, tr("ভুল পিন"), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, if (isPw) tr("ভুল পাসকোড") else tr("ভুল পিন"), Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -480,13 +489,53 @@ class SettingsActivity : GuardedActivity() {
         dlg.show()
     }
 
+    /** Sets a new passcode of 6 or more letters, digits or symbols (typed twice). */
+    private fun showSetPassword(onDone: () -> Unit) {
+        val a = passField(tr("নতুন পাসকোড (কমপক্ষে ৬ অক্ষর)"))
+        val b = passField(tr("আবার লিখুন"))
+        val wrap = LinearLayout(this)
+        wrap.orientation = LinearLayout.VERTICAL
+        wrap.setPadding(dp(20), dp(10), dp(20), 0)
+        wrap.addView(a, lp())
+        wrap.addView(b, lp(t = 4))
+        val dlg = AlertDialog.Builder(this)
+            .setTitle(tr("নতুন পাসকোড"))
+            .setView(wrap)
+            .setPositiveButton(tr("সংরক্ষণ"), null)
+            .setNegativeButton(tr("বাতিল"), null)
+            .create()
+        dlg.setOnShowListener {
+            dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val p1 = a.text.toString()
+                val p2 = b.text.toString()
+                if (p1.length < 6 || p1.length > 32) {
+                    Toast.makeText(this, tr("৬ থেকে ৩২ অক্ষরের পাসকোড দিন"), Toast.LENGTH_SHORT).show()
+                } else if (p1 != p2) {
+                    Toast.makeText(this, tr("দুটো পাসকোড মেলেনি"), Toast.LENGTH_SHORT).show()
+                } else {
+                    Lock.setSecret(this, "password", p1)
+                    dlg.dismiss()
+                    onDone()
+                }
+            }
+        }
+        dlg.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+        dlg.show()
+    }
+
+    private fun lockTypeName(): String = when (Lock.type(this)) {
+        "pattern" -> tr("প্যাটার্ন")
+        "password" -> tr("পাসকোড")
+        else -> tr("পিন")
+    }
+
     // ------------------------------------------------------------------ lock type and pattern dialogs
 
     private fun chooseType(onDone: () -> Unit) {
         AlertDialog.Builder(this)
             .setTitle(tr("লকের ধরন"))
-            .setItems(arrayOf(tr("পিন (৪ থেকে ৮ সংখ্যা)"), tr("প্যাটার্ন"))) { _, i ->
-                if (i == 0) showSetPin(onDone) else showSetPattern(onDone)
+            .setItems(arrayOf(tr("পিন (৪ থেকে ৮ সংখ্যা)"), tr("প্যাটার্ন"), tr("পাসকোড (অক্ষর ও সংখ্যা)"))) { _, i ->
+                when (i) { 0 -> showSetPin(onDone); 1 -> showSetPattern(onDone); else -> showSetPassword(onDone) }
             }
             .setNegativeButton(tr("বাতিল"), null)
             .show()
