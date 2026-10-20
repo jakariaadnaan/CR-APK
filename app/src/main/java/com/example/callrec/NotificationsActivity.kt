@@ -105,11 +105,9 @@ class NotificationsActivity : GuardedActivity() {
         if (alerts.isNotEmpty()) {
             box.addView(section(tr("সতর্কতা") + " (" + bn(alerts.size.toString()) + ")"), lp(l = 4, b = 8))
             box.addView(groupCard(alerts.map { a ->
-                item(a.color, a.icon, a.title, a.text, "", false) {
-                    val i = Intent(this, a.target)
-                    if (a.page.isNotEmpty()) i.putExtra("page", a.page)
-                    startActivity(i)
-                }
+                item(a.color, a.icon, a.title, a.text, "", false, if (a.open == null) null else ({
+                    try { startActivity(a.open.invoke(this)) } catch (e: Throwable) { }
+                }))
             }), lp(b = 16))
         }
 

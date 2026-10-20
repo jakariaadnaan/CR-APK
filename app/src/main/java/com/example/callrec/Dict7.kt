@@ -2,6 +2,20 @@ package com.example.callrec
 
 object Dict7 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        "অটো-ব্যাকআপ হয়নি" to "Auto-backup failed",
+        "শেষবার স্বয়ংক্রিয় ব্যাকআপ ব্যর্থ হয়েছে। ফোল্ডারটি আছে কি না দেখুন।" to "The last automatic backup failed. Check that the folder still exists.",
+        "নোটিফিকেশনের অনুমতি বন্ধ" to "Notification permission is off",
+        "অনুমতি না দিলে নামাজ, বাকি ও করণীয়ের রিমাইন্ডার ফোনে আসবে না।" to "Without it, prayer, debt and task reminders will not reach your phone.",
+        "এই মাসে খরচ আয়ের চেয়ে বেশি" to "Spending is above income this month",
+        "খরচ " to "Spent ",
+        ", আয় " to ", income ",
+        "কাল: " to "Tomorrow: ",
+        "অ্যাপ লক চালু করুন" to "Turn on App Lock",
+        "আপনার হিসাব ও নোট পিন বা প্যাটার্ন দিয়ে সুরক্ষিত রাখতে পারেন।" to "Protect your accounts and notes with a PIN, pattern or passcode.",
+        "নিরাপত্তা-প্রশ্ন সেট করা নেই" to "No security question set",
+        "লক ভুলে গেলে ডেটা না মুছে ফিরে আসার উপায় এটাই।" to "It lets you recover from a forgotten lock without wiping data.",
+        "ক্যাশ অনেক জমেছে" to "A lot of cache has built up",
+        "সেটিংস থেকে পরিষ্কার করা যায়" to "clear it from Settings",
         "ব্যাকআপ নিন" to "Back up your data",
         "এখনো কোনো ব্যাকআপ নেওয়া হয়নি। ফোন হারালে বা অ্যাপ মুছলে ডেটা চলে যাবে।" to "No backup has been made yet. Your data is lost if the phone is lost or the app is removed.",
         "ব্যাকআপ পুরোনো হয়ে গেছে" to "Your backup is out of date",
