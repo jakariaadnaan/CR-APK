@@ -400,8 +400,7 @@ class HomeActivity : GuardedActivity() {
 
     /** The "Your Activity" card: counts for the chosen period, compared with the period before. */
     private fun activityCard(): View {
-        val sp = getSharedPreferences("settings", MODE_PRIVATE)
-        val days = if (sp.getInt("actDays", 7) == 30) 30 else 7
+        val days = 7
         val st = Usage.stats(this, days)
         val tint = Ui.mix(Ui.PRIMARY, Ui.CARD, if (Ui.dark) 0.82f else 0.9f)
         val card = LinearLayout(this)
@@ -409,35 +408,6 @@ class HomeActivity : GuardedActivity() {
         card.background = bg(tint, 22, Ui.LINE, 1)
         card.setPadding(dp(12), dp(12), dp(12), dp(12))
         card.setOnClickListener { it.tapFx(); startActivity(Intent(this, DashboardActivity::class.java)) }
-
-        val head = LinearLayout(this)
-        head.gravity = Gravity.CENTER_VERTICAL
-        val ib = LinearLayout(this)
-        ib.gravity = Gravity.CENTER
-        ib.background = bg(Ui.PRIMARY, 12)
-        ib.addView(iconView(R.drawable.ic_bolt, 20, Color.WHITE))
-        head.addView(ib, lp(width = dp(40), height = dp(40), r = 10))
-        val tt = LinearLayout(this)
-        tt.orientation = LinearLayout.VERTICAL
-        tt.addView(label(tr("আপনার কার্যকলাপ"), 16f, Ui.TEXT, true))
-        tt.addView(label(tr("ব্যবহারের সারসংক্ষেপ"), 12f, Ui.MUTED))
-        head.addView(tt, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        val sel = label((if (days == 30) tr("সর্বশেষ ৩০ দিন") else tr("সর্বশেষ ৭ দিন")) + "  ▾", 12f, Ui.PRIMARY, true)
-        sel.background = bg(Ui.CARD, 18, Ui.PRIMARY, 1)
-        sel.setPadding(dp(12), dp(8), dp(12), dp(8))
-        sel.setOnClickListener {
-            it.tapFx()
-            android.app.AlertDialog.Builder(this)
-                .setTitle(tr("আপনার কার্যকলাপ"))
-                .setSingleChoiceItems(arrayOf(tr("সর্বশেষ ৭ দিন"), tr("সর্বশেষ ৩০ দিন")), if (days == 30) 1 else 0) { d, i ->
-                    sp.edit().putInt("actDays", if (i == 1) 30 else 7).apply()
-                    d.dismiss()
-                    render()
-                }
-                .show()
-        }
-        head.addView(sel)
-        card.addView(head, lp(b = 10))
 
         val top = LinearLayout(this)
         top.orientation = LinearLayout.HORIZONTAL
