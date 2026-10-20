@@ -301,6 +301,7 @@ class SettingsActivity : GuardedActivity() {
                     render()
                 } else chooseType {
                     render()
+                    if (Lock.question(this) == null) showSetQuestion(true) { render() }
                 }
             },
             lp(b = 8)
@@ -313,6 +314,12 @@ class SettingsActivity : GuardedActivity() {
                     null
                 ) {
                     askCurrent(tr("বর্তমান লক দিন")) { chooseType { render() } }
+                },
+                lp(b = 8)
+            )
+            box.addView(
+                row(tr("নিরাপত্তা-প্রশ্ন"), if (Lock.question(this) != null) tr("সেট করা আছে") else tr("সেট করা নেই (লক ভুলে গেলে কাজে লাগে)"), null) {
+                    askCurrent(tr("বর্তমান লক দিন")) { showSetQuestion(false) { render() } }
                 },
                 lp(b = 8)
             )
@@ -521,6 +528,66 @@ class SettingsActivity : GuardedActivity() {
         }
         dlg.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
         dlg.show()
+    }
+
+    /** Picks a security question and a hashed answer; used to reset the lock without wiping data. */
+    private fun showSetQuestion(offer: Boolean, onDone: () -> Unit) {
+        val qs = arrayOf(
+            tr("আপনার প্রথম স্কুলের নাম কী?"),
+            tr("আপনার শৈশবের প্রিয় বন্ধুর নাম কী?"),
+            tr("আপনার মায়ের জন্মস্থান কোথায়?"),
+            tr("আপনার প্রথম মোবাইল নম্বরের শেষ ৪ সংখ্যা কত?"),
+            tr("নিজের প্রশ্ন লিখব")
+        )
+        AlertDialog.Builder(this)
+            .setTitle(tr("নিরাপত্তা-প্রশ্ন বাছুন"))
+            .setItems(qs) { _, i ->
+                if (i < qs.size - 1) askAnswer(qs[i], onDone) else {
+                    val e = EditText(this)
+                    e.hint = tr("আপনার প্রশ্ন")
+                    val w = LinearLayout(this)
+                    w.setPadding(dp(20), dp(10), dp(20), 0)
+                    w.addView(e, lp())
+                    AlertDialog.Builder(this)
+                        .setTitle(tr("নিজের প্রশ্ন"))
+                        .setView(w)
+                        .setPositiveButton(tr("পরবর্তী")) { _, _ ->
+                            val q = e.text.toString().trim()
+                            if (q.length < 4) Toast.makeText(this, tr("প্রশ্নটি একটু বড় করে লিখুন"), Toast.LENGTH_SHORT).show()
+                            else askAnswer(q, onDone)
+                        }
+                        .setNegativeButton(tr("বাতিল"), null)
+                        .show()
+                }
+            }
+            .setNegativeButton(if (offer) tr("এখন নয়") else tr("বাতিল"), null)
+            .show()
+    }
+
+    private fun askAnswer(q: String, onDone: () -> Unit) {
+        val a = EditText(this)
+        a.hint = tr("উত্তর")
+        a.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        val w = LinearLayout(this)
+        w.orientation = LinearLayout.VERTICAL
+        w.setPadding(dp(20), dp(10), dp(20), 0)
+        w.addView(label(q, 14f, Ui.MUTED), lp(b = 6))
+        w.addView(a, lp())
+        AlertDialog.Builder(this)
+            .setTitle(tr("উত্তর লিখুন"))
+            .setView(w)
+            .setPositiveButton(tr("সংরক্ষণ")) { _, _ ->
+                val ans = a.text.toString().trim()
+                if (ans.length < 2) {
+                    Toast.makeText(this, tr("উত্তর লিখতে হবে"), Toast.LENGTH_SHORT).show()
+                } else {
+                    Lock.setQuestion(this, q, ans)
+                    Toast.makeText(this, tr("নিরাপত্তা-প্রশ্ন সংরক্ষিত হয়েছে"), Toast.LENGTH_SHORT).show()
+                    onDone()
+                }
+            }
+            .setNegativeButton(tr("বাতিল"), null)
+            .show()
     }
 
     private fun lockTypeName(): String = when (Lock.type(this)) {

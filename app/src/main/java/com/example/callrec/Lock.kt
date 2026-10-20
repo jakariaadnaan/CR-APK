@@ -63,6 +63,27 @@ object Lock {
         markUnlocked()
     }
 
+    private fun norm(a: String) = a.trim().lowercase().replace(Regex("\\s+"), " ")
+
+    fun question(c: Context): String? = sp(c).getString("q", null)
+
+    fun setQuestion(c: Context, q: String, answer: String) {
+        val raw = ByteArray(16)
+        SecureRandom().nextBytes(raw)
+        val salt = raw.joinToString("") { String.format("%02x", it) }
+        sp(c).edit().putString("q", q).putString("qsalt", salt).putString("qhash", hash(norm(answer), salt)).apply()
+    }
+
+    fun checkAnswer(c: Context, answer: String): Boolean {
+        val salt = sp(c).getString("qsalt", null) ?: return false
+        val stored = sp(c).getString("qhash", null) ?: return false
+        return hash(norm(answer), salt) == stored
+    }
+
+    fun clearQuestion(c: Context) {
+        sp(c).edit().remove("q").remove("qsalt").remove("qhash").apply()
+    }
+
     fun setPin(c: Context, pin: String) = setSecret(c, "pin", pin)
 
     fun check(c: Context, pin: String): Boolean {
@@ -72,7 +93,7 @@ object Lock {
     }
 
     fun disable(c: Context) {
-        sp(c).edit().remove("on").remove("hash").remove("salt").remove("bio").remove("type").apply()
+        sp(c).edit().remove("on").remove("hash").remove("salt").remove("bio").remove("type").remove("q").remove("qsalt").remove("qhash").apply()
     }
 
     fun markUnlocked() {

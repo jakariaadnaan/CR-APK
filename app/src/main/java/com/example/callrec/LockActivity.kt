@@ -205,9 +205,10 @@ class LockActivity : Activity() {
         forgot.setPadding(dp(16), dp(12), dp(16), dp(8))
         forgot.setOnClickListener {
             it.tapFx()
+            if (Lock.question(this) != null) askRecovery() else
             AlertDialog.Builder(this)
                 .setTitle(tr("ভুলে গেলে কী করবেন"))
-                .setMessage(tr("পিন বা প্যাটার্ন ফোনেই থাকে, তাই আমরা ফিরিয়ে দিতে পারি না। ফোনের Settings > Apps > আমার খাতা > Storage থেকে ডেটা মুছে নতুন করে শুরু করতে হবে। আগে ব্যাকআপ নেওয়া থাকলে তা ফিরিয়ে আনা যাবে।"))
+                .setMessage(tr("কোনো নিরাপত্তা-প্রশ্ন সেট করা নেই, তাই লক ফিরিয়ে আনা যাবে না। ফোনের Settings > Apps > আমার খাতা > Storage থেকে ডেটা মুছে নতুন করে শুরু করতে হবে। আগে ব্যাকআপ নেওয়া থাকলে তা ফিরিয়ে আনা যাবে।"))
                 .setPositiveButton(tr("ঠিক আছে"), null)
                 .show()
         }
@@ -290,6 +291,39 @@ class LockActivity : Activity() {
             pv.flashError()
             registerFail(tr("প্যাটার্ন"))
         }
+    }
+
+    private fun askRecovery() {
+        val a = android.widget.EditText(this)
+        a.hint = tr("উত্তর")
+        a.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        val w = LinearLayout(this)
+        w.orientation = LinearLayout.VERTICAL
+        w.setPadding(dp(20), dp(10), dp(20), 0)
+        w.addView(label(Lock.question(this) ?: "", 14f, Ui.MUTED), lp(b = 6))
+        w.addView(a, lp())
+        val dlg = AlertDialog.Builder(this)
+            .setTitle(tr("নিরাপত্তা-প্রশ্ন"))
+            .setView(w)
+            .setPositiveButton(tr("লক রিসেট করুন"), null)
+            .setNegativeButton(tr("বাতিল"), null)
+            .create()
+        dlg.setOnShowListener {
+            dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                if (System.currentTimeMillis() < lockedUntil) return@setOnClickListener
+                if (Lock.checkAnswer(this, a.text.toString())) {
+                    dlg.dismiss()
+                    Lock.disable(this)
+                    android.widget.Toast.makeText(this, tr("লক বন্ধ হয়েছে। সেটিংস থেকে নতুন লক দিন"), android.widget.Toast.LENGTH_LONG).show()
+                    success()
+                } else {
+                    a.setText("")
+                    registerFail(tr("উত্তর"))
+                    android.widget.Toast.makeText(this, tr("উত্তর মেলেনি"), android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        dlg.show()
     }
 
     private fun submitPass() {
