@@ -227,7 +227,7 @@ class HomeActivity : GuardedActivity() {
         all.setPadding(dp(8), dp(6), dp(4), dp(6))
         all.setOnClickListener { startActivity(Intent(this, ToolListActivity::class.java).putExtra("cat", "all")) }
         hdr.addView(all)
-        content.addView(hdr, lp(l = 4, b = 8))
+        content.addView(hdr, lp(l = 4, b = 4))
 
         val grid = quickTools()
         var idx = 0
@@ -236,7 +236,7 @@ class HomeActivity : GuardedActivity() {
             line.orientation = LinearLayout.HORIZONTAL
             for (k in 0 until 3) {
                 val p = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                p.setMargins(dp(4), dp(4), dp(4), dp(4))
+                p.setMargins(dp(3), dp(3), dp(3), dp(3))
                 if (idx + k < grid.size) line.addView(favTile(grid[idx + k]), p) else line.addView(View(this), p)
             }
             content.addView(line, lp())
@@ -466,17 +466,17 @@ class HomeActivity : GuardedActivity() {
         val col = LinearLayout(this)
         col.orientation = LinearLayout.VERTICAL
         col.gravity = Gravity.CENTER_HORIZONTAL
-        col.background = bg(Ui.CARD, 16, Ui.LINE, 1)
-        col.setPadding(dp(6), dp(14), dp(6), dp(12))
+        col.background = bg(Ui.CARD, 14, Ui.LINE, 1)
+        col.setPadding(dp(4), dp(9), dp(4), dp(8))
         val ib = LinearLayout(this)
         ib.gravity = Gravity.CENTER
-        ib.background = bg(if (Ui.dark) Ui.mix(cat.fg, Color.BLACK, 0.15f) else cat.fg, 14)
-        ib.addView(iconView(cat.icon, 26, Color.WHITE))
-        col.addView(ib, lp(width = dp(50), height = dp(50)))
-        val name = label(t.title, 12f, Ui.TEXT)
+        ib.background = bg(if (Ui.dark) Ui.mix(cat.fg, Color.BLACK, 0.15f) else cat.fg, 11)
+        ib.addView(iconView(cat.icon, 20, Color.WHITE))
+        col.addView(ib, lp(width = dp(38), height = dp(38)))
+        val name = label(t.title, 11f, Ui.TEXT)
         name.gravity = Gravity.CENTER
         name.maxLines = 2
-        col.addView(name, lp(t = 8))
+        col.addView(name, lp(t = 5))
         col.setOnClickListener { it.tapFx(); openTool(t) }
         col.setOnLongClickListener {
             Registry.toggleFav(this, t.id)
