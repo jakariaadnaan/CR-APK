@@ -64,7 +64,6 @@ class ToolListActivity : GuardedActivity() {
                 box.addView(e, lp())
             } else {
                 box.addView(groupCard(favs.map { toolRow(it) { render() } }), lp(b = 10))
-                box.addView(label(tr("সরাতে টুলে চেপে ধরে রাখুন।"), 12f, Ui.MUTED), lp(l = 4, t = 4))
             }
             return
         }
@@ -85,6 +84,5 @@ class ToolListActivity : GuardedActivity() {
             e.setPadding(0, dp(30), 0, dp(30))
             box.addView(e, lp())
         }
-        box.addView(label(tr("প্রিয় করতে বা সরাতে টুলে চেপে ধরে রাখুন।"), 12f, Ui.MUTED), lp(l = 4, t = 4))
     }
 }
