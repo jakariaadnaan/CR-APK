@@ -265,30 +265,36 @@ class HomeActivity : GuardedActivity() {
             else -> Pair(R.drawable.ic_doc, "#3F6FE0")
         }
         val r = LinearLayout(this)
+        r.orientation = LinearLayout.HORIZONTAL
         r.gravity = Gravity.CENTER_VERTICAL
-        r.setPadding(dp(14), dp(12), dp(12), dp(12))
+        r.setPadding(dp(12), dp(11), dp(10), dp(11))
         val ib = LinearLayout(this)
         ib.gravity = Gravity.CENTER
-        ib.background = bg(Color.parseColor(col), 12)
-        ib.addView(iconView(res, 22, Color.WHITE))
-        r.addView(ib, lp(width = dp(42), height = dp(42), r = 12))
+        ib.background = bg(Color.parseColor(col), 11)
+        ib.addView(iconView(res, 20, Color.WHITE))
+        r.addView(ib, lp(width = dp(40), height = dp(40), r = 12))
         val mid = LinearLayout(this)
         mid.orientation = LinearLayout.VERTICAL
         val nm = label(if (e.n.isNotBlank()) e.n else (tool?.title ?: tr("কাজ সম্পন্ন")), 14f, Ui.TEXT, true)
         nm.maxLines = 1
         nm.ellipsize = android.text.TextUtils.TruncateAt.END
-        mid.addView(nm)
-        if (tool != null) mid.addView(label(tool.title, 12f, Ui.MUTED))
+        mid.addView(nm, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+        if (tool != null) {
+            val sb = label(tool.title, 12f, Ui.MUTED)
+            sb.maxLines = 1
+            sb.ellipsize = android.text.TextUtils.TruncateAt.END
+            mid.addView(sb, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+        }
         r.addView(mid, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        val right = LinearLayout(this)
-        right.orientation = LinearLayout.VERTICAL
-        right.gravity = Gravity.END
-        right.addView(label(ago(e.t), 11f, Ui.MUTED))
+        val tm = label(ago(e.t), 11f, Ui.MUTED)
+        tm.maxLines = 1
+        r.addView(tm, lp(width = LinearLayout.LayoutParams.WRAP_CONTENT, l = 8))
         val tag = label("● " + tr("সম্পন্ন"), 10f, Ui.GREEN, true)
-        tag.background = bg(Ui.mix(Ui.GREEN, Ui.CARD, 0.85f), 10)
-        tag.setPadding(dp(8), dp(2), dp(8), dp(2))
-        right.addView(tag, lp(t = 4))
-        r.addView(right, lp(l = 8))
+        tag.maxLines = 1
+        tag.background = bg(Ui.mix(Ui.GREEN, Ui.CARD, 0.85f), 12)
+        tag.setPadding(dp(8), dp(3), dp(8), dp(3))
+        r.addView(tag, lp(width = LinearLayout.LayoutParams.WRAP_CONTENT, l = 8))
+        r.addView(iconView(R.drawable.ic_chevron, 16, Ui.CHEV), lp(width = dp(16), height = dp(16), l = 6))
         if (tool != null) r.setOnClickListener { it.tapFx(); openTool(tool) }
         return r
     }
