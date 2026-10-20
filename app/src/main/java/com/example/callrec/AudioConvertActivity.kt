@@ -146,6 +146,7 @@ abstract class AudioConvertBase(private val video: Boolean) : GuardedActivity() 
                 }
                 contentResolver.openOutputStream(out)?.use { os -> FileInputStream(tmp).use { it.copyTo(os) } }
                 msg = tr("সংরক্ষিত হয়েছে (") + Img.human(tmp.length()) + ")"
+                Usage.done(this, "AudioConvert", tmp.length())
             } catch (e: NoAudio) {
                 msg = tr("এই ফাইলে কোনো অডিও ট্র্যাক নেই")
             } catch (e: Throwable) {

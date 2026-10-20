@@ -2,6 +2,17 @@ package com.example.callrec
 
 object Dict7 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        "আপনার কার্যকলাপ" to "Your Activity",
+        "ব্যবহারের সারসংক্ষেপ" to "Overview of your usage",
+        "টুল ব্যবহার" to "Tools Used",
+        "কনভার্সন" to "Conversions",
+        "ফাইল প্রসেস" to "Files Processed",
+        "সাশ্রয়ী সময়" to "Time Saved",
+        "সম্পন্ন করণীয়" to "Tasks Completed",
+        "সর্বশেষ ৭ দিন" to "Last 7 Days",
+        "সর্বশেষ ৩০ দিন" to "Last 30 Days",
+        "নতুন" to "New",
+        "টুল ব্যবহার শুরু করলে এখানে হিসাব জমতে থাকবে।" to "Your usage will build up here as you use the tools.",
         "দ্রুত অ্যাক্সেস" to "Quick Access",
         "সব দেখুন" to "View All",
         "বিজ্ঞপ্তি" to "Notifications",

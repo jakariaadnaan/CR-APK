@@ -100,15 +100,25 @@ abstract class PdfBase : GuardedActivity() {
     }
 
     /** Runs [block] off the main thread; it returns the message to show, or throws. */
+    private var lastOut: Uri? = null
+
     protected fun work(msg: String, block: () -> String) {
         status.text = msg
         Thread {
+            var ok = true
             val res = try {
                 block()
             } catch (e: InvalidPasswordException) {
+                ok = false
                 tr("পাসওয়ার্ড ভুল বা PDF লক করা")
             } catch (e: Throwable) {
+                ok = false
                 tr("কাজটি করা যায়নি")
+            }
+            if (ok) {
+                var size = 0L
+                try { lastOut?.let { u -> contentResolver.openFileDescriptor(u, "r")?.use { size = it.statSize } } } catch (e: Throwable) { }
+                Usage.done(this, javaClass.simpleName, size)
             }
             runOnUiThread { status.text = res; actionBuzz() }
         }.start()
@@ -122,8 +132,8 @@ abstract class PdfBase : GuardedActivity() {
         val u = data.data!!
         when (requestCode) {
             85 -> load(u)
-            86 -> onCreateDoc?.invoke(u)
-            87 -> onTree?.invoke(u)
+            86 -> { lastOut = u; onCreateDoc?.invoke(u) }
+            87 -> { lastOut = null; onTree?.invoke(u) }
         }
     }
 

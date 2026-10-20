@@ -186,6 +186,7 @@ class ImagesToPdfActivity : GuardedActivity() {
             runOnUiThread {
                 if (ok) {
                     status.text = tr("সংরক্ষিত হয়েছে: ") + bn(n.toString()) + tr(" পেজের PDF")
+                    Usage.done(this, "ImagesToPdf")
                 } else {
                     status.text = tr("PDF বানানো যায়নি")
                     Toast.makeText(this, tr("PDF বানানো যায়নি"), Toast.LENGTH_LONG).show()

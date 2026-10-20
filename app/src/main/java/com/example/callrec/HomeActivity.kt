@@ -253,9 +253,7 @@ class HomeActivity : GuardedActivity() {
         else tr("এই মাসে ব্যয়: ") + taka(mExp) + tr("  ব্যালান্স: ") + taka(mInc - mExp)
         val bk = backupBanner()
         if (bk != null) content.addView(bk, lp(b = 12))
-        val dash = listRow(R.drawable.ic_wallet, tr("ড্যাশবোর্ড"), dashSub)
-        dash.setOnClickListener { startActivity(Intent(this, DashboardActivity::class.java)) }
-        content.addView(groupCard(listOf(dash)), lp(b = 14))
+        content.addView(activityCard(), lp(b = 16))
 
         val hdr = LinearLayout(this)
         hdr.gravity = Gravity.CENTER_VERTICAL
@@ -279,7 +277,146 @@ class HomeActivity : GuardedActivity() {
             content.addView(line, lp())
             idx += 3
         }
-        content.addView(label(tr("প্রিয় করতে বা সরাতে যেকোনো টুলে চেপে ধরে রাখুন।"), 12f, Ui.MUTED), lp(l = 6, t = 10))
+        content.addView(label(tr("প্রিয় করতে বা সরাতে যেকোনো টুলে চেপে ধরে রাখুন।"), 12f, Ui.MUTED), lp(l = 6, t = 10, b = 14))
+        val dash = listRow(R.drawable.ic_wallet, tr("ড্যাশবোর্ড"), dashSub)
+        dash.setOnClickListener { startActivity(Intent(this, DashboardActivity::class.java)) }
+        content.addView(groupCard(listOf(dash)), lp())
+    }
+
+    private fun pctView(cur: Double, prev: Double, small: Boolean): View {
+        val col = LinearLayout(this)
+        col.orientation = LinearLayout.VERTICAL
+        val text: String
+        val color: Int
+        if (prev <= 0.0) {
+            text = if (cur > 0.0) tr("নতুন") else "—"
+            color = if (cur > 0.0) Ui.PRIMARY else Ui.MUTED
+        } else {
+            val p = (cur - prev) * 100.0 / prev
+            text = (if (p >= 0) "↑ " else "↓ ") + bn(String.format(java.util.Locale.US, "%.1f", Math.abs(p))) + "%"
+            color = if (p >= 0) Ui.PRIMARY else Ui.RED
+        }
+        col.addView(label(text, if (small) 11f else 10f, color, true))
+        return col
+    }
+
+    private fun humanBytes(b: Long): String {
+        val s = when {
+            b <= 0L -> "0 MB"
+            b < 1024L * 1024L -> String.format(java.util.Locale.US, "%.1f KB", b / 1024.0)
+            b < 1024L * 1024L * 1024L -> String.format(java.util.Locale.US, "%.1f MB", b / 1048576.0)
+            else -> String.format(java.util.Locale.US, "%.2f GB", b / 1073741824.0)
+        }
+        return bn(s)
+    }
+
+    private fun humanMinutes(m: Double): String =
+        if (m < 60.0) bn(Math.round(m).toString()) + " " + tr("মিনিট")
+        else bn(String.format(java.util.Locale.US, "%.1f", m / 60.0)) + " " + tr("ঘণ্টা")
+
+    /** The "Your Activity" card: counts for the chosen period, compared with the period before. */
+    private fun activityCard(): View {
+        val sp = getSharedPreferences("settings", MODE_PRIVATE)
+        val days = if (sp.getInt("actDays", 7) == 30) 30 else 7
+        val st = Usage.stats(this, days)
+        val tint = Ui.mix(Ui.PRIMARY, Ui.CARD, if (Ui.dark) 0.82f else 0.9f)
+        val card = LinearLayout(this)
+        card.orientation = LinearLayout.VERTICAL
+        card.background = bg(tint, 22, Ui.LINE, 1)
+        card.setPadding(dp(12), dp(12), dp(12), dp(12))
+
+        val head = LinearLayout(this)
+        head.gravity = Gravity.CENTER_VERTICAL
+        val ib = LinearLayout(this)
+        ib.gravity = Gravity.CENTER
+        ib.background = bg(Ui.PRIMARY, 12)
+        ib.addView(iconView(R.drawable.ic_bolt, 20, Color.WHITE))
+        head.addView(ib, lp(width = dp(40), height = dp(40), r = 10))
+        val tt = LinearLayout(this)
+        tt.orientation = LinearLayout.VERTICAL
+        tt.addView(label(tr("আপনার কার্যকলাপ"), 16f, Ui.TEXT, true))
+        tt.addView(label(tr("ব্যবহারের সারসংক্ষেপ"), 12f, Ui.MUTED))
+        head.addView(tt, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        val sel = label((if (days == 30) tr("সর্বশেষ ৩০ দিন") else tr("সর্বশেষ ৭ দিন")) + "  ▾", 12f, Ui.PRIMARY, true)
+        sel.background = bg(Ui.CARD, 18, Ui.PRIMARY, 1)
+        sel.setPadding(dp(12), dp(8), dp(12), dp(8))
+        sel.setOnClickListener {
+            it.tapFx()
+            android.app.AlertDialog.Builder(this)
+                .setTitle(tr("আপনার কার্যকলাপ"))
+                .setSingleChoiceItems(arrayOf(tr("সর্বশেষ ৭ দিন"), tr("সর্বশেষ ৩০ দিন")), if (days == 30) 1 else 0) { d, i ->
+                    sp.edit().putInt("actDays", if (i == 1) 30 else 7).apply()
+                    d.dismiss()
+                    render()
+                }
+                .show()
+        }
+        head.addView(sel)
+        card.addView(head, lp(b = 10))
+
+        val top = LinearLayout(this)
+        top.orientation = LinearLayout.HORIZONTAL
+        top.addView(bigStat(R.drawable.ic_grid, bn(st.cur.tools.toString()), tr("টুল ব্যবহার"), st.cur.tools.toDouble(), st.prev.tools.toDouble()), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        top.addView(bigStat(R.drawable.ic_sparkle, bn(st.cur.conversions.toString()), tr("কনভার্সন"), st.cur.conversions.toDouble(), st.prev.conversions.toDouble()), lp(width = 0, l = 8).also { it.weight = 1f })
+        val chart = ActivityChart(this)
+        chart.values = st.daily
+        chart.color = Ui.PRIMARY
+        chart.bubbleBg = Ui.CARD
+        chart.bubbleFg = Ui.TEXT
+        var mi = 0
+        for (i in st.daily.indices) if (st.daily[i] >= st.daily[mi]) mi = i
+        chart.bubbleText = java.text.SimpleDateFormat("d MMM", java.util.Locale.getDefault()).format(java.util.Date(st.labels[mi])) + "\n" + bn(st.daily[mi].toString())
+        top.addView(chart, lp(width = 0, height = dp(110), l = 6).also { it.weight = 1.3f })
+        card.addView(top, lp())
+
+        val line = View(this)
+        line.setBackgroundColor(Ui.LINE)
+        card.addView(line, lp(height = 1, t = 12, b = 10))
+
+        val bottom = LinearLayout(this)
+        bottom.orientation = LinearLayout.HORIZONTAL
+        bottom.addView(smallStat(R.drawable.ic_doc, tr("ফাইল প্রসেস"), humanBytes(st.cur.bytes), st.cur.bytes.toDouble(), st.prev.bytes.toDouble()), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        bottom.addView(smallStat(R.drawable.ic_clock, tr("সাশ্রয়ী সময়"), humanMinutes(st.cur.minutes), st.cur.minutes, st.prev.minutes), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        bottom.addView(smallStat(R.drawable.ic_star, tr("সম্পন্ন করণীয়"), bn(st.cur.todos.toString()), st.cur.todos.toDouble(), st.prev.todos.toDouble()), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        card.addView(bottom, lp())
+        if (!st.hasAny) card.addView(label(tr("টুল ব্যবহার শুরু করলে এখানে হিসাব জমতে থাকবে।"), 12f, Ui.MUTED), lp(t = 10))
+        return card
+    }
+
+    private fun bigStat(icon: Int, value: String, name: String, cur: Double, prev: Double): View {
+        val c = LinearLayout(this)
+        c.orientation = LinearLayout.VERTICAL
+        c.background = bg(Ui.CARD, 14, Ui.LINE, 1)
+        c.setPadding(dp(10), dp(10), dp(8), dp(10))
+        val r = LinearLayout(this)
+        r.gravity = Gravity.CENTER_VERTICAL
+        r.addView(iconView(icon, 18, Ui.PRIMARY), lp(r = 6))
+        r.addView(label(value, 20f, Ui.TEXT, true))
+        c.addView(r)
+        c.addView(label(name, 12f, Ui.MUTED), lp(t = 2))
+        c.addView(pctView(cur, prev, false), lp(t = 6))
+        return c
+    }
+
+    private fun smallStat(icon: Int, name: String, value: String, cur: Double, prev: Double): View {
+        val c = LinearLayout(this)
+        c.orientation = LinearLayout.VERTICAL
+        c.setPadding(dp(2), 0, dp(4), 0)
+        val r = LinearLayout(this)
+        r.gravity = Gravity.CENTER_VERTICAL
+        val ib = LinearLayout(this)
+        ib.gravity = Gravity.CENTER
+        ib.background = bg(Ui.CARD, 10)
+        ib.addView(iconView(icon, 16, Ui.PRIMARY))
+        r.addView(ib, lp(width = dp(30), height = dp(30), r = 6))
+        val col = LinearLayout(this)
+        col.orientation = LinearLayout.VERTICAL
+        col.addView(label(name, 11f, Ui.MUTED))
+        col.addView(label(value, 15f, Ui.TEXT, true))
+        r.addView(col)
+        c.addView(r)
+        c.addView(pctView(cur, prev, true), lp(t = 4))
+        return c
     }
 
     /** Up to nine tools: the favourites first, then one from each category in turn. */

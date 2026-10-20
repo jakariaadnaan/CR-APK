@@ -272,6 +272,7 @@ class GifMakerActivity : GuardedActivity() {
                 if (frames == 0) throw IllegalStateException()
                 contentResolver.openOutputStream(dest)?.use { os -> FileInputStream(tmp).use { it.copyTo(os) } }
                 msg = tr("সংরক্ষিত হয়েছে: ") + bn(frames.toString()) + tr(" ফ্রেম · ") + Img.human(tmp.length())
+                Usage.done(this, "GifMaker", tmp.length())
             } catch (e: Throwable) {
                 msg = tr("GIF বানানো যায়নি")
             } finally {

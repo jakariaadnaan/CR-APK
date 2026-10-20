@@ -13,6 +13,7 @@ fun Activity.openTool(t: Tool) {
     if (target == null) {
         Toast.makeText(this, tr("এই টুলটি শীঘ্রই আসছে"), Toast.LENGTH_SHORT).show()
     } else {
+        Usage.add(this, "open", t.id)
         startActivity(Intent(this, target))
     }
 }

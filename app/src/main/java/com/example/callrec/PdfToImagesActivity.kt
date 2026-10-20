@@ -195,6 +195,7 @@ class PdfToImagesActivity : GuardedActivity() {
             }
             val d = done
             runOnUiThread {
+                if (ok) Usage.done(this, "PdfToImages")
                 status.text = if (ok) tr("সংরক্ষিত হয়েছে: ") + bn(d.toString()) + tr("টি ছবি") else tr("কিছু পেজ সংরক্ষণ করা যায়নি (") + bn(d.toString()) + tr("টি হয়েছে)")
             }
         }.start()

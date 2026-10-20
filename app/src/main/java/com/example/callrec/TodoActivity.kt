@@ -82,6 +82,7 @@ class TodoActivity : GuardedActivity() {
             tick.gravity = Gravity.CENTER
             tick.setPadding(dp(6), dp(4), dp(14), dp(4))
             tick.setOnClickListener {
+                if (!t.done) Usage.add(this, "todo", "")
                 TodoStore.upsert(this, t.copy(done = !t.done))
                 render()
             }
