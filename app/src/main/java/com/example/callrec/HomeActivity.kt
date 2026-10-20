@@ -227,7 +227,11 @@ class HomeActivity : GuardedActivity() {
         all.setPadding(dp(8), dp(6), dp(4), dp(6))
         all.setOnClickListener { startActivity(Intent(this, ToolListActivity::class.java).putExtra("cat", "all")) }
         hdr.addView(all)
-        content.addView(hdr, lp(l = 4, b = 4))
+        val qa = LinearLayout(this)
+        qa.orientation = LinearLayout.VERTICAL
+        qa.background = bg(Ui.mix(Ui.PRIMARY, Ui.BG, if (Ui.dark) 0.1f else 0.05f), 20, Ui.LINE, 1)
+        qa.setPadding(dp(10), dp(8), dp(10), dp(8))
+        qa.addView(hdr, lp(l = 4, b = 2))
 
         val grid = quickTools()
         var idx = 0
@@ -239,9 +243,10 @@ class HomeActivity : GuardedActivity() {
                 p.setMargins(dp(3), dp(3), dp(3), dp(3))
                 if (idx + k < grid.size) line.addView(favTile(grid[idx + k]), p) else line.addView(View(this), p)
             }
-            content.addView(line, lp())
+            qa.addView(line, lp())
             idx += 3
         }
+        content.addView(qa, lp())
         content.addView(recentSection(), lp(t = 14, b = 14))
     }
 
@@ -468,21 +473,26 @@ class HomeActivity : GuardedActivity() {
     }
 
     private fun favTile(t: Tool): View {
-        val cat = Registry.cat(t.cat)
         val col = LinearLayout(this)
         col.orientation = LinearLayout.VERTICAL
         col.gravity = Gravity.CENTER_HORIZONTAL
         col.background = bg(Ui.CARD, 14, Ui.LINE, 1)
-        col.setPadding(dp(4), dp(9), dp(4), dp(8))
+        col.setPadding(dp(4), dp(10), dp(4), dp(9))
         val ib = LinearLayout(this)
         ib.gravity = Gravity.CENTER
-        ib.background = bg(if (Ui.dark) Ui.mix(cat.fg, Color.BLACK, 0.15f) else cat.fg, 11)
-        ib.addView(iconView(cat.icon, 20, Color.WHITE))
-        col.addView(ib, lp(width = dp(38), height = dp(38)))
+        val g = android.graphics.drawable.GradientDrawable(
+            android.graphics.drawable.GradientDrawable.Orientation.TL_BR,
+            intArrayOf(Ui.mix(Ui.PRIMARY, Color.WHITE, 0.28f), Ui.PRIMARY)
+        )
+        g.cornerRadius = dp(10).toFloat()
+        ib.background = g
+        ib.addView(iconView(Registry.cat(t.cat).icon, 18, Color.WHITE))
+        col.addView(ib, lp(width = dp(34), height = dp(34)))
         val name = label(t.title, 11f, Ui.TEXT)
         name.gravity = Gravity.CENTER
-        name.maxLines = 2
-        col.addView(name, lp(t = 5))
+        name.maxLines = 1
+        name.ellipsize = android.text.TextUtils.TruncateAt.END
+        col.addView(name, lp(t = 6))
         col.setOnClickListener { it.tapFx(); openTool(t) }
         col.setOnLongClickListener {
             Registry.toggleFav(this, t.id)
