@@ -85,7 +85,7 @@ class HomeActivity : GuardedActivity() {
         val bp = android.widget.FrameLayout.LayoutParams(dp(18), dp(18))
         bp.gravity = Gravity.TOP or Gravity.END
         bellWrap.addView(badge, bp)
-        bell.setOnClickListener { it.tapFx(); showNotifs() }
+        bell.setOnClickListener { it.tapFx(); startActivity(Intent(this, NotificationsActivity::class.java)) }
         top.addView(bellWrap, lp(width = dp(46), height = dp(46), l = 8))
         header.addView(top, lp())
 
@@ -151,44 +151,11 @@ class HomeActivity : GuardedActivity() {
         render()
     }
 
-    private fun unseen(): Int {
-        val seen = getSharedPreferences("settings", MODE_PRIVATE).getLong("notifSeen", 0L)
-        return NotifLog.list(this).count { it.first > seen }
-    }
-
     private fun updateBadge() {
         if (!::badge.isInitialized) return
-        val n = unseen()
+        val n = NotifCenter.badge(this)
         badge.visibility = if (n > 0) View.VISIBLE else View.GONE
         badge.text = if (n > 9) "9+" else bn(n.toString())
-    }
-
-    private fun showNotifs() {
-        val list = NotifLog.list(this)
-        getSharedPreferences("settings", MODE_PRIVATE).edit().putLong("notifSeen", System.currentTimeMillis()).apply()
-        updateBadge()
-        val w = LinearLayout(this)
-        w.orientation = LinearLayout.VERTICAL
-        w.setPadding(dp(20), dp(8), dp(20), dp(4))
-        if (list.isEmpty()) {
-            w.addView(label(tr("কোনো বিজ্ঞপ্তি নেই"), 14f, Ui.MUTED), lp(t = 8, b = 8))
-        } else {
-            val fmt = java.text.SimpleDateFormat("d MMM, HH:mm", java.util.Locale.getDefault())
-            for (e in list.take(15)) {
-                w.addView(label(e.second, 14f, Ui.TEXT, true), lp(t = 10))
-                if (e.third.isNotBlank()) w.addView(label(e.third, 13f, Ui.MUTED), lp(t = 1))
-                w.addView(label(bn(fmt.format(java.util.Date(e.first))), 11f, Ui.MUTED), lp(t = 1))
-            }
-        }
-        val sc = ScrollView(this)
-        sc.addView(w)
-        val b = android.app.AlertDialog.Builder(this)
-            .setTitle(tr("বিজ্ঞপ্তি"))
-            .setView(sc)
-            .setPositiveButton(tr("বন্ধ করুন"), null)
-            .setNeutralButton(tr("সেটিংস")) { _, _ -> startActivity(Intent(this, NotifSettingsActivity::class.java)) }
-        if (list.isNotEmpty()) b.setNegativeButton(tr("লগ মুছে ফেলুন")) { _, _ -> NotifLog.clear(this) }
-        b.show()
     }
 
     private fun hasData(): Boolean = listOf("ledger", "debts", "todos", "notes").any { Store.read(this, it).length() > 0 }

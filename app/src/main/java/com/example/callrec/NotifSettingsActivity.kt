@@ -192,7 +192,7 @@ class NotifSettingsActivity : GuardedActivity() {
             toggle(R.drawable.ic_wallet, "Debt reminders", "On the due date you set", NotifPrefs.DEBT, master),
             toggle(R.drawable.ic_text, "To-do reminders", "At the time you set for a task", NotifPrefs.TODO, master),
             toggle(R.drawable.ic_clock, "Prayer reminders", "For the prayers you turned on", NotifPrefs.PRAYER, master),
-            toggle(R.drawable.ic_backup, "Backup reminder", "A banner on Home when a backup is due", NotifPrefs.BACKUP, master)
+            toggle(R.drawable.ic_backup, "Backup reminder", "An alert in the bell when a backup is due", NotifPrefs.BACKUP, master)
         )), lp())
 
         section("Prayer alerts")
