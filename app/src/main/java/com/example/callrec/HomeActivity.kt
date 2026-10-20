@@ -229,7 +229,7 @@ class HomeActivity : GuardedActivity() {
         hdr.addView(all)
         val qa = LinearLayout(this)
         qa.orientation = LinearLayout.VERTICAL
-        qa.background = bg(Ui.mix(Ui.PRIMARY, Ui.BG, if (Ui.dark) 0.1f else 0.05f), 20, Ui.LINE, 1)
+        qa.background = bg(Ui.CARD, 20, Ui.LINE, 1)
         qa.setPadding(dp(10), dp(8), dp(10), dp(8))
         qa.addView(hdr, lp(l = 4, b = 2))
 
@@ -472,6 +472,37 @@ class HomeActivity : GuardedActivity() {
         return out
     }
 
+    /** The colour people already associate with each kind of tool (PDF red, Word blue, Excel green and so on). */
+    private fun toolColor(t: Tool): Int {
+        val id = t.id
+        val hex = when {
+            id.startsWith("pdf") || id in listOf("img2pdf", "txt2pdf", "web2pdf", "campdf", "pdf2img", "invoice") -> "#E53935"
+            id in listOf("imgfmt", "imgcomp", "upscale", "transp", "collage") -> "#43A047"
+            id == "color" -> "#EC407A"
+            id in listOf("words", "counter", "textcase", "unicode", "dict") -> "#2B6CD9"
+            id == "notes" -> "#F9A825"
+            id in listOf("ledger", "debt") -> "#1D8B4C"
+            id in listOf("calc", "sci") -> "#F57C00"
+            id == "land" -> "#8D6E63"
+            id == "currency" -> "#00897B"
+            id == "prayer" -> "#00796B"
+            id == "todo" -> "#3F6FE0"
+            id == "date" -> "#E64A19"
+            id == "timer" -> "#FB8C00"
+            id == "pass" -> "#5E35B1"
+            id in listOf("aconv", "v2mp3") -> "#7E57C2"
+            id == "gif" -> "#8E24AA"
+            id == "vmeta" -> "#5E35B1"
+            id == "rec" -> "#D32F2F"
+            id in listOf("qrgen", "barcode", "scan") -> "#26A69A"
+            id == "speed" -> "#7C4DFF"
+            id in listOf("ip", "whois") -> "#1E88E5"
+            id == "webcam" -> "#546E7A"
+            else -> null
+        }
+        return if (hex != null) Color.parseColor(hex) else Registry.cat(t.cat).fg
+    }
+
     private fun favTile(t: Tool): View {
         val col = LinearLayout(this)
         col.orientation = LinearLayout.VERTICAL
@@ -482,7 +513,7 @@ class HomeActivity : GuardedActivity() {
         ib.gravity = Gravity.CENTER
         val g = android.graphics.drawable.GradientDrawable(
             android.graphics.drawable.GradientDrawable.Orientation.TL_BR,
-            intArrayOf(Ui.mix(Ui.PRIMARY, Color.WHITE, 0.28f), Ui.PRIMARY)
+            intArrayOf(Ui.mix(toolColor(t), Color.WHITE, 0.25f), toolColor(t))
         )
         g.cornerRadius = dp(10).toFloat()
         ib.background = g
