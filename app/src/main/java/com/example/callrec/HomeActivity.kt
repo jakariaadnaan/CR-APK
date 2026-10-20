@@ -279,9 +279,6 @@ class HomeActivity : GuardedActivity() {
         }
         content.addView(label(tr("প্রিয় করতে বা সরাতে যেকোনো টুলে চেপে ধরে রাখুন।"), 12f, Ui.MUTED), lp(l = 6, t = 10, b = 14))
         content.addView(recentSection(), lp(t = 6, b = 14))
-        val dash = listRow(R.drawable.ic_wallet, tr("ড্যাশবোর্ড"), dashSub)
-        dash.setOnClickListener { startActivity(Intent(this, DashboardActivity::class.java)) }
-        content.addView(groupCard(listOf(dash)), lp())
     }
 
     private fun ago(t: Long): String {
@@ -414,6 +411,7 @@ class HomeActivity : GuardedActivity() {
         card.orientation = LinearLayout.VERTICAL
         card.background = bg(tint, 22, Ui.LINE, 1)
         card.setPadding(dp(12), dp(12), dp(12), dp(12))
+        card.setOnClickListener { it.tapFx(); startActivity(Intent(this, DashboardActivity::class.java)) }
 
         val head = LinearLayout(this)
         head.gravity = Gravity.CENTER_VERTICAL
