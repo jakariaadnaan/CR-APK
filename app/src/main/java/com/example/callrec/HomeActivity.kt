@@ -370,16 +370,16 @@ class HomeActivity : GuardedActivity() {
         val days = 7
         val st = Usage.stats(this, days)
         val tint = Ui.mix(Ui.PRIMARY, Ui.CARD, if (Ui.dark) 0.82f else 0.9f)
-        val card = LinearLayout(this)
+        val card = AspectLinear(this)
         card.orientation = LinearLayout.VERTICAL
         card.background = bg(tint, 22, Ui.LINE, 1)
-        card.setPadding(dp(12), dp(12), dp(12), dp(12))
+        card.setPadding(dp(12), dp(8), dp(12), dp(8))
         card.setOnClickListener { it.tapFx(); startActivity(Intent(this, DashboardActivity::class.java)) }
 
         val top = LinearLayout(this)
         top.orientation = LinearLayout.HORIZONTAL
-        top.addView(bigStat(R.drawable.ic_grid, bn(st.cur.tools.toString()), tr("টুল ব্যবহার"), st.cur.tools.toDouble(), st.prev.tools.toDouble()), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        top.addView(bigStat(R.drawable.ic_sparkle, bn(st.cur.conversions.toString()), tr("কনভার্সন"), st.cur.conversions.toDouble(), st.prev.conversions.toDouble()), lp(width = 0, l = 8).also { it.weight = 1f })
+        top.addView(bigStat(R.drawable.ic_grid, bn(st.cur.tools.toString()), tr("টুল ব্যবহার"), st.cur.tools.toDouble(), st.prev.tools.toDouble()), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f))
+        top.addView(bigStat(R.drawable.ic_sparkle, bn(st.cur.conversions.toString()), tr("কনভার্সন"), st.cur.conversions.toDouble(), st.prev.conversions.toDouble()), lp(width = 0, height = LinearLayout.LayoutParams.MATCH_PARENT, l = 8).also { it.weight = 1f })
         val chart = ActivityChart(this)
         chart.values = st.daily
         chart.color = Ui.PRIMARY
@@ -388,12 +388,12 @@ class HomeActivity : GuardedActivity() {
         var mi = 0
         for (i in st.daily.indices) if (st.daily[i] >= st.daily[mi]) mi = i
         chart.bubbleText = java.text.SimpleDateFormat("d MMM", java.util.Locale.getDefault()).format(java.util.Date(st.labels[mi])) + "\n" + bn(st.daily[mi].toString())
-        top.addView(chart, lp(width = 0, height = dp(110), l = 6).also { it.weight = 1.3f })
-        card.addView(top, lp())
+        top.addView(chart, lp(width = 0, height = LinearLayout.LayoutParams.MATCH_PARENT, l = 6).also { it.weight = 1.3f })
+        card.addView(top, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
 
         val line = View(this)
         line.setBackgroundColor(Ui.LINE)
-        card.addView(line, lp(height = 1, t = 12, b = 10))
+        card.addView(line, lp(height = 1, t = 6, b = 6))
 
         val bottom = LinearLayout(this)
         bottom.orientation = LinearLayout.HORIZONTAL
@@ -401,7 +401,6 @@ class HomeActivity : GuardedActivity() {
         bottom.addView(smallStat(R.drawable.ic_clock, tr("সাশ্রয়ী সময়"), humanMinutes(st.cur.minutes), st.cur.minutes, st.prev.minutes), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         bottom.addView(smallStat(R.drawable.ic_star, tr("সম্পন্ন করণীয়"), bn(st.cur.todos.toString()), st.cur.todos.toDouble(), st.prev.todos.toDouble()), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         card.addView(bottom, lp())
-        if (!st.hasAny) card.addView(label(tr("টুল ব্যবহার শুরু করলে এখানে হিসাব জমতে থাকবে।"), 12f, Ui.MUTED), lp(t = 10))
         return card
     }
 
@@ -409,14 +408,15 @@ class HomeActivity : GuardedActivity() {
         val c = LinearLayout(this)
         c.orientation = LinearLayout.VERTICAL
         c.background = bg(Ui.CARD, 14, Ui.LINE, 1)
-        c.setPadding(dp(10), dp(10), dp(8), dp(10))
+        c.gravity = Gravity.CENTER_VERTICAL
+        c.setPadding(dp(10), dp(6), dp(6), dp(6))
         val r = LinearLayout(this)
         r.gravity = Gravity.CENTER_VERTICAL
         r.addView(iconView(icon, 18, Ui.PRIMARY), lp(r = 6))
-        r.addView(label(value, 20f, Ui.TEXT, true))
+        r.addView(label(value, 19f, Ui.TEXT, true))
         c.addView(r)
-        c.addView(label(name, 12f, Ui.MUTED), lp(t = 2))
-        c.addView(pctView(cur, prev, false), lp(t = 6))
+        c.addView(label(name, 12f, Ui.MUTED), lp(t = 1))
+        c.addView(pctView(cur, prev, false), lp(t = 3))
         return c
     }
 

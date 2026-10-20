@@ -94,3 +94,11 @@ class ActivityChart(ctx: Context) : View(ctx) {
         }
     }
 }
+
+/** A vertical layout that is always exactly 16:9 (width : height). */
+class AspectLinear(ctx: Context) : android.widget.LinearLayout(ctx) {
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        val w = MeasureSpec.getSize(widthMeasureSpec)
+        super.onMeasure(MeasureSpec.makeMeasureSpec(w, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(w * 9 / 16, MeasureSpec.EXACTLY))
+    }
+}
