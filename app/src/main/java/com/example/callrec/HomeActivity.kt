@@ -251,8 +251,6 @@ class HomeActivity : GuardedActivity() {
         val mExp = monthItems.filter { !it.income }.sumOf { it.amount }
         val dashSub = if (monthItems.isEmpty()) tr("আয় ও ব্যয়ের ছবি দেখুন")
         else tr("এই মাসে ব্যয়: ") + taka(mExp) + tr("  ব্যালান্স: ") + taka(mInc - mExp)
-        val bk = backupBanner()
-        if (bk != null) content.addView(bk, lp(b = 12))
         content.addView(activityCard(), lp(b = 16))
 
         val hdr = LinearLayout(this)
@@ -277,8 +275,7 @@ class HomeActivity : GuardedActivity() {
             content.addView(line, lp())
             idx += 3
         }
-        content.addView(label(tr("প্রিয় করতে বা সরাতে যেকোনো টুলে চেপে ধরে রাখুন।"), 12f, Ui.MUTED), lp(l = 6, t = 10, b = 14))
-        content.addView(recentSection(), lp(t = 6, b = 14))
+        content.addView(recentSection(), lp(t = 14, b = 14))
     }
 
     private fun ago(t: Long): String {
