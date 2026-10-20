@@ -2,6 +2,7 @@ package com.example.callrec
 
 object Dict7 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        "ফিঙ্গারপ্রিন্ট ব্যবহার করুন" to "Use fingerprint",
         "পিন ভুলে গেছেন?" to "Forgot PIN?",
         "প্যাটার্ন ভুলে গেছেন?" to "Forgot pattern?",
         "ভুলে গেলে কী করবেন" to "If you forget it",

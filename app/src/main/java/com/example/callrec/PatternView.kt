@@ -134,9 +134,14 @@ class PatternView(ctx: Context) : View(ctx) {
                 paint.strokeWidth = context.dp(2).toFloat()
                 paint.alpha = 140
                 canvas.drawCircle(px(i), py(i), context.dp(22).toFloat(), paint)
+                paint.style = Paint.Style.FILL
+                paint.alpha = 45
+                canvas.drawCircle(px(i), py(i), context.dp(22).toFloat(), paint)
             } else {
                 paint.style = Paint.Style.FILL
                 paint.color = baseColor
+                paint.alpha = 40
+                canvas.drawCircle(px(i), py(i), context.dp(24).toFloat(), paint)
                 paint.alpha = 255
                 canvas.drawCircle(px(i), py(i), context.dp(6).toFloat(), paint)
             }

@@ -97,13 +97,20 @@ class LockActivity : Activity() {
             pv.errorColor = Color.parseColor("#FF8A80")
             pv.onComplete = { s -> onPattern(pv, s) }
             pattern = pv
-            root.addView(pv, LinearLayout.LayoutParams(dp(290), dp(290)))
+            val panel = LinearLayout(this)
+            panel.gravity = Gravity.CENTER
+            panel.background = bg(Color.argb(24, 255, 255, 255), 28)
+            panel.addView(pv, LinearLayout.LayoutParams(dp(280), dp(280)))
+            root.addView(panel, lp(width = dp(300), height = dp(300)))
             if (bioReady()) {
-                val bio = label(tr("👆  ফিঙ্গারপ্রিন্ট ব্যবহার করুন"), 15f, Color.WHITE, true)
+                val bio = label("👆", 26f, Color.WHITE, true)
                 bio.gravity = Gravity.CENTER
-                bio.setPadding(dp(16), dp(12), dp(16), dp(12))
+                bio.background = bg(Color.argb(36, 255, 255, 255), 32)
                 bio.setOnClickListener { it.tapFx(); showBiometric() }
-                root.addView(bio, lp(t = 16))
+                root.addView(bio, lp(width = dp(64), height = dp(64), t = 18))
+                val hint = label(tr("ফিঙ্গারপ্রিন্ট ব্যবহার করুন"), 13f, soft)
+                hint.gravity = Gravity.CENTER
+                root.addView(hint, lp(t = 6))
             }
         } else {
             root.addView(msg, lp(t = if (timeStyle) 20 else 26))
