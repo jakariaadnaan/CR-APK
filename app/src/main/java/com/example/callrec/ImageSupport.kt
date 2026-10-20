@@ -201,7 +201,7 @@ abstract class ImageToolBase : GuardedActivity() {
             try {
                 contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
                 Toast.makeText(this, tr("সংরক্ষিত হয়েছে"), Toast.LENGTH_SHORT).show()
-                Usage.done(this, javaClass.simpleName, bytes.size.toLong())
+                Usage.done(this, javaClass.simpleName, bytes.size.toLong(), srcName)
             } catch (e: Throwable) {
                 Toast.makeText(this, tr("সংরক্ষণ করা যায়নি"), Toast.LENGTH_LONG).show()
             }

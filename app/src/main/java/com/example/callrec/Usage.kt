@@ -14,7 +14,7 @@ object Usage {
     private fun sp(c: Context) = c.getSharedPreferences("usage", Context.MODE_PRIVATE)
 
     /** kind: "open" (a tool was opened), "done" (a file job finished), "todo" (a task was ticked off). */
-    fun add(c: Context, kind: String, id: String, bytes: Long = 0L) {
+    fun add(c: Context, kind: String, id: String, bytes: Long = 0L, name: String = "") {
         try {
             val now = System.currentTimeMillis()
             val old = JSONArray(sp(c).getString(KEY, "[]"))
@@ -25,14 +25,14 @@ object Usage {
                 val o = old.getJSONObject(i)
                 if (o.optLong("t") >= from) out.put(o)
             }
-            out.put(JSONObject().put("t", now).put("k", kind).put("id", id).put("b", bytes))
+            out.put(JSONObject().put("t", now).put("k", kind).put("id", id).put("b", bytes).put("n", name))
             sp(c).edit().putString(KEY, out.toString()).apply()
         } catch (e: Throwable) { }
     }
 
-    fun done(c: Context, id: String, bytes: Long = 0L) = add(c, "done", id, bytes)
+    fun done(c: Context, id: String, bytes: Long = 0L, name: String = "") = add(c, "done", id, bytes, name)
 
-    class Ev(val t: Long, val k: String, val id: String, val b: Long)
+    class Ev(val t: Long, val k: String, val id: String, val b: Long, val n: String = "")
 
     private fun all(c: Context): List<Ev> {
         val r = ArrayList<Ev>()
@@ -40,11 +40,14 @@ object Usage {
             val a = JSONArray(sp(c).getString(KEY, "[]"))
             for (i in 0 until a.length()) {
                 val o = a.getJSONObject(i)
-                r.add(Ev(o.optLong("t"), o.optString("k"), o.optString("id"), o.optLong("b")))
+                r.add(Ev(o.optLong("t"), o.optString("k"), o.optString("id"), o.optLong("b"), o.optString("n")))
             }
         } catch (e: Throwable) { }
         return r
     }
+
+    /** Newest first: finished file jobs. */
+    fun recent(c: Context, limit: Int): List<Ev> = all(c).filter { it.k == "done" }.sortedByDescending { it.t }.take(limit)
 
     class Part(val tools: Int, val conversions: Int, val bytes: Long, val todos: Int, val minutes: Double)
 

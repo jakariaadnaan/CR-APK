@@ -431,9 +431,9 @@ fun Activity.navBar(selected: Int): View {
     bar.orientation = LinearLayout.HORIZONTAL
     bar.setPadding(dp(8), dp(8), dp(8), dp(10))
     wrap.addView(bar, lp())
-    val names = listOf(tr("হোম"), tr("সব টুল"), tr("সেটিংস"))
-    val icons = listOf(R.drawable.ic_home, R.drawable.ic_grid, R.drawable.ic_lock)
-    for (i in 0..2) {
+    val names = listOf(tr("হোম"), tr("ক্যাটাগরি"), tr("প্রিয়"), tr("সেটিংস"))
+    val icons = listOf(R.drawable.ic_home, R.drawable.ic_grid, R.drawable.ic_star, R.drawable.ic_lock)
+    for (i in 0..3) {
         val item = LinearLayout(this)
         item.orientation = LinearLayout.VERTICAL
         item.gravity = Gravity.CENTER_HORIZONTAL
@@ -443,7 +443,7 @@ fun Activity.navBar(selected: Int): View {
         pillBox.gravity = Gravity.CENTER
         if (on) pillBox.background = bg(Ui.KEY_OP, 16)
         pillBox.addView(iconView(icons[i], 24, color))
-        item.addView(pillBox, LinearLayout.LayoutParams(dp(64), dp(32)))
+        item.addView(pillBox, LinearLayout.LayoutParams(dp(60), dp(32)))
         val tv = label(names[i], 12f, color)
         tv.gravity = Gravity.CENTER
         tv.maxLines = 1
@@ -455,6 +455,7 @@ fun Activity.navBar(selected: Int): View {
                 val intent = when (i) {
                     0 -> Intent(this, HomeActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                     1 -> Intent(this, ToolListActivity::class.java).putExtra("cat", "all")
+                    2 -> Intent(this, ToolListActivity::class.java).putExtra("cat", "fav")
                     else -> Intent(this, SettingsActivity::class.java)
                 }
                 startActivity(intent)

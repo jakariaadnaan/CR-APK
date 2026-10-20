@@ -48,7 +48,7 @@ class SettingsActivity : GuardedActivity() {
             "data" -> tr("ডেটা ও অ্যাপ")
             else -> "Settings"
         }
-        if (page == "main") setScreen(title, scroll, back = false, bottom = navBar(2)) else setScreen(title, scroll)
+        if (page == "main") setScreen(title, scroll, back = false, bottom = navBar(3)) else setScreen(title, scroll)
         render()
     }
 

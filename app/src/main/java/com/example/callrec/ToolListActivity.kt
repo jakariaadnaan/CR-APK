@@ -42,8 +42,8 @@ class ToolListActivity : GuardedActivity() {
         scroll.addView(box)
         col.addView(scroll, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
 
-        val title = if (catId == "all") tr("সব টুল") else Registry.cat(catId).name
-        setScreen(title, col, null, true, navBar(1))
+        val title = if (catId == "all") tr("সব টুল") else if (catId == "fav") tr("প্রিয় টুল") else Registry.cat(catId).name
+        setScreen(title, col, null, true, navBar(if (catId == "fav") 2 else 1))
         render()
     }
 
@@ -55,6 +55,19 @@ class ToolListActivity : GuardedActivity() {
     private fun render() {
         box.removeAllViews()
         val q = search?.text?.toString() ?: ""
+        if (catId == "fav") {
+            val favs = Registry.favIds(this).mapNotNull { id -> Registry.tools.firstOrNull { it.id == id && it.id !in Registry.hidden } }
+            if (favs.isEmpty()) {
+                val e = label(tr("এখনো কোনো প্রিয় টুল নেই। যেকোনো টুলে চেপে ধরে রাখলে সেটি এখানে যোগ হবে।"), 14f, Ui.MUTED)
+                e.gravity = Gravity.CENTER
+                e.setPadding(dp(16), dp(40), dp(16), dp(30))
+                box.addView(e, lp())
+            } else {
+                box.addView(groupCard(favs.map { toolRow(it) { render() } }), lp(b = 10))
+                box.addView(label(tr("সরাতে টুলে চেপে ধরে রাখুন।"), 12f, Ui.MUTED), lp(l = 4, t = 4))
+            }
+            return
+        }
         val cats = if (catId == "all") Registry.cats else listOf(Registry.cat(catId))
         var any = false
         for (c in cats) {

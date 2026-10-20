@@ -278,9 +278,99 @@ class HomeActivity : GuardedActivity() {
             idx += 3
         }
         content.addView(label(tr("প্রিয় করতে বা সরাতে যেকোনো টুলে চেপে ধরে রাখুন।"), 12f, Ui.MUTED), lp(l = 6, t = 10, b = 14))
+        content.addView(recentSection(), lp(t = 6, b = 14))
         val dash = listRow(R.drawable.ic_wallet, tr("ড্যাশবোর্ড"), dashSub)
         dash.setOnClickListener { startActivity(Intent(this, DashboardActivity::class.java)) }
         content.addView(groupCard(listOf(dash)), lp())
+    }
+
+    private fun ago(t: Long): String {
+        val m = (System.currentTimeMillis() - t) / 60_000L
+        return when {
+            m < 1 -> tr("এইমাত্র")
+            m < 60 -> bn(m.toString()) + tr(" মিনিট আগে")
+            m < 1440 -> bn((m / 60).toString()) + tr(" ঘণ্টা আগে")
+            else -> bn((m / 1440).toString()) + tr(" দিন আগে")
+        }
+    }
+
+    private fun recentRow(e: Usage.Ev): View {
+        val tool = Registry.tools.firstOrNull { it.target?.simpleName == e.id }
+        val catId = tool?.cat ?: ""
+        val (res, col) = when (catId) {
+            "pdf" -> Pair(R.drawable.ic_pdf, "#E53935")
+            "image" -> Pair(R.drawable.ic_image, "#43A047")
+            "media" -> Pair(R.drawable.ic_media, "#7E57C2")
+            else -> Pair(R.drawable.ic_doc, "#3F6FE0")
+        }
+        val r = LinearLayout(this)
+        r.gravity = Gravity.CENTER_VERTICAL
+        r.setPadding(dp(14), dp(12), dp(12), dp(12))
+        val ib = LinearLayout(this)
+        ib.gravity = Gravity.CENTER
+        ib.background = bg(Color.parseColor(col), 12)
+        ib.addView(iconView(res, 22, Color.WHITE))
+        r.addView(ib, lp(width = dp(42), height = dp(42), r = 12))
+        val mid = LinearLayout(this)
+        mid.orientation = LinearLayout.VERTICAL
+        val nm = label(if (e.n.isNotBlank()) e.n else (tool?.title ?: tr("কাজ সম্পন্ন")), 14f, Ui.TEXT, true)
+        nm.maxLines = 1
+        nm.ellipsize = android.text.TextUtils.TruncateAt.END
+        mid.addView(nm)
+        if (tool != null) mid.addView(label(tool.title, 12f, Ui.MUTED))
+        r.addView(mid, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        val right = LinearLayout(this)
+        right.orientation = LinearLayout.VERTICAL
+        right.gravity = Gravity.END
+        right.addView(label(ago(e.t), 11f, Ui.MUTED))
+        val tag = label("● " + tr("সম্পন্ন"), 10f, Ui.GREEN, true)
+        tag.background = bg(Ui.mix(Ui.GREEN, Ui.CARD, 0.85f), 10)
+        tag.setPadding(dp(8), dp(2), dp(8), dp(2))
+        right.addView(tag, lp(t = 4))
+        r.addView(right, lp(l = 8))
+        if (tool != null) r.setOnClickListener { it.tapFx(); openTool(tool) }
+        return r
+    }
+
+    private fun recentSection(): View {
+        val sec = LinearLayout(this)
+        sec.orientation = LinearLayout.VERTICAL
+        val hdr = LinearLayout(this)
+        hdr.gravity = Gravity.CENTER_VERTICAL
+        hdr.addView(label(tr("সাম্প্রতিক কাজ"), 17f, Ui.TEXT, true), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        val all = label(tr("সব দেখুন") + "  ›", 13f, Ui.PRIMARY, true)
+        all.setPadding(dp(8), dp(6), dp(4), dp(6))
+        all.setOnClickListener { showAllRecent() }
+        hdr.addView(all)
+        sec.addView(hdr, lp(l = 4, b = 8))
+        val list = Usage.recent(this, 4)
+        if (list.isEmpty()) {
+            val e = label(tr("এখনো কোনো কাজ সম্পন্ন হয়নি। কোনো টুল দিয়ে ফাইল বানালে এখানে দেখা যাবে।"), 13f, Ui.MUTED)
+            e.setPadding(dp(14), dp(14), dp(14), dp(14))
+            e.background = bg(Ui.CARD, 18, Ui.LINE, 1)
+            sec.addView(e, lp())
+        } else {
+            sec.addView(groupCard(list.map { recentRow(it) }), lp())
+        }
+        return sec
+    }
+
+    private fun showAllRecent() {
+        val list = Usage.recent(this, 30)
+        val col = LinearLayout(this)
+        col.orientation = LinearLayout.VERTICAL
+        if (list.isEmpty()) {
+            col.addView(label(tr("এখনো কোনো কাজ সম্পন্ন হয়নি।"), 14f, Ui.MUTED), lp(l = 20, t = 12, r = 20, b = 12))
+        } else {
+            for (e in list) col.addView(recentRow(e), lp())
+        }
+        val sc = ScrollView(this)
+        sc.addView(col)
+        android.app.AlertDialog.Builder(this)
+            .setTitle(tr("সাম্প্রতিক কাজ"))
+            .setView(sc)
+            .setPositiveButton(tr("বন্ধ করুন"), null)
+            .show()
     }
 
     private fun pctView(cur: Double, prev: Double, small: Boolean): View {

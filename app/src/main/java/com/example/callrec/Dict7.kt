@@ -2,6 +2,20 @@ package com.example.callrec
 
 object Dict7 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        "ক্যাটাগরি" to "Categories",
+        "প্রিয়" to "Favorites",
+        "প্রিয় টুল" to "Favorite tools",
+        "এখনো কোনো প্রিয় টুল নেই। যেকোনো টুলে চেপে ধরে রাখলে সেটি এখানে যোগ হবে।" to "No favorite tools yet. Long-press any tool to add it here.",
+        "সরাতে টুলে চেপে ধরে রাখুন।" to "Long-press a tool to remove it.",
+        "এইমাত্র" to "Just now",
+        " মিনিট আগে" to " min ago",
+        " ঘণ্টা আগে" to " hr ago",
+        " দিন আগে" to " d ago",
+        "কাজ সম্পন্ন" to "Task completed",
+        "সম্পন্ন" to "Completed",
+        "সাম্প্রতিক কাজ" to "Recent Activity",
+        "এখনো কোনো কাজ সম্পন্ন হয়নি। কোনো টুল দিয়ে ফাইল বানালে এখানে দেখা যাবে।" to "Nothing completed yet. Files you make with the tools will show up here.",
+        "এখনো কোনো কাজ সম্পন্ন হয়নি।" to "Nothing completed yet.",
         "আপনার কার্যকলাপ" to "Your Activity",
         "ব্যবহারের সারসংক্ষেপ" to "Overview of your usage",
         "টুল ব্যবহার" to "Tools Used",

@@ -118,7 +118,7 @@ abstract class PdfBase : GuardedActivity() {
             if (ok) {
                 var size = 0L
                 try { lastOut?.let { u -> contentResolver.openFileDescriptor(u, "r")?.use { size = it.statSize } } } catch (e: Throwable) { }
-                Usage.done(this, javaClass.simpleName, size)
+                Usage.done(this, javaClass.simpleName, size, pdfName + ".pdf")
             }
             runOnUiThread { status.text = res; actionBuzz() }
         }.start()
