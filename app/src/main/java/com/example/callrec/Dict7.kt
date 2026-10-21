@@ -2,6 +2,18 @@ package com.example.callrec
 
 object Dict7 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        "আপনার হিসাব, নোট ও ফাইল সুরক্ষিত রাখুন" to "Keep your accounts, notes and files safe",
+        "পিন, প্যাটার্ন বা পাসকোড, যেটা পছন্দ" to "PIN, pattern or passcode, your choice",
+        "ফিঙ্গারপ্রিন্ট দিয়ে দ্রুত খোলা" to "Quick unlock with fingerprint",
+        "ভুলে গেলে নিরাপত্তা-প্রশ্ন দিয়ে রিসেট" to "Reset with a security question if you forget",
+        "স্ক্রিনশট ও রিসেন্ট প্রিভিউ লুকানো" to "Hide screenshots and the recents preview",
+        "লক চালু করুন" to "Turn on lock",
+        "লক সেটিংস" to "Lock settings",
+        "সেট করা নেই" to "Not set",
+        "কখন লক হবে" to "When it locks",
+        "অ্যাপ থেকে বের হওয়ার পর" to "After leaving the app",
+        "গোপনীয়তা" to "Privacy",
+        "লক ভুলে গেলে নিরাপত্তা-প্রশ্ন দিয়ে রিসেট করা যায়। প্রশ্ন সেট না থাকলে অ্যাপের ডেটা মুছে নতুন করে শুরু করতে হয়, তাই আগে ব্যাকআপ রাখুন।" to "If you forget the lock you can reset it with the security question. Without one you must clear the app data and start over, so keep a backup first.",
         "ডিফল্ট ফোল্ডার" to "Default folder",
         "এখন সব ফাইল (PDF, ছবি, অডিও, ব্যাকআপ ইত্যাদি) সরাসরি এই ফোল্ডারে সংরক্ষিত হয়: " to "All files (PDF, images, audio, backups and so on) are now saved straight into this folder: ",
         "ফোল্ডার বদলান" to "Change folder",

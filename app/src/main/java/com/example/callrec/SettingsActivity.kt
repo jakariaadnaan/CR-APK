@@ -311,100 +311,112 @@ class SettingsActivity : GuardedActivity() {
 
     private fun renderLock() {
         val on = Lock.enabled(this)
+        val toggle = {
+            if (on) askCurrent(tr("লক বন্ধ করতে বর্তমান লক দিন")) {
+                Lock.disable(this)
+                render()
+            } else chooseType {
+                render()
+                if (Lock.question(this) == null) showSetQuestion(true) { render() }
+            }
+        }
         box.addView(
-            row(tr("অ্যাপ লক"), if (on) tr("চালু আছে (") + lockTypeName() + ")" else tr("বন্ধ আছে (পিন, প্যাটার্ন বা পাসকোড)"), switchView(on)) {
-                if (on) askCurrent(tr("লক বন্ধ করতে বর্তমান লক দিন")) {
-                    Lock.disable(this)
-                    render()
-                } else chooseType {
-                    render()
-                    if (Lock.question(this) == null) showSetQuestion(true) { render() }
-                }
-            },
-            lp(b = 8)
+            groupCard(listOf(
+                rowOf(
+                    R.drawable.ic_shield, tr("অ্যাপ লক"),
+                    if (on) tr("চালু আছে (") + lockTypeName() + ")" else tr("বন্ধ আছে (পিন, প্যাটার্ন বা পাসকোড)"),
+                    extra = switchView(on), chevron = false
+                ) { toggle() }
+            )),
+            lp(b = 6)
         )
-        if (on) {
-            box.addView(
-                row(
-                    tr("লক বদলান"),
-                    tr("বর্তমান: ") + lockTypeName(),
-                    null
-                ) {
-                    askCurrent(tr("বর্তমান লক দিন")) { chooseType { render() } }
-                },
-                lp(b = 8)
-            )
-            box.addView(
-                row(tr("নিরাপত্তা-প্রশ্ন"), if (Lock.question(this) != null) tr("সেট করা আছে") else tr("সেট করা নেই (লক ভুলে গেলে কাজে লাগে)"), null) {
-                    askCurrent(tr("বর্তমান লক দিন")) { showSetQuestion(false) { render() } }
-                },
-                lp(b = 8)
-            )
-            if (Lock.type(this) == "pin") {
-                val st = Lock.style(this)
-                box.addView(
-                    row(tr("লক স্ক্রিনের ধরন"), if (st == 1) tr("সময় ও পিন") else tr("ক্লাসিক"), null) {
-                        AlertDialog.Builder(this)
-                            .setTitle(tr("লক স্ক্রিনের ধরন"))
-                            .setSingleChoiceItems(arrayOf(tr("ক্লাসিক"), tr("সময় ও পিন")), st) { d, i ->
-                                Lock.setStyle(this, i)
-                                d.dismiss()
-                                render()
-                            }
-                            .show()
-                    },
-                    lp(b = 8)
-                )
-            }
-            if (Lock.biometricAvailable(this)) {
-                val bio = Lock.bioEnabled(this)
-                box.addView(
-                    row(tr("ফিঙ্গারপ্রিন্ট দিয়ে খুলুন"), if (bio) tr("চালু") else tr("বন্ধ"), switchView(bio)) {
-                        Lock.setBio(this, !bio)
-                        render()
-                    },
-                    lp(b = 8)
-                )
-            }
-            val g = Lock.graceMs(this)
-            val gText = when (g) {
-                30_000L -> tr("৩০ সেকেন্ড")
-                60_000L -> tr("১ মিনিট")
-                300_000L -> tr("৫ মিনিট")
-                else -> tr("১৫ মিনিট")
-            }
-            box.addView(
-                row(tr("কতক্ষণ পরে আবার লক হবে"), tr("অ্যাপ থেকে বের হওয়ার পর: ") + gText, null) {
-                    val names = arrayOf(tr("৩০ সেকেন্ড"), tr("১ মিনিট"), tr("৫ মিনিট"), tr("১৫ মিনিট"))
-                    val vals = longArrayOf(30_000L, 60_000L, 300_000L, 900_000L)
-                    AlertDialog.Builder(this)
-                        .setTitle(tr("আবার লক হবে"))
-                        .setItems(names) { _, i ->
-                            Lock.setGrace(this, vals[i])
-                            render()
-                        }
-                        .show()
-                },
-                lp(b = 8)
-            )
-            val hide = screenHidden(this)
-            box.addView(
-                row(tr("স্ক্রিনশট ও রিসেন্ট প্রিভিউ লুকান"), if (hide) tr("চালু: স্ক্রিনশট নেওয়া যায় না") else tr("বন্ধ: স্ক্রিনশট নেওয়া যায়"), switchView(hide)) {
-                    prefs.edit().putBoolean("secure", !hide).apply()
-                    Ui.stamp++
-                    recreate()
-                },
-                lp(b = 8)
-            )
-            box.addView(
-                label(
-                    tr("পিন বা প্যাটার্ন ভুলে গেলে অ্যাপের ডেটা মুছে নতুন করে ইনস্টল ছাড়া উপায় নেই, তাই আগে ব্যাকআপ রাখুন।"),
-                    12f, Ui.MUTED
-                ),
-                lp(l = 4, b = 4)
-            )
+        if (!on) {
+            val info = LinearLayout(this)
+            info.orientation = LinearLayout.VERTICAL
+            info.background = bg(Ui.CARD, 18, Ui.LINE, 1)
+            info.setPadding(dp(16), dp(14), dp(16), dp(16))
+            info.addView(label(tr("আপনার হিসাব, নোট ও ফাইল সুরক্ষিত রাখুন"), 15f, Ui.TEXT, true))
+            for (t in listOf(
+                tr("পিন, প্যাটার্ন বা পাসকোড, যেটা পছন্দ"),
+                tr("ফিঙ্গারপ্রিন্ট দিয়ে দ্রুত খোলা"),
+                tr("ভুলে গেলে নিরাপত্তা-প্রশ্ন দিয়ে রিসেট"),
+                tr("স্ক্রিনশট ও রিসেন্ট প্রিভিউ লুকানো")
+            )) info.addView(label("•  " + t, 13f, Ui.MUTED), lp(t = 6))
+            val go = label(tr("লক চালু করুন"), 15f, Color.WHITE, true)
+            go.gravity = Gravity.CENTER
+            go.background = bg(Ui.PRIMARY, 14)
+            go.setOnClickListener { it.tapFx(); toggle() }
+            info.addView(go, lp(height = dp(48), t = 16))
+            box.addView(info, lp(t = 8))
+            return
         }
 
+        secTitle(tr("লক সেটিংস"))
+        val g1 = ArrayList<View>()
+        g1.add(rowOf(R.drawable.ic_lock, tr("লক বদলান"), "", extra = value(lockTypeName())) {
+            askCurrent(tr("বর্তমান লক দিন")) { chooseType { render() } }
+        })
+        g1.add(rowOf(R.drawable.ic_help, tr("নিরাপত্তা-প্রশ্ন"), "", extra = value(if (Lock.question(this) != null) tr("সেট করা আছে") else tr("সেট করা নেই"))) {
+            askCurrent(tr("বর্তমান লক দিন")) { showSetQuestion(false) { render() } }
+        })
+        if (Lock.type(this) == "pin") {
+            val st = Lock.style(this)
+            g1.add(rowOf(R.drawable.ic_phone, tr("লক স্ক্রিনের ধরন"), "", extra = value(if (st == 1) tr("সময় ও পিন") else tr("ক্লাসিক"))) {
+                AlertDialog.Builder(this)
+                    .setTitle(tr("লক স্ক্রিনের ধরন"))
+                    .setSingleChoiceItems(arrayOf(tr("ক্লাসিক"), tr("সময় ও পিন")), st) { d, i ->
+                        Lock.setStyle(this, i)
+                        d.dismiss()
+                        render()
+                    }
+                    .show()
+            })
+        }
+        if (Lock.biometricAvailable(this)) {
+            val bio = Lock.bioEnabled(this)
+            g1.add(rowOf(R.drawable.ic_sparkle, tr("ফিঙ্গারপ্রিন্ট দিয়ে খুলুন"), "", extra = switchView(bio), chevron = false) {
+                Lock.setBio(this, !bio)
+                render()
+            })
+        }
+        box.addView(groupCard(g1), lp())
+
+        secTitle(tr("কখন লক হবে"))
+        val g = Lock.graceMs(this)
+        val gText = when (g) {
+            30_000L -> tr("৩০ সেকেন্ড")
+            60_000L -> tr("১ মিনিট")
+            300_000L -> tr("৫ মিনিট")
+            else -> tr("১৫ মিনিট")
+        }
+        box.addView(groupCard(listOf(
+            rowOf(R.drawable.ic_clock, tr("কতক্ষণ পরে আবার লক হবে"), tr("অ্যাপ থেকে বের হওয়ার পর"), extra = value(gText)) {
+                val names = arrayOf(tr("৩০ সেকেন্ড"), tr("১ মিনিট"), tr("৫ মিনিট"), tr("১৫ মিনিট"))
+                val vals = longArrayOf(30_000L, 60_000L, 300_000L, 900_000L)
+                AlertDialog.Builder(this)
+                    .setTitle(tr("আবার লক হবে"))
+                    .setItems(names) { _, i ->
+                        Lock.setGrace(this, vals[i])
+                        render()
+                    }
+                    .show()
+            }
+        )), lp())
+
+        secTitle(tr("গোপনীয়তা"))
+        val hide = screenHidden(this)
+        box.addView(groupCard(listOf(
+            rowOf(R.drawable.ic_eye_off, tr("স্ক্রিনশট ও রিসেন্ট প্রিভিউ লুকান"), if (hide) tr("চালু: স্ক্রিনশট নেওয়া যায় না") else tr("বন্ধ: স্ক্রিনশট নেওয়া যায়"), extra = switchView(hide), chevron = false) {
+                prefs.edit().putBoolean("secure", !hide).apply()
+                Ui.stamp++
+                recreate()
+            }
+        )), lp())
+
+        box.addView(
+            label(tr("লক ভুলে গেলে নিরাপত্তা-প্রশ্ন দিয়ে রিসেট করা যায়। প্রশ্ন সেট না থাকলে অ্যাপের ডেটা মুছে নতুন করে শুরু করতে হয়, তাই আগে ব্যাকআপ রাখুন।"), 12f, Ui.MUTED),
+            lp(l = 6, t = 12)
+        )
     }
 
     private fun renderBackup() {
