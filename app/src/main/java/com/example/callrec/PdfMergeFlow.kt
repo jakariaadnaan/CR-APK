@@ -377,7 +377,7 @@ class PdfMergeActivity : GuardedActivity() {
         col.setPadding(dp(24), dp(12), dp(24), dp(16))
         scroll.addView(col)
 
-        val ring = RingView(this)
+        val ring = PercentRing(this)
         ring.percent = if (done) 100 else percent
         col.addView(ring, lp(width = dp(170), height = dp(170), t = 12))
         val title = label(

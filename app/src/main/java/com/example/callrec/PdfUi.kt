@@ -119,7 +119,7 @@ fun Activity.thumbView(w: Int, h: Int): ImageView {
 }
 
 /** A circle with the percent in the middle. */
-class RingView(ctx: Context) : View(ctx) {
+class PercentRing(ctx: Context) : View(ctx) {
     var percent = 0
         set(v) { field = v.coerceIn(0, 100); invalidate() }
     var color = Ui.PRIMARY
