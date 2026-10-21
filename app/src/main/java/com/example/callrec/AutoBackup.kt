@@ -61,7 +61,8 @@ object AutoBackup {
 
     private fun sp(c: Context) = c.getSharedPreferences("settings", Context.MODE_PRIVATE)
     fun freq(c: Context) = sp(c).getInt("autoFreq", 0)
-    fun tree(c: Context): String? = sp(c).getString("autoTree", null)
+    /** The Default Folder from Settings when it is set and usable, otherwise the folder picked for auto-backup. */
+    fun tree(c: Context): String? = SaveTarget.folder(c)?.toString() ?: sp(c).getString("autoTree", null)
     fun last(c: Context) = sp(c).getLong("autoLast", 0L)
     fun status(c: Context): String = sp(c).getString("autoStatus", "") ?: ""
     fun pass(c: Context): String = sp(c).getString("autoPass", "") ?: ""

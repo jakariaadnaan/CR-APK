@@ -421,7 +421,7 @@ object Dict7 {
         "ব্যর্থ হয়েছে" to "failed",
         "স্বয়ংক্রিয় ব্যাকআপ" to "Automatic backup",
         "পাসওয়ার্ড (ঐচ্ছিক)" to "Password (optional)",
-        "রাতে ৩টার দিকে ফোল্ডারে নতুন ফাইল জমা হবে, সর্বশেষ ৫টি রাখা হবে। পাসওয়ার্ড দিলে ফাইল এনক্রিপ্ট হয়; সেই পাসওয়ার্ড এই ফোনের অ্যাপেই রাখা হয়, তাই ভুলবেন না।" to "A new file is saved to the folder around 3 AM; the latest 5 are kept. With a password the file is encrypted; that password is kept inside this app on this phone, so don't forget it.",
+        "রাতে ৩টার দিকে ফোল্ডারে (ডিফল্ট ফোল্ডার সেট থাকলে সেখানেই) নতুন ফাইল জমা হবে, সর্বশেষ ৫টি রাখা হবে। পাসওয়ার্ড দিলে ফাইল এনক্রিপ্ট হয়; সেই পাসওয়ার্ড এই ফোনের অ্যাপেই রাখা হয়, তাই ভুলবেন না।" to "A new file is saved to the folder around 3 AM; the latest 5 are kept. With a password the file is encrypted; that password is kept inside this app on this phone, so don't forget it.",
         "প্রথম ব্যাকআপ জমা হয়েছে" to "First backup saved",
         "ফোল্ডারে ব্যাকআপ রাখা যায়নি" to "Could not save the backup to the folder",
         "পাসওয়ার্ড (খালি রাখলে সুরক্ষা ছাড়া)" to "Password (leave empty for no protection)",

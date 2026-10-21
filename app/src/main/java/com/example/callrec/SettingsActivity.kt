@@ -771,7 +771,7 @@ class SettingsActivity : GuardedActivity() {
         pw.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
         pw.setText(AutoBackup.pass(this))
         w.addView(pw, lp(t = 8))
-        w.addView(label(tr("রাতে ৩টার দিকে ফোল্ডারে নতুন ফাইল জমা হবে, সর্বশেষ ৫টি রাখা হবে। পাসওয়ার্ড দিলে ফাইল এনক্রিপ্ট হয়; সেই পাসওয়ার্ড এই ফোনের অ্যাপেই রাখা হয়, তাই ভুলবেন না।"), 12f, Ui.MUTED), lp(t = 8))
+        w.addView(label(tr("রাতে ৩টার দিকে ফোল্ডারে (ডিফল্ট ফোল্ডার সেট থাকলে সেখানেই) নতুন ফাইল জমা হবে, সর্বশেষ ৫টি রাখা হবে। পাসওয়ার্ড দিলে ফাইল এনক্রিপ্ট হয়; সেই পাসওয়ার্ড এই ফোনের অ্যাপেই রাখা হয়, তাই ভুলবেন না।"), 12f, Ui.MUTED), lp(t = 8))
         AlertDialog.Builder(this).setTitle(tr("স্বয়ংক্রিয় ব্যাকআপ")).setView(w)
             .setPositiveButton(tr("সংরক্ষণ")) { _, _ ->
                 val f = group.checkedRadioButtonId - 100
@@ -787,7 +787,7 @@ class SettingsActivity : GuardedActivity() {
                     val i = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
                     i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
                     try {
-                        startActivityForResult(i, reqTree)
+                        treeOrAsk(i, reqTree)
                     } catch (e: Exception) {
                         Toast.makeText(this, tr("ফাইল বেছে নেওয়ার অ্যাপ পাওয়া যায়নি"), Toast.LENGTH_LONG).show()
                     }
