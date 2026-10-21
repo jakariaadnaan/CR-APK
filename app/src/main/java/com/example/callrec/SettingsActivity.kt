@@ -257,9 +257,6 @@ class SettingsActivity : GuardedActivity() {
                         render()
                     }
                     .setNegativeButton("Cancel", null).show()
-            },
-            rowOf(R.drawable.ic_doc, "Privacy Policy", "") {
-                startActivity(Intent(this, InfoPageActivity::class.java).putExtra("page", "privacy"))
             }
         )), lp())
 
@@ -273,6 +270,9 @@ class SettingsActivity : GuardedActivity() {
         box.addView(groupCard(listOf(
             rowOf(R.drawable.ic_help, "Help & Support", "") {
                 startActivity(Intent(this, InfoPageActivity::class.java).putExtra("page", "help"))
+            },
+            rowOf(R.drawable.ic_doc, "Privacy Policy", "") {
+                startActivity(Intent(this, InfoPageActivity::class.java).putExtra("page", "privacy"))
             },
             rowOf(R.drawable.ic_star, "Rate Us", "") {
                 try {
