@@ -33,3 +33,6 @@ object Lang {
 }
 
 fun tr(s: String): String = if (Lang.en) Lang.lookup(s) else s
+
+/** For labels written in English in the code: shown as written in English, swapped for Bangla in Bangla. */
+fun tl(s: String): String = if (Lang.en) s else (DictBn.map[s] ?: s)

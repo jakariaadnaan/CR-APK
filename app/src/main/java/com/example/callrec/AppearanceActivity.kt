@@ -32,7 +32,7 @@ class AppearanceActivity : GuardedActivity() {
         box.orientation = LinearLayout.VERTICAL
         box.setPadding(dp(14), dp(14), dp(14), dp(24))
         scroll.addView(box)
-        setScreen("Appearance", scroll)
+        setScreen(tl("Appearance"), scroll)
         render()
     }
 
@@ -109,10 +109,10 @@ class AppearanceActivity : GuardedActivity() {
         val w = LinearLayout(this)
         w.setPadding(dp(20), dp(8), dp(20), 0)
         w.orientation = LinearLayout.VERTICAL
-        w.addView(label("Type a colour code like #2D5BE3. Pick a fairly dark colour so white text stays readable.", 12f, Ui.MUTED), lp(b = 8))
+        w.addView(label(tl("Type a colour code like #2D5BE3. Pick a fairly dark colour so white text stays readable."), 12f, Ui.MUTED), lp(b = 8))
         w.addView(e)
-        AlertDialog.Builder(this).setTitle("Custom colour").setView(w)
-            .setPositiveButton("Apply") { _, _ ->
+        AlertDialog.Builder(this).setTitle(tl("Custom colour")).setView(w)
+            .setPositiveButton(tl("Apply")) { _, _ ->
                 var s = e.text.toString().trim()
                 if (!s.startsWith("#")) s = "#$s"
                 try {
@@ -120,10 +120,10 @@ class AppearanceActivity : GuardedActivity() {
                     prefs.edit().putString("accentHex", s).putInt("accent", Ui.ACCENTS.size).apply()
                     changed()
                 } catch (x: Throwable) {
-                    Toast.makeText(this, "That colour code is not valid", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, tl("That colour code is not valid"), Toast.LENGTH_SHORT).show()
                 }
             }
-            .setNegativeButton("Cancel", null).show()
+            .setNegativeButton(tl("Cancel"), null).show()
     }
 
     private fun iconTile(res: Int, alias: String, on: Boolean): View {
@@ -157,7 +157,7 @@ class AppearanceActivity : GuardedActivity() {
                     )
                 }
                 prefs.edit().putString("appIcon", alias).apply()
-                Toast.makeText(this, "Icon changed. The home screen may take a few seconds to update.", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, tl("Icon changed. The home screen may take a few seconds to update."), Toast.LENGTH_LONG).show()
                 render()
             }
         }
@@ -195,11 +195,11 @@ class AppearanceActivity : GuardedActivity() {
         box.removeAllViews()
 
         // Theme Mode: Light, Dark, System
-        section("Theme Mode")
+        section(tl("Theme Mode"))
         val theme = prefs.getInt("theme", 0).coerceIn(0, 2)
         val trow = LinearLayout(this)
         trow.orientation = LinearLayout.HORIZONTAL
-        val tdefs = listOf(Triple(R.drawable.ic_sun, "Light", 1), Triple(R.drawable.ic_moon, "Dark", 2), Triple(R.drawable.ic_phone, "System", 0))
+        val tdefs = listOf(Triple(R.drawable.ic_sun, tl("Light"), 1), Triple(R.drawable.ic_moon, tl("Dark"), 2), Triple(R.drawable.ic_phone, tl("System"), 0))
         for ((k, d) in tdefs.withIndex()) {
             val c = themeCard(d.first, d.second, theme == d.third) {
                 prefs.edit().putInt("theme", d.third).apply()
@@ -212,7 +212,7 @@ class AppearanceActivity : GuardedActivity() {
         box.addView(trow, lp())
 
         // Accent Color
-        section("Accent Color")
+        section(tl("Accent Color"))
         val cur = prefs.getInt("accent", 0).coerceIn(0, Ui.ACCENTS.size)
         val arow = card(12)
         val line = LinearLayout(this)
@@ -227,7 +227,7 @@ class AppearanceActivity : GuardedActivity() {
         box.addView(arow, lp())
 
         // App Icon
-        section("App Icon")
+        section(tl("App Icon"))
         val ic = prefs.getString("appIcon", "IconA") ?: "IconA"
         val irow = LinearLayout(this)
         irow.orientation = LinearLayout.HORIZONTAL
@@ -237,7 +237,7 @@ class AppearanceActivity : GuardedActivity() {
         box.addView(irow, lp())
 
         // Font Size
-        section("Font Size")
+        section(tl("Font Size"))
         val sizeVals = floatArrayOf(0.9f, 1f, 1.15f, 1.3f)
         val curSize = prefs.getFloat("fontScale", 1f)
         var curIdx = 1
@@ -267,30 +267,12 @@ class AppearanceActivity : GuardedActivity() {
         box.addView(frow, lp())
 
         // Other
-        section("Other")
+        section(tl("Other"))
         box.addView(groupCard(listOf(
-            toggleRow(R.drawable.ic_text, "Show Tool Descriptions", "Show helpful description for each tool", "toolDesc", true),
-            toggleRow(R.drawable.ic_vibrate, "Vibration on Action", "", "vibAction", true),
-            toggleRow(R.drawable.ic_exit, "Confirm Before Exit", "", "confirmExit", false),
-            toggleRow(R.drawable.ic_sparkle, "Animations", "", "anim", true)
+            toggleRow(R.drawable.ic_text, tl("Show Tool Descriptions"), tl("Show helpful description for each tool"), "toolDesc", true),
+            toggleRow(R.drawable.ic_vibrate, tl("Vibration on Action"), "", "vibAction", true),
+            toggleRow(R.drawable.ic_exit, tl("Confirm Before Exit"), "", "confirmExit", false),
+            toggleRow(R.drawable.ic_sparkle, tl("Animations"), "", "anim", true)
         )), lp())
-
-        // Language and number style stay here so they are not lost
-        section("Language")
-        box.addView(
-            choices(listOf("বাংলা", "English"), if (Lang.en) 1 else 0) { i ->
-                Lang.set(this, i == 1)
-                changed()
-            },
-            lp(b = 8)
-        )
-        section(tr("সংখ্যার ধরন"))
-        box.addView(
-            choices(listOf(tr("বাংলা (১২৩)"), tr("ইংরেজি (123)")), if (prefs.getBoolean("digitsBn", true)) 0 else 1) { i ->
-                prefs.edit().putBoolean("digitsBn", i == 0).apply()
-                changed()
-            },
-            lp(b = 8)
-        )
     }
 }

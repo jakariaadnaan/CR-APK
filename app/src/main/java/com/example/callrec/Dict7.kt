@@ -2,6 +2,9 @@ package com.example.callrec
 
 object Dict7 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        "পুরো অ্যাপের ভাষা বদলাবে: টুল, সেটিংস, বিজ্ঞপ্তি সব।" to "The language changes across the whole app: tools, settings, notifications and more.",
+        "অ্যাপের ভাষা" to "App language",
+        "এই ভাষা শীঘ্রই আসছে" to "This language is coming soon",
         "আপনার হিসাব, নোট ও ফাইল সুরক্ষিত রাখুন" to "Keep your accounts, notes and files safe",
         "পিন, প্যাটার্ন বা পাসকোড, যেটা পছন্দ" to "PIN, pattern or passcode, your choice",
         "ফিঙ্গারপ্রিন্ট দিয়ে দ্রুত খোলা" to "Quick unlock with fingerprint",

@@ -46,7 +46,7 @@ class SettingsActivity : GuardedActivity() {
             "lock" -> tr("অ্যাপ লক")
             "backup" -> tr("ব্যাকআপ")
             "data" -> tr("ডেটা ও অ্যাপ")
-            else -> "Settings"
+            else -> tl("Settings")
         }
         if (page == "main") setScreen(title, scroll, back = false, bottom = navBar(3)) else setScreen(title, scroll)
         render()
@@ -160,29 +160,29 @@ class SettingsActivity : GuardedActivity() {
     }
 
     private fun folderName(): String {
-        val s = prefs.getString("defFolder", null) ?: return "Internal Storage"
+        val s = prefs.getString("defFolder", null) ?: return tl("Internal Storage")
         return try {
             val id = android.provider.DocumentsContract.getTreeDocumentId(Uri.parse(s))
             val n = id.substringAfter(":", id).substringAfterLast("/")
-            if (n.isEmpty()) "Internal Storage" else n
-        } catch (e: Throwable) { "Selected folder" }
+            if (n.isEmpty()) tl("Internal Storage") else n
+        } catch (e: Throwable) { tl("Selected folder") }
     }
 
     private fun simpleDialog(title: String, msg: String, extra: String? = null, extraClick: (() -> Unit)? = null) {
-        val b = AlertDialog.Builder(this).setTitle(title).setMessage(msg).setPositiveButton("OK", null)
+        val b = AlertDialog.Builder(this).setTitle(title).setMessage(msg).setPositiveButton(tl("OK"), null)
         if (extra != null) b.setNeutralButton(extra) { _, _ -> extraClick?.invoke() }
         b.show()
     }
 
     private fun renderMain() {
-        val themeNames = arrayOf("System", "Light Mode", "Dark Mode")
+        val themeNames = arrayOf(tl("System"), tl("Light Mode"), tl("Dark Mode"))
         val ver = try {
             packageManager.getPackageInfo(packageName, 0).versionName ?: ""
         } catch (e: Exception) {
             ""
         }
         val last = prefs.getLong("lastBackup", 0L)
-        val lastText = if (last == 0L) "Never" else SimpleDateFormat("dd/MM/yyyy", Locale.US).format(Date(last))
+        val lastText = if (last == 0L) tl("Never") else SimpleDateFormat("dd/MM/yyyy", Locale.US).format(Date(last))
 
         // profile card
         val top = card(14)
@@ -191,29 +191,29 @@ class SettingsActivity : GuardedActivity() {
         top.addView(iconBox(R.drawable.ic_user, Ui.PRIMARY, Color.WHITE, 48, 26, 24, 14))
         val mid = LinearLayout(this)
         mid.orientation = LinearLayout.VERTICAL
-        mid.addView(label("Guest User", 17f, Ui.TEXT, true))
-        mid.addView(label("Sign in to sync your data", 12f, Ui.MUTED), lp(t = 2))
+        mid.addView(label(tl("Guest User"), 17f, Ui.TEXT, true))
+        mid.addView(label(tl("Sign in to sync your data"), 12f, Ui.MUTED), lp(t = 2))
         top.addView(mid, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        top.addView(pill("Sign In") {
+        top.addView(pill(tl("Sign In")) {
             simpleDialog(
-                "Sign In",
-                "Online sign-in and sync are not available yet. All your data is safely stored on this phone only. Use Backup to keep a copy.",
-                "Open Backup"
+                tl("Sign In"),
+                tl("Online sign-in and sync are not available yet. All your data is safely stored on this phone only. Use Backup to keep a copy."),
+                tl("Open Backup")
             ) { go("backup") }
         }, lp(width = ViewGroup.LayoutParams.WRAP_CONTENT, l = 8))
         box.addView(top, lp())
 
-        secTitle("Preferences")
+        secTitle(tl("Preferences"))
         val hap = prefs.getBoolean("haptic", true)
         val snd = prefs.getBoolean("sound", true)
         box.addView(groupCard(listOf(
-            rowOf(R.drawable.ic_palette, "Appearance", "", extra = value(themeNames[prefs.getInt("theme", 0).coerceIn(0, 2)])) {
+            rowOf(R.drawable.ic_palette, tl("Appearance"), "", extra = value(themeNames[prefs.getInt("theme", 0).coerceIn(0, 2)])) {
                 startActivity(Intent(this, AppearanceActivity::class.java))
             },
-            rowOf(R.drawable.ic_globe, "Language", "", extra = value(if (Lang.en) "English" else "বাংলা")) {
-                startActivity(Intent(this, AppearanceActivity::class.java))
+            rowOf(R.drawable.ic_globe, tl("Language"), "", extra = value(if (Lang.en) "English" else "বাংলা")) {
+                startActivity(Intent(this, LanguageActivity::class.java))
             },
-            rowOf(R.drawable.ic_folder, "Default Folder", "", extra = value(folderName())) {
+            rowOf(R.drawable.ic_folder, tl("Default Folder"), "", extra = value(folderName())) {
                 if (SaveTarget.folder(this) == null) pickDefFolder() else {
                     AlertDialog.Builder(this)
                         .setTitle(tr("ডিফল্ট ফোল্ডার"))
@@ -228,66 +228,66 @@ class SettingsActivity : GuardedActivity() {
                         .show()
                 }
             },
-            rowOf(R.drawable.ic_bolt, "Hide Tools", "") {
+            rowOf(R.drawable.ic_bolt, tl("Hide Tools"), "") {
                 startActivity(Intent(this, HiddenToolsActivity::class.java))
             },
-            rowOf(R.drawable.ic_bell, "Notifications", "", extra = value(if (prefs.getBoolean("notifAll", true)) "On" else "Off")) {
+            rowOf(R.drawable.ic_bell, tl("Notifications"), "", extra = value(if (prefs.getBoolean("notifAll", true)) tl("On") else tl("Off"))) {
                 startActivity(Intent(this, NotifSettingsActivity::class.java))
             },
-            rowOf(R.drawable.ic_vibrate, "Haptic Feedback", "", extra = switchView(hap), chevron = false) {
+            rowOf(R.drawable.ic_vibrate, tl("Haptic Feedback"), "", extra = switchView(hap), chevron = false) {
                 prefs.edit().putBoolean("haptic", !hap).apply()
                 render()
             },
-            rowOf(R.drawable.ic_volume, "Sound", "", extra = switchView(snd), chevron = false) {
+            rowOf(R.drawable.ic_volume, tl("Sound"), "", extra = switchView(snd), chevron = false) {
                 prefs.edit().putBoolean("sound", !snd).apply()
                 render()
             }
         )), lp())
 
-        secTitle("Security & Privacy")
+        secTitle(tl("Security & Privacy"))
         box.addView(groupCard(listOf(
-            rowOf(R.drawable.ic_lock, "App Lock", "", extra = value(if (Lock.enabled(this)) "On" else "Off")) { go("lock") },
-            rowOf(R.drawable.ic_trash, "Clear Cache", "", extra = value(Img.human(cacheSize()))) {
-                AlertDialog.Builder(this).setTitle("Clear Cache")
-                    .setMessage("Temporary files will be deleted. Your ledger, notes and other data are not touched.")
-                    .setPositiveButton("Clear") { _, _ ->
+            rowOf(R.drawable.ic_lock, tl("App Lock"), "", extra = value(if (Lock.enabled(this)) tl("On") else tl("Off"))) { go("lock") },
+            rowOf(R.drawable.ic_trash, tl("Clear Cache"), "", extra = value(Img.human(cacheSize()))) {
+                AlertDialog.Builder(this).setTitle(tl("Clear Cache"))
+                    .setMessage(tl("Temporary files will be deleted. Your ledger, notes and other data are not touched."))
+                    .setPositiveButton(tl("Clear")) { _, _ ->
                         clearDir(cacheDir)
                         clearDir(externalCacheDir)
-                        Toast.makeText(this, "Cache cleared", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, tl("Cache cleared"), Toast.LENGTH_SHORT).show()
                         render()
                     }
-                    .setNegativeButton("Cancel", null).show()
+                    .setNegativeButton(tl("Cancel"), null).show()
             }
         )), lp())
 
-        secTitle("Backup & Data")
+        secTitle(tl("Backup & Data"))
         box.addView(groupCard(listOf(
-            rowOf(R.drawable.ic_backup, "Backup & Restore", "", extra = value(lastText)) { go("backup") },
-            rowOf(R.drawable.ic_eye_off, "Delete Data", "") { go("data") }
+            rowOf(R.drawable.ic_backup, tl("Backup & Restore"), "", extra = value(lastText)) { go("backup") },
+            rowOf(R.drawable.ic_eye_off, tl("Delete Data"), "") { go("data") }
         )), lp())
 
-        secTitle("Support & About")
+        secTitle(tl("Support & About"))
         box.addView(groupCard(listOf(
-            rowOf(R.drawable.ic_help, "Help & Support", "") {
+            rowOf(R.drawable.ic_help, tl("Help & Support"), "") {
                 startActivity(Intent(this, InfoPageActivity::class.java).putExtra("page", "help"))
             },
-            rowOf(R.drawable.ic_doc, "Privacy Policy", "") {
+            rowOf(R.drawable.ic_doc, tl("Privacy Policy"), "") {
                 startActivity(Intent(this, InfoPageActivity::class.java).putExtra("page", "privacy"))
             },
-            rowOf(R.drawable.ic_star, "Rate Us", "") {
+            rowOf(R.drawable.ic_star, tl("Rate Us"), "") {
                 try {
                     startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$packageName")))
                 } catch (e: Throwable) {
-                    Toast.makeText(this, "Rating opens once the app is on a store", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, tl("Rating opens once the app is on a store"), Toast.LENGTH_LONG).show()
                 }
             },
-            rowOf(R.drawable.ic_share, "Share App", "") {
+            rowOf(R.drawable.ic_share, tl("Share App"), "") {
                 val i = Intent(Intent.ACTION_SEND)
                 i.type = "text/plain"
-                i.putExtra(Intent.EXTRA_TEXT, "Amar Khata — ledger, debts, notes and many handy tools in one app.")
-                startActivity(Intent.createChooser(i, "Share App"))
+                i.putExtra(Intent.EXTRA_TEXT, tl("Amar Khata — ledger, debts, notes and many handy tools in one app."))
+                startActivity(Intent.createChooser(i, tl("Share App")))
             },
-            rowOf(R.drawable.ic_info, "About", "", extra = value("v$ver")) {
+            rowOf(R.drawable.ic_info, tl("About"), "", extra = value("v$ver")) {
                 startActivity(Intent(this, InfoPageActivity::class.java).putExtra("page", "about"))
             }
         )), lp(b = 12))
