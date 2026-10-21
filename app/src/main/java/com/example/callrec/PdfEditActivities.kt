@@ -220,51 +220,6 @@ fun parsePageSpec(spec: String, total: Int): List<Int>? {
     return if (out.isEmpty()) null else out
 }
 
-/** PDF ভাগ: cut a PDF into parts of N pages each. */
-class PdfSplitActivity : PdfBase() {
-    private lateinit var count: EditText
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        val opt = card(14)
-        opt.addView(label(tr("প্রতি কত পেজে একটি ফাইল"), 12f, Ui.MUTED, true))
-        count = field(tr("যেমন: ১"), InputType.TYPE_CLASS_NUMBER)
-        count.setText("1")
-        opt.addView(count)
-        val act = actionCard(tr("ফোল্ডার বেছে ভাগ করুন"), tr("ফাইলের নাম হবে নাম_part1.pdf, নাম_part2.pdf…")) { go() }
-        screen(tr("PDF ভাগ"), pickCard(), opt, act)
-    }
-
-    private fun go() {
-        if (!requireFile()) return
-        if (encrypted) { status.text = tr("আগে PDF আনলক করুন (PDF লক / আনলক টুল)"); return }
-        val n = asciiDigits(count.text.toString()).toIntOrNull()
-        if (n == null || n < 1) { status.text = tr("পেজ সংখ্যা ঠিক নেই"); return }
-        askTree { tree ->
-            val f = src!!
-            val base = baseOut()
-            work(tr("ভাগ হচ্ছে…")) {
-                val parent = DocumentsContract.buildDocumentUriUsingTree(tree, DocumentsContract.getTreeDocumentId(tree))
-                var made = 0
-                PDDocument.load(f).use { doc ->
-                    val sp = Splitter()
-                    sp.setSplitAtPage(n)
-                    val parts = sp.split(doc)
-                    for ((i, p) in parts.withIndex()) {
-                        val u = DocumentsContract.createDocument(contentResolver, parent, "application/pdf", base + "_part" + (i + 1) + ".pdf")
-                        if (u != null) {
-                            saveDoc(p, u)
-                            made++
-                        }
-                        p.close()
-                    }
-                }
-                tr("সংরক্ষিত হয়েছে: ") + bn(made.toString()) + tr("টি ফাইল")
-            }
-        }
-    }
-}
-
 /** পেজ এক্সট্র্যাক্টর: choose pages like "1-3, 5, 8-" and save them as a new PDF. */
 class PdfExtractActivity : PdfBase() {
     private lateinit var spec: EditText
