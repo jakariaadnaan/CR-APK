@@ -236,7 +236,7 @@ class SettingsActivity : GuardedActivity() {
                         .show()
                 }
             },
-            rowOf(R.drawable.ic_bolt, "Quick Access", "") {
+            rowOf(R.drawable.ic_bolt, "Hide Tools", "") {
                 startActivity(Intent(this, HiddenToolsActivity::class.java))
             },
             rowOf(R.drawable.ic_bell, "Notifications", "", extra = value(if (prefs.getBoolean("notifAll", true)) "On" else "Off")) {
