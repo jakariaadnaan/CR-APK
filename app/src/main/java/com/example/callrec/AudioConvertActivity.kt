@@ -104,7 +104,7 @@ abstract class AudioConvertBase(private val video: Boolean) : GuardedActivity() 
         i.addCategory(Intent.CATEGORY_OPENABLE)
         i.type = if (wav) "audio/wav" else "audio/mp4"
         i.putExtra(Intent.EXTRA_TITLE, base + (if (wav) ".wav" else ".m4a"))
-        startActivityForResult(i, 92)
+        saveOrAsk(i, 92)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

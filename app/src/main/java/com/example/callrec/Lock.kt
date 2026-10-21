@@ -140,6 +140,21 @@ open class GuardedActivity : Activity() {
         }
     }
 
+    /** Saves into the default folder when one is set; otherwise shows the usual "save as" picker. */
+    @Suppress("DEPRECATION")
+    fun saveOrAsk(i: Intent, code: Int) {
+        val name = i.getStringExtra(Intent.EXTRA_TITLE) ?: "file"
+        val u = SaveTarget.create(this, name, i.type ?: "application/octet-stream")
+        if (u != null) onActivityResult(code, RESULT_OK, Intent().setData(u)) else startActivityForResult(i, code)
+    }
+
+    /** Uses the default folder as the output folder when one is set; otherwise asks for a folder. */
+    @Suppress("DEPRECATION")
+    fun treeOrAsk(i: Intent, code: Int) {
+        val t = SaveTarget.folder(this)
+        if (t != null) onActivityResult(code, RESULT_OK, Intent().setData(t)) else startActivityForResult(i, code)
+    }
+
     private fun animsOff() = !getSharedPreferences("settings", Context.MODE_PRIVATE).getBoolean("anim", true)
 
     override fun startActivity(intent: Intent?) {

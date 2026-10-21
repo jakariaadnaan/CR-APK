@@ -89,14 +89,14 @@ abstract class PdfBase : GuardedActivity() {
         i.type = "application/pdf"
         i.putExtra(Intent.EXTRA_TITLE, name)
         defaultFolderUri(this)?.let { i.putExtra(android.provider.DocumentsContract.EXTRA_INITIAL_URI, it) }
-        startActivityForResult(i, 86)
+        saveOrAsk(i, 86)
     }
 
     protected fun askTree(then: (Uri) -> Unit) {
         onTree = then
         val ti = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
         defaultFolderUri(this)?.let { ti.putExtra(android.provider.DocumentsContract.EXTRA_INITIAL_URI, it) }
-        startActivityForResult(ti, 87)
+        treeOrAsk(ti, 87)
     }
 
     /** Runs [block] off the main thread; it returns the message to show, or throws. */

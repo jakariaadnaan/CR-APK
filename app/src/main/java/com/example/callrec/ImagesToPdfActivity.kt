@@ -113,7 +113,7 @@ class ImagesToPdfActivity : GuardedActivity() {
         i.addCategory(Intent.CATEGORY_OPENABLE)
         i.type = "application/pdf"
         i.putExtra(Intent.EXTRA_TITLE, "images.pdf")
-        startActivityForResult(i, 82)
+        saveOrAsk(i, 82)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

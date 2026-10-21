@@ -2,6 +2,12 @@ package com.example.callrec
 
 object Dict7 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        "ডিফল্ট ফোল্ডার" to "Default folder",
+        "এখন সব ফাইল (PDF, ছবি, অডিও, ব্যাকআপ ইত্যাদি) সরাসরি এই ফোল্ডারে সংরক্ষিত হয়: " to "All files (PDF, images, audio, backups and so on) are now saved straight into this folder: ",
+        "ফোল্ডার বদলান" to "Change folder",
+        "সরিয়ে দিন" to "Remove",
+        "এখন থেকে প্রতিবার ফোল্ডার জিজ্ঞেস করা হবে" to "From now on you will be asked for a folder each time",
+        "এখন থেকে সব ফাইল এই ফোল্ডারে সংরক্ষিত হবে" to "From now on all files will be saved into this folder",
         "অটো-ব্যাকআপ হয়নি" to "Auto-backup failed",
         "শেষবার স্বয়ংক্রিয় ব্যাকআপ ব্যর্থ হয়েছে। ফোল্ডারটি আছে কি না দেখুন।" to "The last automatic backup failed. Check that the folder still exists.",
         "নোটিফিকেশনের অনুমতি বন্ধ" to "Notification permission is off",

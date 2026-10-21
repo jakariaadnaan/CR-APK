@@ -170,7 +170,7 @@ abstract class ImageToolBase : GuardedActivity() {
         i.addCategory(Intent.CATEGORY_OPENABLE)
         i.type = mime
         i.putExtra(Intent.EXTRA_TITLE, fileName)
-        startActivityForResult(i, Img.REQ_SAVE)
+        saveOrAsk(i, Img.REQ_SAVE)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

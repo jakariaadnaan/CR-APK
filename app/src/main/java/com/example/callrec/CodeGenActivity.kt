@@ -150,7 +150,7 @@ abstract class CodeGenBase(private val barcode: Boolean) : GuardedActivity() {
         i.addCategory(Intent.CATEGORY_OPENABLE)
         i.type = "image/png"
         i.putExtra(Intent.EXTRA_TITLE, if (barcode) "barcode.png" else "qrcode.png")
-        startActivityForResult(i, 95)
+        saveOrAsk(i, 95)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

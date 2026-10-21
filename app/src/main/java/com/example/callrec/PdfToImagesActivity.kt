@@ -98,7 +98,7 @@ class PdfToImagesActivity : GuardedActivity() {
             Toast.makeText(this, tr("আগে একটি PDF বাছুন"), Toast.LENGTH_SHORT).show()
             return
         }
-        startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), 84)
+        treeOrAsk(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), 84)
     }
 
     /** Copies the PDF into the app cache so PdfRenderer always gets a seekable file. */

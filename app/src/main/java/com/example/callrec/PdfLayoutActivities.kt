@@ -248,7 +248,7 @@ class CollageActivity : GuardedActivity() {
         i.addCategory(Intent.CATEGORY_OPENABLE)
         i.type = "image/jpeg"
         i.putExtra(Intent.EXTRA_TITLE, "collage.jpg")
-        startActivityForResult(i, 100)
+        saveOrAsk(i, 100)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

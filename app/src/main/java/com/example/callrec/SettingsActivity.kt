@@ -160,6 +160,13 @@ class SettingsActivity : GuardedActivity() {
         f?.listFiles()?.forEach { if (it.isDirectory) { clearDir(it); it.delete() } else it.delete() }
     }
 
+    private fun pickDefFolder() {
+        val i = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+        defaultFolderUri(this)?.let { i.putExtra(android.provider.DocumentsContract.EXTRA_INITIAL_URI, it) }
+        i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+        startActivityForResult(i, reqDefFolder)
+    }
+
     private fun folderName(): String {
         val s = prefs.getString("defFolder", null) ?: return "Internal Storage"
         return try {
@@ -215,9 +222,19 @@ class SettingsActivity : GuardedActivity() {
                 startActivity(Intent(this, AppearanceActivity::class.java))
             },
             rowOf(R.drawable.ic_folder, "Default Folder", "", extra = value(folderName())) {
-                val i = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
-                defaultFolderUri(this)?.let { i.putExtra(android.provider.DocumentsContract.EXTRA_INITIAL_URI, it) }
-                startActivityForResult(i, reqDefFolder)
+                if (SaveTarget.folder(this) == null) pickDefFolder() else {
+                    AlertDialog.Builder(this)
+                        .setTitle(tr("ডিফল্ট ফোল্ডার"))
+                        .setMessage(tr("এখন সব ফাইল (PDF, ছবি, অডিও, ব্যাকআপ ইত্যাদি) সরাসরি এই ফোল্ডারে সংরক্ষিত হয়: ") + folderName())
+                        .setPositiveButton(tr("ফোল্ডার বদলান")) { _, _ -> pickDefFolder() }
+                        .setNeutralButton(tr("সরিয়ে দিন")) { _, _ ->
+                            prefs.edit().remove("defFolder").apply()
+                            Toast.makeText(this, tr("এখন থেকে প্রতিবার ফোল্ডার জিজ্ঞেস করা হবে"), Toast.LENGTH_LONG).show()
+                            render()
+                        }
+                        .setNegativeButton(tr("বাতিল"), null)
+                        .show()
+                }
             },
             rowOf(R.drawable.ic_bolt, "Quick Access", "") {
                 startActivity(Intent(this, HiddenToolsActivity::class.java))
@@ -726,7 +743,7 @@ class SettingsActivity : GuardedActivity() {
         i.type = "application/json"
         i.putExtra(Intent.EXTRA_TITLE, name)
         try {
-            startActivityForResult(i, reqSave)
+            saveOrAsk(i, reqSave)
         } catch (e: Exception) {
             Toast.makeText(this, tr("ফাইল বেছে নেওয়ার অ্যাপ পাওয়া যায়নি"), Toast.LENGTH_LONG).show()
         }
@@ -785,7 +802,7 @@ class SettingsActivity : GuardedActivity() {
         i.type = "text/csv"
         i.putExtra(Intent.EXTRA_TITLE, "amar-khata-" + kind + "-" + SimpleDateFormat("yyyyMMdd", Locale.US).format(Date()) + ".csv")
         try {
-            startActivityForResult(i, req)
+            saveOrAsk(i, req)
         } catch (e: Exception) {
             Toast.makeText(this, tr("ফাইল বেছে নেওয়ার অ্যাপ পাওয়া যায়নি"), Toast.LENGTH_LONG).show()
         }
@@ -857,6 +874,7 @@ class SettingsActivity : GuardedActivity() {
                 contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
             } catch (e: Throwable) { }
             prefs.edit().putString("defFolder", uri.toString()).apply()
+            Toast.makeText(this, tr("এখন থেকে সব ফাইল এই ফোল্ডারে সংরক্ষিত হবে"), Toast.LENGTH_LONG).show()
             render()
             return
         }

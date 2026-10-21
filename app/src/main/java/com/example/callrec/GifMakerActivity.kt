@@ -189,7 +189,7 @@ class GifMakerActivity : GuardedActivity() {
         i.addCategory(Intent.CATEGORY_OPENABLE)
         i.type = "image/gif"
         i.putExtra(Intent.EXTRA_TITLE, "animation.gif")
-        startActivityForResult(i, 103)
+        saveOrAsk(i, 103)
     }
 
     /** Draws [src] centred inside a white w x h canvas, keeping its shape. */

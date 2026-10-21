@@ -146,7 +146,7 @@ class PdfTextActivity : PdfBase() {
         i.addCategory(Intent.CATEGORY_OPENABLE)
         i.type = "text/plain"
         i.putExtra(Intent.EXTRA_TITLE, baseOut() + ".txt")
-        startActivityForResult(i, 94)
+        saveOrAsk(i, 94)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

@@ -414,7 +414,7 @@ class TextToPdfActivity : GuardedActivity() {
         i.addCategory(Intent.CATEGORY_OPENABLE)
         i.type = "application/pdf"
         i.putExtra(Intent.EXTRA_TITLE, "text.pdf")
-        startActivityForResult(i, 93)
+        saveOrAsk(i, 93)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

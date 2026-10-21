@@ -210,7 +210,7 @@ class CameraPdfActivity : GuardedActivity() {
         i.addCategory(Intent.CATEGORY_OPENABLE)
         i.type = "application/pdf"
         i.putExtra(Intent.EXTRA_TITLE, "scan.pdf")
-        startActivityForResult(i, 95)
+        saveOrAsk(i, 95)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -327,7 +327,7 @@ class InvoicePdfActivity : GuardedActivity() {
         i.addCategory(Intent.CATEGORY_OPENABLE)
         i.type = "application/pdf"
         i.putExtra(Intent.EXTRA_TITLE, "invoice.pdf")
-        startActivityForResult(i, 96)
+        saveOrAsk(i, 96)
     }
 
     private class Line(val name: String, val qty: Double, val price: Double)

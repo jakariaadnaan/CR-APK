@@ -109,7 +109,7 @@ class PdfMergeActivity : GuardedActivity() {
         i.addCategory(Intent.CATEGORY_OPENABLE)
         i.type = "application/pdf"
         i.putExtra(Intent.EXTRA_TITLE, "merged.pdf")
-        startActivityForResult(i, 92)
+        saveOrAsk(i, 92)
     }
 
     private fun mergeInto(out: Uri) {
