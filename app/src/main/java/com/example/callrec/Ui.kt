@@ -128,10 +128,31 @@ fun Context.styledSwitch(on: Boolean): android.widget.Switch {
     val s = android.widget.Switch(this)
     s.isChecked = on
     s.isClickable = false
-    val states = arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf())
-    s.thumbTintList = android.content.res.ColorStateList(states, intArrayOf(Color.WHITE, Color.WHITE))
-    s.trackTintList = android.content.res.ColorStateList(states, intArrayOf(Ui.PRIMARY, Ui.GREY))
+    styleSwitch(s)
     return s
+}
+
+/** A solid accent track when on and a clearly visible grey one when off, with a round white thumb. */
+fun Context.styleSwitch(s: android.widget.Switch) {
+    fun track(color: Int): android.graphics.drawable.GradientDrawable {
+        val g = android.graphics.drawable.GradientDrawable()
+        g.setColor(color)
+        g.cornerRadius = dp(13).toFloat()
+        g.setSize(dp(48), dp(26))
+        return g
+    }
+    val offColor = if (Ui.dark) Color.parseColor("#5A6070") else Color.parseColor("#B8BDC7")
+    val tl = android.graphics.drawable.StateListDrawable()
+    tl.addState(intArrayOf(android.R.attr.state_checked), track(Ui.PRIMARY))
+    tl.addState(intArrayOf(), track(offColor))
+    val th = android.graphics.drawable.GradientDrawable()
+    th.shape = android.graphics.drawable.GradientDrawable.OVAL
+    th.setColor(Color.WHITE)
+    th.setSize(dp(20), dp(20))
+    s.thumbTintList = null
+    s.trackTintList = null
+    s.trackDrawable = tl
+    s.thumbDrawable = android.graphics.drawable.InsetDrawable(th, dp(3))
 }
 
 /** One short buzz when a job finishes, if "Vibration on Action" is on. */

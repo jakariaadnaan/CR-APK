@@ -73,15 +73,7 @@ class SettingsActivity : GuardedActivity() {
         return c
     }
 
-    private fun switchView(on: Boolean): Switch {
-        val s = Switch(this)
-        s.isChecked = on
-        s.isClickable = false
-        val states = arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf())
-        s.thumbTintList = android.content.res.ColorStateList(states, intArrayOf(android.graphics.Color.WHITE, android.graphics.Color.WHITE))
-        s.trackTintList = android.content.res.ColorStateList(states, intArrayOf(Ui.PRIMARY, Ui.GREY))
-        return s
-    }
+    private fun switchView(on: Boolean): Switch = styledSwitch(on)
 
     private val dataNames = listOf(tr("খরচের খাতা"), tr("বাকির খাতা"), tr("করণীয় তালিকা"), tr("দ্রুত নোট"))
 
