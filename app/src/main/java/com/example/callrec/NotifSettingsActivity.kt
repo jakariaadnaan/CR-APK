@@ -67,7 +67,7 @@ class NotifSettingsActivity : GuardedActivity() {
         box.orientation = LinearLayout.VERTICAL
         box.setPadding(dp(14), dp(14), dp(14), dp(24))
         scroll.addView(box)
-        setScreen("Notifications", scroll)
+        setScreen(tl("Notifications"), scroll)
         render()
     }
 
@@ -93,7 +93,7 @@ class NotifSettingsActivity : GuardedActivity() {
                 Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
             )
         } catch (e: Throwable) {
-            Toast.makeText(this, "Could not open the phone settings", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, tl("Could not open the phone settings"), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -111,7 +111,7 @@ class NotifSettingsActivity : GuardedActivity() {
     private fun choose(title: String, items: Array<String>, cur: Int, onPick: (Int) -> Unit) {
         android.app.AlertDialog.Builder(this).setTitle(title)
             .setSingleChoiceItems(items, cur) { d, i -> d.dismiss(); onPick(i) }
-            .setNegativeButton("Cancel", null).show()
+            .setNegativeButton(tl("Cancel"), null).show()
     }
 
     private fun clock(min: Int): String {
@@ -136,15 +136,15 @@ class NotifSettingsActivity : GuardedActivity() {
 
     private fun sendTest() {
         if (!granted()) {
-            Toast.makeText(this, "Notifications are not allowed yet", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, tl("Notifications are not allowed yet"), Toast.LENGTH_SHORT).show()
             return
         }
         val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        nm.createNotificationChannel(NotificationChannel("test", "Test", NotificationManager.IMPORTANCE_HIGH))
+        nm.createNotificationChannel(NotificationChannel("test", tl("Test"), NotificationManager.IMPORTANCE_HIGH))
         val n = Notification.Builder(this, "test")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(tr("আমার খাতা"))
-            .setContentText("This is a test notification. Reminders will look like this.")
+            .setContentText(tl("This is a test notification. Reminders will look like this."))
             .setAutoCancel(true)
             .build()
         nm.notify(9001, n)
@@ -162,14 +162,14 @@ class NotifSettingsActivity : GuardedActivity() {
         st.addView(iconBox(R.drawable.ic_bell, if (ok) Ui.PRIMARY else Ui.RED, android.graphics.Color.WHITE, 46, 24, 23, 14))
         val mid = LinearLayout(this)
         mid.orientation = LinearLayout.VERTICAL
-        mid.addView(label(if (ok) "Notifications are allowed" else "Notifications are blocked", 16f, Ui.TEXT, true))
+        mid.addView(label(if (ok) tl("Notifications are allowed") else tl("Notifications are blocked"), 16f, Ui.TEXT, true))
         mid.addView(
-            label(if (ok) "Reminders can reach this phone." else "Allow them, or no reminder will show.", 12f, Ui.MUTED),
+            label(if (ok) tl("Reminders can reach this phone.") else tl("Allow them, or no reminder will show."), 12f, Ui.MUTED),
             lp(t = 2)
         )
         st.addView(mid, LinearLayout.LayoutParams(0, android.view.ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         if (!ok) {
-            st.addView(pill("Allow") {
+            st.addView(pill(tl("Allow")) {
                 if (android.os.Build.VERSION.SDK_INT >= 33 &&
                     checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
                 ) {
@@ -179,24 +179,24 @@ class NotifSettingsActivity : GuardedActivity() {
         }
         box.addView(st, lp())
 
-        section("General")
+        section(tl("General"))
         box.addView(groupCard(listOf(
-            toggle(R.drawable.ic_bell, "All notifications", "Switch every reminder on or off", NotifPrefs.ALL),
-            listRow(R.drawable.ic_sparkle, "Send test notification", "Check that reminders work").also {
+            toggle(R.drawable.ic_bell, tl("All notifications"), tl("Switch every reminder on or off"), NotifPrefs.ALL),
+            listRow(R.drawable.ic_sparkle, tl("Send test notification"), tl("Check that reminders work")).also {
                 it.setOnClickListener { v -> v.tapFx(); sendTest() }
             }
         )), lp())
 
-        section("Reminders")
+        section(tl("Reminders"))
         box.addView(groupCard(listOf(
-            toggle(R.drawable.ic_wallet, "Debt reminders", "On the due date you set", NotifPrefs.DEBT, master),
-            toggle(R.drawable.ic_text, "To-do reminders", "At the time you set for a task", NotifPrefs.TODO, master),
-            toggle(R.drawable.ic_clock, "Prayer reminders", "For the prayers you turned on", NotifPrefs.PRAYER, master),
-            toggle(R.drawable.ic_backup, "Backup reminder", "An alert in the bell when a backup is due", NotifPrefs.BACKUP, master)
+            toggle(R.drawable.ic_wallet, tl("Debt reminders"), tl("On the due date you set"), NotifPrefs.DEBT, master),
+            toggle(R.drawable.ic_text, tl("To-do reminders"), tl("At the time you set for a task"), NotifPrefs.TODO, master),
+            toggle(R.drawable.ic_clock, tl("Prayer reminders"), tl("For the prayers you turned on"), NotifPrefs.PRAYER, master),
+            toggle(R.drawable.ic_backup, tl("Backup reminder"), tl("An alert in the bell when a backup is due"), NotifPrefs.BACKUP, master)
         )), lp())
 
-        section("Prayer alerts")
-        val pn = listOf("Fajr", "Dhuhr", "Asr", "Maghrib", "Isha")
+        section(tl("Prayer alerts"))
+        val pn = listOf(tl("Fajr"), tl("Dhuhr"), tl("Asr"), tl("Maghrib"), tl("Isha"))
         val prows = ArrayList<View>()
         for (k in pn.indices) {
             val idx = PrayerReminder.IDX[k]
@@ -211,13 +211,13 @@ class NotifSettingsActivity : GuardedActivity() {
             prows.add(r)
         }
         val leads = intArrayOf(0, 5, 10, 15, 30)
-        val leadNames = arrayOf("On time", "5 minutes before", "10 minutes before", "15 minutes before", "30 minutes before")
+        val leadNames = arrayOf(tl("On time"), tl("5 minutes before"), tl("10 minutes before"), tl("15 minutes before"), tl("30 minutes before"))
         val pl = NotifPrefs.prayerLead(this)
         val plIdx = leads.indexOf(pl).let { if (it < 0) 0 else it }
-        val lr = listRow(R.drawable.ic_bell, "Alert before time", "", Ui.TEXT, label(leadNames[plIdx], 13f, Ui.MUTED), true)
+        val lr = listRow(R.drawable.ic_bell, tl("Alert before time"), "", Ui.TEXT, label(leadNames[plIdx], 13f, Ui.MUTED), true)
         lr.setOnClickListener {
             it.tapFx()
-            choose("Alert before time", leadNames, plIdx) { i ->
+            choose(tl("Alert before time"), leadNames, plIdx) { i ->
                 prefs.edit().putInt("prayerLead", leads[i]).apply()
                 PrayerReminder.scheduleAll(this)
                 render()
@@ -226,14 +226,14 @@ class NotifSettingsActivity : GuardedActivity() {
         prows.add(lr)
         box.addView(groupCard(prows), lp())
 
-        section("Debt reminders")
+        section(tl("Debt reminders"))
         val dl = intArrayOf(0, 1, 3)
-        val dlNames = arrayOf("On the due date", "1 day before", "3 days before")
+        val dlNames = arrayOf(tl("On the due date"), tl("1 day before"), tl("3 days before"))
         val dlIdx = dl.indexOf(NotifPrefs.debtLead(this)).let { if (it < 0) 0 else it }
-        val dr = listRow(R.drawable.ic_wallet, "Remind me", "", Ui.TEXT, label(dlNames[dlIdx], 13f, Ui.MUTED), true)
+        val dr = listRow(R.drawable.ic_wallet, tl("Remind me"), "", Ui.TEXT, label(dlNames[dlIdx], 13f, Ui.MUTED), true)
         dr.setOnClickListener {
             it.tapFx()
-            choose("Debt reminder", dlNames, dlIdx) { i ->
+            choose(tl("Debt reminder"), dlNames, dlIdx) { i ->
                 prefs.edit().putInt("debtLead", dl[i]).apply()
                 DebtReminder.rescheduleAll(this)
                 render()
@@ -241,10 +241,10 @@ class NotifSettingsActivity : GuardedActivity() {
         }
         box.addView(groupCard(listOf(dr)), lp())
 
-        section("Quiet hours")
+        section(tl("Quiet hours"))
         val qOn = prefs.getBoolean("quietOn", false)
         val qrows = ArrayList<View>()
-        val qr = listRow(R.drawable.ic_moon, "Quiet hours", "Reminders in this time are skipped", Ui.TEXT, styledSwitch(qOn), false)
+        val qr = listRow(R.drawable.ic_moon, tl("Quiet hours"), tl("Reminders in this time are skipped"), Ui.TEXT, styledSwitch(qOn), false)
         qr.setOnClickListener {
             it.tapFx()
             prefs.edit().putBoolean("quietOn", !qOn).apply()
@@ -252,10 +252,10 @@ class NotifSettingsActivity : GuardedActivity() {
         }
         qrows.add(qr)
         if (qOn) {
-            qrows.add(timeRow(R.drawable.ic_clock, "From", "quietFrom", 23 * 60))
-            qrows.add(timeRow(R.drawable.ic_clock, "To", "quietTo", 5 * 60))
+            qrows.add(timeRow(R.drawable.ic_clock, tl("From"), "quietFrom", 23 * 60))
+            qrows.add(timeRow(R.drawable.ic_clock, tl("To"), "quietTo", 5 * 60))
             val pOk = prefs.getBoolean("quietPrayerOk", true)
-            val pr = listRow(R.drawable.ic_shield, "Prayer alerts still ring", "Prayers ignore quiet hours", Ui.TEXT, styledSwitch(pOk), false)
+            val pr = listRow(R.drawable.ic_shield, tl("Prayer alerts still ring"), tl("Prayers ignore quiet hours"), Ui.TEXT, styledSwitch(pOk), false)
             pr.setOnClickListener {
                 it.tapFx()
                 prefs.edit().putBoolean("quietPrayerOk", !pOk).apply()
@@ -265,10 +265,10 @@ class NotifSettingsActivity : GuardedActivity() {
         }
         box.addView(groupCard(qrows), lp())
 
-        section("Daily summary")
+        section(tl("Daily summary"))
         val sOn = prefs.getBoolean("sumOn", false)
         val srows = ArrayList<View>()
-        val sr = listRow(R.drawable.ic_sparkle, "Daily summary", "One notification each morning with today's tasks and due debts", Ui.TEXT, styledSwitch(sOn && master), false)
+        val sr = listRow(R.drawable.ic_sparkle, tl("Daily summary"), tl("One notification each morning with today's tasks and due debts"), Ui.TEXT, styledSwitch(sOn && master), false)
         sr.setOnClickListener {
             it.tapFx()
             prefs.edit().putBoolean("sumOn", !sOn).apply()
@@ -278,7 +278,7 @@ class NotifSettingsActivity : GuardedActivity() {
         srows.add(sr)
         if (sOn) {
             val v = prefs.getInt("sumTime", 8 * 60)
-            val tr0 = listRow(R.drawable.ic_clock, "Send at", "", Ui.TEXT, label(clock(v), 13f, Ui.MUTED), true)
+            val tr0 = listRow(R.drawable.ic_clock, tl("Send at"), "", Ui.TEXT, label(clock(v), 13f, Ui.MUTED), true)
             tr0.setOnClickListener {
                 it.tapFx()
                 android.app.TimePickerDialog(this, { _, h, m ->
@@ -291,11 +291,11 @@ class NotifSettingsActivity : GuardedActivity() {
         }
         box.addView(groupCard(srows), lp())
 
-        section("Keep reminders reliable")
+        section(tl("Keep reminders reliable"))
         val pm = getSystemService(POWER_SERVICE) as android.os.PowerManager
         val unrestricted = pm.isIgnoringBatteryOptimizations(packageName)
         val rel = ArrayList<View>()
-        val br = listRow(R.drawable.ic_backup, "Battery", "Let alarms ring on time", Ui.TEXT, label(if (unrestricted) "Unrestricted" else "Optimised", 13f, if (unrestricted) Ui.GREEN else Ui.MUTED), true)
+        val br = listRow(R.drawable.ic_backup, tl("Battery"), tl("Let alarms ring on time"), Ui.TEXT, label(if (unrestricted) tl("Unrestricted") else tl("Optimised"), 13f, if (unrestricted) Ui.GREEN else Ui.MUTED), true)
         br.setOnClickListener {
             it.tapFx()
             try {
@@ -307,7 +307,7 @@ class NotifSettingsActivity : GuardedActivity() {
         rel.add(br)
         val brand = android.os.Build.MANUFACTURER.lowercase()
         if (brand.contains("xiaomi") || brand.contains("redmi") || brand.contains("poco")) {
-            val ar = listRow(R.drawable.ic_bolt, "Autostart (Xiaomi)", "Needed to restore reminders after a restart")
+            val ar = listRow(R.drawable.ic_bolt, tl("Autostart (Xiaomi)"), tl("Needed to restore reminders after a restart"))
             ar.setOnClickListener {
                 it.tapFx()
                 try {
@@ -322,32 +322,32 @@ class NotifSettingsActivity : GuardedActivity() {
         }
         box.addView(groupCard(rel), lp())
 
-        section("Recent notifications")
+        section(tl("Recent notifications"))
         val log = NotifLog.list(this)
         if (log.isEmpty()) {
-            val e = label("Nothing yet. Reminders you receive will be listed here.", 13f, Ui.MUTED)
+            val e = label(tl("Nothing yet. Reminders you receive will be listed here."), 13f, Ui.MUTED)
             e.setPadding(dp(6), 0, dp(6), 0)
             box.addView(e, lp())
         } else {
             val lrows = ArrayList<View>()
             for (en in log) {
                 val when0 = java.text.SimpleDateFormat("dd MMM, h:mm a", java.util.Locale.US).format(java.util.Date(en.first))
-                lrows.add(listRow(R.drawable.ic_bell, en.second, en.third + "  ·  " + when0, Ui.TEXT, null, false))
+                lrows.add(listRow(R.drawable.ic_bell, en.second, en.third + "  ·  " + bn(when0), Ui.TEXT, null, false))
             }
-            val clr = listRow(R.drawable.ic_trash, "Clear history", "", Ui.RED, null, false)
+            val clr = listRow(R.drawable.ic_trash, tl("Clear history"), "", Ui.RED, null, false)
             clr.setOnClickListener { it.tapFx(); NotifLog.clear(this); render() }
             lrows.add(clr)
             box.addView(groupCard(lrows), lp())
         }
 
-        section("Sound & vibration")
+        section(tl("Sound & vibration"))
         box.addView(groupCard(listOf(
-            listRow(R.drawable.ic_volume, "Phone notification settings", "Choose sound and vibration for each type").also {
+            listRow(R.drawable.ic_volume, tl("Phone notification settings"), tl("Choose sound and vibration for each type")).also {
                 it.setOnClickListener { v -> v.tapFx(); openPhoneSettings() }
             }
         )), lp())
         box.addView(
-            label("Reminders are set again automatically after a restart. On Xiaomi, also allow Autostart and set this app's battery to “No restrictions”, or alarms may come late.", 12f, Ui.MUTED),
+            label(tl("Reminders are set again automatically after a restart. On Xiaomi, also allow Autostart and set this app's battery to “No restrictions”, or alarms may come late."), 12f, Ui.MUTED),
             lp(l = 6, t = 12)
         )
     }

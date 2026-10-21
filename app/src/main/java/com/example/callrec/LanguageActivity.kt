@@ -88,26 +88,5 @@ class LanguageActivity : GuardedActivity() {
             r as View
         }
         box.addView(groupCard(rows), lp())
-
-        section(tr("সংখ্যার ধরন"))
-        val bnDigits = prefs.getBoolean("digitsBn", true)
-        val digitRows = listOf(tr("বাংলা (১২৩)"), tr("ইংরেজি (123)")).mapIndexed { i, n ->
-            val r = LinearLayout(this)
-            r.orientation = LinearLayout.HORIZONTAL
-            r.gravity = Gravity.CENTER_VERTICAL
-            r.setPadding(dp(18), dp(16), dp(18), dp(16))
-            val on = (i == 0) == bnDigits
-            r.addView(label(n, 16f, Ui.TEXT, on), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-            if (on) r.addView(label("✓", 18f, Ui.PRIMARY, true))
-            r.setOnClickListener {
-                it.tapFx()
-                if (!on) {
-                    prefs.edit().putBoolean("digitsBn", i == 0).apply()
-                    changed()
-                }
-            }
-            r as View
-        }
-        box.addView(groupCard(digitRows), lp())
     }
 }
