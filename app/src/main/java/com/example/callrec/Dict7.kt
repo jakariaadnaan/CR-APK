@@ -2,6 +2,17 @@ package com.example.callrec
 
 object Dict7 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        "আগের সংরক্ষিত সই ব্যবহার করুন" to "Use the saved signature",
+        "ওয়াটারমার্ক যোগ করুন" to "Add Watermark",
+        "চালিয়ে যান" to "Continue",
+        "ডিজিটাল সই" to "Digital Signature",
+        "ডিজিটাল সই যোগ করুন" to "Add Digital Signature",
+        "নিচের সাদা জায়গায় আঙুল দিয়ে সই আঁকুন" to "Draw your signature with your finger in the white box",
+        "মুছে আবার আঁকুন" to "Clear and redraw",
+        "যেমন: গোপনীয়" to "e.g. CONFIDENTIAL",
+        "লোগো" to "Logo",
+        "লোগো বা ছবি পেজের মাঝখানে হালকা করে বসবে।" to "The logo or picture sits lightly in the middle of the page.",
+        "সই বসান" to "Place Signature",
         "উজ্জ্বল ও স্পষ্ট" to "Bright & Clear",
         "কোন পেজে" to "Which pages",
         "ক্রপ" to "Crop",
