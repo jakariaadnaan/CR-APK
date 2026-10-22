@@ -255,61 +255,6 @@ class PdfExtractActivity : PdfBase() {
     }
 }
 
-/** PDF লক / আনলক: add a password to a PDF, or remove it. */
-class PdfLockActivity : PdfBase() {
-    private var lock = true
-    private lateinit var row: LinearLayout
-    private lateinit var pw: EditText
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        val opt = card(14)
-        row = LinearLayout(this)
-        row.orientation = LinearLayout.HORIZONTAL
-        opt.addView(row, lp(b = 10))
-        opt.addView(label(tr("পাসওয়ার্ড"), 12f, Ui.MUTED, true))
-        pw = field(tr("পাসওয়ার্ড লিখুন"), InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD)
-        opt.addView(pw)
-        opt.addView(label(tr("পাসওয়ার্ড ভুলে গেলে PDF খোলা যাবে না, তাই মনে রাখুন।"), 12f, Ui.MUTED), lp(t = 6))
-        val act = actionCard(tr("নতুন PDF সংরক্ষণ"), "") { go() }
-        screen(tr("PDF লক / আনলক"), pickCard(), opt, act)
-        chips()
-    }
-
-    private fun chips() {
-        row.removeAllViews()
-        row.addView(chip(tr("লক করুন"), lock) { lock = true; chips() }, lp(r = 8))
-        row.addView(chip(tr("আনলক করুন"), !lock) { lock = false; chips() })
-    }
-
-    private fun go() {
-        if (!requireFile()) return
-        val p = pw.text.toString()
-        if (p.isEmpty()) { status.text = tr("পাসওয়ার্ড লিখুন"); return }
-        val doLock = lock
-        askCreate(baseOut() + (if (doLock) "_locked.pdf" else "_unlocked.pdf")) { out ->
-            val f = src!!
-            work(if (doLock) tr("লক করা হচ্ছে…") else tr("আনলক করা হচ্ছে…")) {
-                if (doLock) {
-                    PDDocument.load(f).use { doc ->
-                        val policy = StandardProtectionPolicy(p, p, AccessPermission())
-                        policy.encryptionKeyLength = 128
-                        doc.protect(policy)
-                        saveDoc(doc, out)
-                    }
-                    tr("লক করা PDF সংরক্ষিত হয়েছে")
-                } else {
-                    PDDocument.load(f, p).use { doc ->
-                        doc.isAllSecurityToBeRemoved = true
-                        saveDoc(doc, out)
-                    }
-                    tr("আনলক করা PDF সংরক্ষিত হয়েছে")
-                }
-            }
-        }
-    }
-}
-
 /** The folder chosen under Settings > Default Folder, used as the starting point of save pickers. */
 fun defaultFolderUri(ctx: android.content.Context): Uri? {
     val s = ctx.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE).getString("defFolder", null) ?: return null
