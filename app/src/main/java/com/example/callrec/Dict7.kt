@@ -2,6 +2,22 @@ package com.example.callrec
 
 object Dict7 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        "PDF তৈরি হয়েছে" to "PDF created",
+        "PDF লেখা হচ্ছে" to "Writing the PDF",
+        "PDF-এর পেজ কেমন হবে ঠিক করুন" to "Choose how the PDF pages look",
+        "আড়াআড়ি" to "Landscape",
+        "আমেরিকান মাপ" to "US size",
+        "চেপে ফোনের ছবি বাছুন, একসাথে অনেকগুলো নেওয়া যায়" to "Tap to choose pictures from your phone, several at once",
+        "ছবি পেজে বসানো হচ্ছে" to "Placing pictures on pages",
+        "ছবি সাজান" to "Arrange Pictures",
+        "ছবির মাপ রাখলে পেজের দিক ছবির মতোই থাকে।" to "With the picture's size, the page keeps the picture's orientation.",
+        "টি ছবি, ↑ ↓ দিয়ে ক্রম বদলান" to " pictures, change the order with ↑ ↓",
+        "নিজে থেকে" to "Automatic",
+        "প্রতিটি পেজ ছবির সমান, কোনো ফাঁকা জায়গা নেই" to "Each page matches the picture, no blank space",
+        "যোগ করা ছবি" to "Added Pictures",
+        "লম্বা" to "Portrait",
+        "সবচেয়ে চালু মাপ" to "The most common size",
+        "\"নিজে থেকে\" মানে ছবি যেদিকে লম্বা, পেজও সেদিকে।" to "\"Automatic\" means the page follows the picture's longer side.",
         "পেজ বের করা, রেঞ্জ ধরে ভাগ" to "Extract pages, split by range",
         " পেজে আড়াআড়ি ওয়াটারমার্ক বসবে" to " pages will get a diagonal watermark",
         " পেজের নিচে নম্বর বসবে" to " pages will get a number at the bottom",

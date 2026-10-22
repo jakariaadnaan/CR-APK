@@ -58,8 +58,6 @@ object Registry {
         Tool("color", "কালার পিকার", "ছবি থেকে রঙের কোড", "image", ColorPickerActivity::class.java, false, "color picker hex rgb"),
         // PDF
         Tool("img2pdf", "ছবি → PDF", "একাধিক ছবি একটি PDF-এ", "pdf", ImagesToPdfActivity::class.java, false, "image to pdf images to pdf"),
-        Tool("pdfmerge", "PDF জোড়া", "একাধিক PDF একটিতে", "pdf", PdfMergeActivity::class.java, keywords = "merge pdf combine join জোড়া"),
-        Tool("pdforg", "পেজ সাজান", "ঘোরান, মুছুন, ক্রম বদলান", "pdf", PdfOrganizeActivity::class.java, keywords = "rotate remove delete rearrange reorder pages pdf"),
         Tool("pdfmerge", "PDF জোড়া", "একাধিক PDF এক ফাইলে", "pdf", PdfMergeActivity::class.java, keywords = "merge combine join pdf জোড়া"),
         Tool("pdforg", "পেজ সাজান", "ঘোরান, মুছুন, ক্রম বদলান", "pdf", PdfOrganizeActivity::class.java, keywords = "rotate remove delete rearrange reorder reverse pages pdf"),
         Tool("pdfcomp", "PDF ছোট করুন", "ফাইলের সাইজ কমান", "pdf", PdfCompressActivity::class.java, keywords = "compress reduce size shrink pdf"),
