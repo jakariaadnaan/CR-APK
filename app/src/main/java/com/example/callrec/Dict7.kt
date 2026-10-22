@@ -2,6 +2,14 @@ package com.example.callrec
 
 object Dict7 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        "উজ্জ্বল ও স্পষ্ট" to "Bright & Clear",
+        "কোন পেজে" to "Which pages",
+        "ক্রপ" to "Crop",
+        "ক্রপ করুন" to "Crop",
+        "ডকুমেন্ট (কালো-সাদা)" to "Document (black & white)",
+        "ফিল্টার" to "Filter",
+        "শুধু এই পেজ" to "This page only",
+        "সাদাকালো (গ্রেস্কেল)" to "Grayscale",
         "PDF Edit" to "PDF Edit",
         "PDF বা ছবি খুলে এডিট করুন" to "Open a PDF or pictures and edit",
         "PDF বা ছবি খুলে পেজ এডিট করুন" to "Open a PDF or pictures and edit the pages",
