@@ -220,41 +220,6 @@ fun parsePageSpec(spec: String, total: Int): List<Int>? {
     return if (out.isEmpty()) null else out
 }
 
-/** পেজ এক্সট্র্যাক্টর: choose pages like "1-3, 5, 8-" and save them as a new PDF. */
-class PdfExtractActivity : PdfBase() {
-    private lateinit var spec: EditText
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        val opt = card(14)
-        opt.addView(label(tr("কোন কোন পেজ চান"), 12f, Ui.MUTED, true))
-        spec = field(tr("যেমন: 1-3, 5, 8-"), InputType.TYPE_CLASS_TEXT)
-        opt.addView(spec)
-        opt.addView(label(tr("কমা দিয়ে আলাদা করুন। 8- মানে ৮ থেকে শেষ পর্যন্ত।"), 12f, Ui.MUTED), lp(t = 6))
-        val act = actionCard(tr("নতুন PDF বানান"), "") { go() }
-        screen(tr("পেজ এক্সট্র্যাক্টর"), pickCard(), opt, act)
-    }
-
-    private fun go() {
-        if (!requireFile()) return
-        if (encrypted) { status.text = tr("আগে PDF আনলক করুন (PDF লক / আনলক টুল)"); return }
-        val idx = parsePageSpec(spec.text.toString(), pages)
-        if (idx == null) { status.text = tr("পেজ নম্বর ঠিক নেই (মোট ") + bn(pages.toString()) + tr(" পেজ)"); return }
-        askCreate(baseOut() + "_pages.pdf") { out ->
-            val f = src!!
-            work(tr("তৈরি হচ্ছে…")) {
-                PDDocument.load(f).use { doc ->
-                    val nd = PDDocument()
-                    for (i in idx) nd.importPage(doc.getPage(i))
-                    saveDoc(nd, out)
-                    nd.close()
-                }
-                tr("সংরক্ষিত হয়েছে: ") + bn(idx.size.toString()) + tr(" পেজের PDF")
-            }
-        }
-    }
-}
-
 /** The folder chosen under Settings > Default Folder, used as the starting point of save pickers. */
 fun defaultFolderUri(ctx: android.content.Context): Uri? {
     val s = ctx.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE).getString("defFolder", null) ?: return null

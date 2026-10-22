@@ -2,6 +2,7 @@ package com.example.callrec
 
 object Dict7 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        "পেজ বের করা, রেঞ্জ ধরে ভাগ" to "Extract pages, split by range",
         " পেজে আড়াআড়ি ওয়াটারমার্ক বসবে" to " pages will get a diagonal watermark",
         " পেজের নিচে নম্বর বসবে" to " pages will get a number at the bottom",
         "PDF-এর তথ্য বদলানো হবে" to "The PDF's information will be changed",

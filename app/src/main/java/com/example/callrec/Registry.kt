@@ -76,8 +76,7 @@ object Registry {
         Tool("pdfnup", "এক শিটে একাধিক পেজ", "২/৪/৬/৯ পেজ বা বুকলেট", "pdf", PdfNupActivity::class.java, keywords = "pages per sheet n-up booklet print pdf"),
         Tool("pdfsize", "পেজ সাইজ বদলান", "A4, A3, Letter ইত্যাদি", "pdf", PdfPageSizeActivity::class.java, keywords = "page size resize a4 a3 letter pdf"),
         Tool("collage", "ছবির কোলাজ", "একাধিক ছবি এক ছবিতে", "pdf", CollageActivity::class.java, keywords = "photo collage grid combine images"),
-        Tool("pdfsplit", "PDF ভাগ", "পেজ রেঞ্জ ধরে আলাদা ফাইল", "pdf", PdfSplitActivity::class.java, false, "pdf splitter split"),
-        Tool("pdfextract", "পেজ এক্সট্র্যাক্টর", "দরকারি পেজ বেছে নতুন PDF", "pdf", PdfExtractActivity::class.java, false, "pdf page extractor"),
+        Tool("pdfsplit", "PDF ভাগ", "পেজ বের করা, রেঞ্জ ধরে ভাগ", "pdf", PdfSplitActivity::class.java, false, "pdf splitter split extract pages page extractor"),
         Tool("pdf2img", "PDF → ছবি", "প্রতিটি পেজ ছবি হিসেবে", "pdf", PdfToImagesActivity::class.java, false, "pdf to images"),
         Tool("pdflock", "PDF লক / আনলক", "পাসওয়ার্ড দিয়ে সুরক্ষা", "pdf", PdfLockActivity::class.java, false, "pdf lock unlock password protect"),
         // অডিও ও ভিডিও

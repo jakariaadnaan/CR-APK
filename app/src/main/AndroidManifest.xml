@@ -121,7 +121,6 @@
         <activity android:name=".ImagesToPdfActivity" android:exported="false" />
         <activity android:name=".PdfToImagesActivity" android:exported="false" />
         <activity android:name=".PdfSplitActivity" android:exported="false" />
-        <activity android:name=".PdfExtractActivity" android:exported="false" />
         <activity android:name=".PdfLockActivity" android:exported="false" />
         <activity android:name=".AudioConvertActivity" android:exported="false" />
         <activity android:name=".VideoToAudioActivity" android:exported="false" />
