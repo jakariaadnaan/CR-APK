@@ -2,6 +2,8 @@ package com.example.callrec
 
 object Dict7 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        "PDF ফাইল" to "PDF file",
+        "বাছুন" to "Choose",
         "PDF তৈরি হয়েছে" to "PDF created",
         "PDF লেখা হচ্ছে" to "Writing the PDF",
         "PDF-এর পেজ কেমন হবে ঠিক করুন" to "Choose how the PDF pages look",

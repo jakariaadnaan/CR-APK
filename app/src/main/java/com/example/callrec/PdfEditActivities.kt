@@ -40,28 +40,46 @@ abstract class PdfBase : GuardedActivity() {
         PDFBoxResourceLoader.init(applicationContext)
     }
 
+    private var actText = ""
+    private var actClick: (() -> Unit)? = null
+    private var pickThumb: android.widget.ImageView? = null
+
+    private fun pickPdf() {
+        val i = Intent(Intent.ACTION_OPEN_DOCUMENT)
+        i.addCategory(Intent.CATEGORY_OPENABLE)
+        i.type = "application/pdf"
+        startActivityForResult(i, 85)
+    }
+
     protected fun pickCard(): LinearLayout {
-        val c = card(14)
-        val row = LinearLayout(this)
-        row.orientation = LinearLayout.HORIZONTAL
-        row.gravity = android.view.Gravity.CENTER_VERTICAL
-        row.addView(pill(tr("PDF বাছুন")) {
-            val i = Intent(Intent.ACTION_OPEN_DOCUMENT)
-            i.addCategory(Intent.CATEGORY_OPENABLE)
-            i.type = "application/pdf"
-            startActivityForResult(i, 85)
-        }, lp(r = 12))
-        info = label(tr("কোনো PDF বাছা হয়নি"), 13f, Ui.MUTED)
-        row.addView(info, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        c.addView(row, lp())
+        val c = LinearLayout(this)
+        c.orientation = LinearLayout.HORIZONTAL
+        c.gravity = android.view.Gravity.CENTER_VERTICAL
+        c.background = bg(Ui.CARD, 14, Ui.LINE, 1)
+        c.setPadding(dp(12), dp(10), dp(12), dp(10))
+        val tv = thumbView(44, 58)
+        pickThumb = tv
+        c.addView(tv, lp(width = dp(44), height = dp(58), r = 12))
+        val m = LinearLayout(this)
+        m.orientation = LinearLayout.VERTICAL
+        m.addView(label(tr("PDF ফাইল"), 11f, Ui.MUTED))
+        info = label(tr("কোনো PDF বাছা হয়নি"), 14f, Ui.TEXT, true)
+        info.maxLines = 2
+        info.ellipsize = android.text.TextUtils.TruncateAt.MIDDLE
+        m.addView(info, lp(t = 2))
+        c.addView(m, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        val ch = label(tr("বাছুন"), 13f, Ui.PRIMARY, true)
+        ch.setPadding(dp(10), dp(8), dp(4), dp(8))
+        c.addView(ch)
+        c.setOnClickListener { it.tapFx(); pickPdf() }
         return c
     }
 
     protected fun chip(text: String, on: Boolean, click: () -> Unit): TextView {
         val c = label(text, 14f, if (on) Color.WHITE else Ui.PRIMARY, true)
         c.gravity = android.view.Gravity.CENTER
-        c.background = bg(if (on) Ui.PRIMARY else Ui.CARD, 20, Ui.PRIMARY, 1)
-        c.setPadding(dp(16), dp(8), dp(16), dp(8))
+        c.background = bg(if (on) Ui.PRIMARY else Ui.BG, 12, if (on) Ui.PRIMARY else Ui.LINE, 1)
+        c.setPadding(dp(16), dp(9), dp(16), dp(9))
         c.setOnClickListener { click() }
         return c
     }
@@ -71,6 +89,10 @@ abstract class PdfBase : GuardedActivity() {
         e.hint = hint
         e.inputType = type
         e.setTextColor(Ui.TEXT)
+        e.setHintTextColor(Ui.MUTED)
+        e.textSize = 15f
+        e.background = bg(Ui.BG, 12, Ui.LINE, 1)
+        e.setPadding(dp(14), dp(12), dp(14), dp(12))
         return e
     }
 
@@ -120,7 +142,7 @@ abstract class PdfBase : GuardedActivity() {
                 try { lastOut?.let { u -> contentResolver.openFileDescriptor(u, "r")?.use { size = it.statSize } } } catch (e: Throwable) { }
                 Usage.done(this, javaClass.simpleName, size, pdfName + ".pdf")
             }
-            runOnUiThread { status.text = res; actionBuzz() }
+            runOnUiThread { status.text = res; status.setTextColor(if (ok) Ui.GREEN else Ui.RED); actionBuzz() }
         }.start()
     }
 
@@ -166,6 +188,7 @@ abstract class PdfBase : GuardedActivity() {
                     pdfName = if (name.lowercase().endsWith(".pdf")) name.substring(0, name.length - 4) else name
                     info.text = name + (if (ee) tr(" · পাসওয়ার্ড দেওয়া") else " · " + bn(nn.toString()) + tr(" পেজ"))
                     status.text = ""
+                    pdfThumb(u, 160) { bmp, _ -> pickThumb?.setImageBitmap(bmp) }
                     onLoaded()
                 }
             }
@@ -177,22 +200,55 @@ abstract class PdfBase : GuardedActivity() {
     }
 
     protected fun screen(title: String, vararg cards: android.view.View) {
+        window.statusBarColor = Ui.BG
+        window.navigationBarColor = Ui.NAV
+        @Suppress("DEPRECATION")
+        window.decorView.systemUiVisibility = if (Ui.dark) 0 else android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+        val rt = LinearLayout(this)
+        rt.orientation = LinearLayout.VERTICAL
+        rt.setBackgroundColor(Ui.BG)
+        rt.addView(pdfHeader(title, "", { finish() }), lp())
         val scroll = ScrollView(this)
         val box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
-        box.setPadding(dp(14), dp(14), dp(14), dp(24))
+        box.setPadding(dp(16), dp(8), dp(16), dp(20))
         scroll.addView(box)
         for (c in cards) box.addView(c, lp(b = 12))
-        setScreen(title, scroll)
+        rt.addView(scroll, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
+        val click = actClick
+        if (click != null) {
+            val bar = LinearLayout(this)
+            bar.orientation = LinearLayout.VERTICAL
+            bar.addView(bigButton(actText) { click() }, lp(height = dp(52)))
+            rt.addView(bottomBar(bar), lp())
+        }
+        setContentView(rt)
     }
 
+    /** The result area (shown once there is a message) and the hint; the button itself goes in the bottom bar. */
     protected fun actionCard(btn: String, hintText: String, click: () -> Unit): LinearLayout {
-        val res = card(14)
-        status = label("", 14f, Ui.TEXT)
-        res.addView(status, lp(b = 10))
-        res.addView(pill(btn) { click() })
-        if (hintText.isNotEmpty()) res.addView(label(hintText, 12f, Ui.MUTED), lp(t = 8))
-        return res
+        actText = btn
+        actClick = click
+        val wrap = LinearLayout(this)
+        wrap.orientation = LinearLayout.VERTICAL
+        status = label("", 14f, Ui.TEXT, true)
+        val res = LinearLayout(this)
+        res.orientation = LinearLayout.VERTICAL
+        res.background = bg(Ui.mix(Ui.PRIMARY, Ui.CARD, 0.93f), 16, Ui.LINE, 1)
+        res.setPadding(dp(14), dp(12), dp(14), dp(12))
+        res.addView(status)
+        res.visibility = android.view.View.GONE
+        status.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) {
+                res.visibility = if (s.isNullOrEmpty()) android.view.View.GONE else android.view.View.VISIBLE
+                if (!s.isNullOrEmpty()) status.setTextColor(Ui.TEXT)
+            }
+        })
+        wrap.addView(res, lp())
+        if (hintText.isNotEmpty()) wrap.addView(label(hintText, 12f, Ui.MUTED), lp(t = 8, l = 2))
+        return wrap
     }
 }
 
