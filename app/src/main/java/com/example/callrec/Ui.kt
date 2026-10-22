@@ -453,7 +453,7 @@ fun Activity.navBar(selected: Int): View {
     bar.setPadding(dp(8), dp(8), dp(8), dp(10))
     wrap.addView(bar, lp())
     val names = listOf(tr("হোম"), tr("ক্যাটাগরি"), tr("প্রিয়"), tr("সেটিংস"))
-    val icons = listOf(R.drawable.ic_home, R.drawable.ic_grid, R.drawable.ic_star, R.drawable.ic_lock)
+    val icons = listOf(R.drawable.ic_home, R.drawable.ic_grid, R.drawable.ic_star, R.drawable.ic_settings)
     for (i in 0..3) {
         val item = LinearLayout(this)
         item.orientation = LinearLayout.VERTICAL
