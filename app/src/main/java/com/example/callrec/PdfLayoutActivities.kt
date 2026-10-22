@@ -220,12 +220,9 @@ class CollageActivity : GuardedActivity() {
         colRow = LinearLayout(this)
         o.addView(colRow, lp(t = 8))
         box.addView(o, lp(b = 12))
-        val a = card(14)
         status = label("", 14f, Ui.TEXT)
-        a.addView(status, lp(b = 10))
-        a.addView(pill(tr("কোলাজ বানান")) { go() })
-        box.addView(a)
-        setScreen(tr("ছবির কোলাজ"), scroll)
+        box.addView(statusCard(status))
+        setPdfScreen(tr("ছবির কোলাজ"), scroll, tr("কোলাজ বানান")) { go() }
         chips()
     }
 

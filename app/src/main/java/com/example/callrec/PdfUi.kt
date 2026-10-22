@@ -145,3 +145,49 @@ class PercentRing(ctx: Context) : View(ctx) {
         c.drawText(s, (width - p.measureText(s)) / 2f, height / 2f + 10f * d, p)
     }
 }
+
+/** A result card that only shows while [status] has some text. */
+fun Activity.statusCard(status: TextView): View {
+    val res = LinearLayout(this)
+    res.orientation = LinearLayout.VERTICAL
+    res.background = bg(Ui.mix(Ui.PRIMARY, Ui.CARD, 0.93f), 16, Ui.LINE, 1)
+    res.setPadding(dp(14), dp(12), dp(14), dp(12))
+    status.setTextColor(Ui.TEXT)
+    res.addView(status)
+    res.visibility = if (status.text.isNullOrEmpty()) View.GONE else View.VISIBLE
+    status.addTextChangedListener(object : android.text.TextWatcher {
+        override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+        override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+        override fun afterTextChanged(s: android.text.Editable?) {
+            res.visibility = if (s.isNullOrEmpty()) View.GONE else View.VISIBLE
+        }
+    })
+    return res
+}
+
+/** Gives a text box the same look as the other inputs. */
+fun Activity.styleInput(e: android.widget.EditText) {
+    e.setTextColor(Ui.TEXT)
+    e.setHintTextColor(Ui.MUTED)
+    e.textSize = 15f
+    e.background = bg(Ui.BG, 12, Ui.LINE, 1)
+    e.setPadding(dp(14), dp(12), dp(14), dp(12))
+}
+
+/** Header, scrolling body and a fixed bottom button, like the step screens. */
+fun Activity.setPdfScreen(title: String, body: View, btn: String, onClick: () -> Unit) {
+    window.statusBarColor = Ui.BG
+    window.navigationBarColor = Ui.NAV
+    @Suppress("DEPRECATION")
+    window.decorView.systemUiVisibility = if (Ui.dark) 0 else View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+    val rt = LinearLayout(this)
+    rt.orientation = LinearLayout.VERTICAL
+    rt.setBackgroundColor(Ui.BG)
+    rt.addView(pdfHeader(title, "", { finish() }), lp())
+    rt.addView(body, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
+    val bar = LinearLayout(this)
+    bar.orientation = LinearLayout.VERTICAL
+    bar.addView(bigButton(btn) { onClick() }, lp(height = dp(52)))
+    rt.addView(bottomBar(bar), lp())
+    setContentView(rt)
+}

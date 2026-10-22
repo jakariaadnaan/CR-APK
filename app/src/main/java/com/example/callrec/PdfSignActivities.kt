@@ -376,7 +376,7 @@ class TextToPdfActivity : GuardedActivity() {
         val c = card(14)
         input = EditText(this)
         input.hint = tr("এখানে লিখুন বা পেস্ট করুন")
-        input.setTextColor(Ui.TEXT)
+        styleInput(input)
         input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
         input.minLines = 8
         input.gravity = Gravity.TOP
@@ -385,12 +385,9 @@ class TextToPdfActivity : GuardedActivity() {
         row = LinearLayout(this)
         c.addView(row, lp(t = 6))
         box.addView(c, lp(b = 12))
-        val a = card(14)
         status = label("", 14f, Ui.TEXT)
-        a.addView(status, lp(b = 10))
-        a.addView(pill(tr("PDF বানান")) { go() })
-        box.addView(a)
-        setScreen(tr("লেখা থেকে PDF"), scroll)
+        box.addView(statusCard(status))
+        setPdfScreen(tr("লেখা থেকে PDF"), scroll, tr("PDF বানান")) { go() }
         chips()
     }
 

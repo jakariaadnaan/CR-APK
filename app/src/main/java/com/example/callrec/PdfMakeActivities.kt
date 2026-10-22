@@ -43,7 +43,7 @@ class WebToPdfActivity : GuardedActivity() {
         val c = card(14)
         url = EditText(this)
         url.hint = "https://example.com"
-        url.setTextColor(Ui.TEXT)
+        styleInput(url)
         url.setSingleLine(true)
         url.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
         url.imeOptions = EditorInfo.IME_ACTION_GO
@@ -57,12 +57,9 @@ class WebToPdfActivity : GuardedActivity() {
         val wc = card(6)
         wc.addView(web, lp(height = dp(380)))
         box.addView(wc, lp(b = 12))
-        val a = card(14)
         status = label(tr("পেজ খুলে নিচের বোতাম চাপুন। খোলা পর্দায় \"PDF হিসেবে সংরক্ষণ\" বাছুন।"), 13f, Ui.MUTED)
-        a.addView(status, lp(b = 10))
-        a.addView(pill(tr("PDF করুন")) { print() })
-        box.addView(a)
-        setScreen(tr("ওয়েবপেজ থেকে PDF"), scroll)
+        box.addView(statusCard(status))
+        setPdfScreen(tr("ওয়েবপেজ থেকে PDF"), scroll, tr("PDF করুন")) { print() }
     }
 
     private fun load() {
@@ -123,12 +120,9 @@ class CameraPdfActivity : GuardedActivity() {
         listBox = LinearLayout(this)
         listBox.orientation = LinearLayout.VERTICAL
         box.addView(listBox, lp(b = 12))
-        val a = card(14)
         status = label("", 14f, Ui.TEXT)
-        a.addView(status, lp(b = 10))
-        a.addView(pill(tr("PDF বানান")) { go() })
-        box.addView(a)
-        setScreen(tr("ক্যামেরা থেকে PDF"), scroll)
+        box.addView(statusCard(status))
+        setPdfScreen(tr("ক্যামেরা থেকে PDF"), scroll, tr("PDF বানান")) { go() }
         render()
     }
 
@@ -295,12 +289,9 @@ class InvoicePdfActivity : GuardedActivity() {
         note = edit(tr("মন্তব্য (ঐচ্ছিক)"))
         nt.addView(note)
         box.addView(nt, lp(b = 12))
-        val a = card(14)
         status = label("", 14f, Ui.TEXT)
-        a.addView(status, lp(b = 10))
-        a.addView(pill(tr("ইনভয়েস PDF বানান")) { go() })
-        box.addView(a)
-        setScreen(tr("ইনভয়েস বানান"), scroll)
+        box.addView(statusCard(status))
+        setPdfScreen(tr("ইনভয়েস বানান"), scroll, tr("ইনভয়েস PDF বানান")) { go() }
         addRow(); addRow()
     }
 
