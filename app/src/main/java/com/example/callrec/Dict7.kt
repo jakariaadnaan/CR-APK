@@ -2,6 +2,19 @@ package com.example.callrec
 
 object Dict7 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        " পেজে আড়াআড়ি ওয়াটারমার্ক বসবে" to " pages will get a diagonal watermark",
+        " পেজের নিচে নম্বর বসবে" to " pages will get a number at the bottom",
+        "PDF-এর তথ্য বদলানো হবে" to "The PDF's information will be changed",
+        "কাজ হয়ে গেছে" to "Done",
+        "কী যোগ বা বদল করবেন ঠিক করুন" to "Choose what to add or change",
+        "কীওয়ার্ড, তৈরির অ্যাপের নাম ইত্যাদি তথ্য মুছে যাবে।" to "Keywords, creator app name and similar info will be removed.",
+        "নম্বর সংখ্যা ইংরেজিতে বসবে।" to "Numbers appear in English digits.",
+        "পেজ নম্বর, ওয়াটারমার্ক বা PDF-এর তথ্য" to "Page numbers, watermark or PDF info",
+        "পেজে যোগ করা হচ্ছে" to "Adding to pages",
+        "শিরোনাম, লেখক ও বিষয় বদলান" to "Change title, author and subject",
+        "শুধু ইংরেজি অক্ষর ও সংখ্যা চলবে।" to "Only English letters and digits are allowed.",
+        "সব " to "All ",
+        "সব পেজে হালকা আড়াআড়ি লেখা" to "Light diagonal text on every page",
         " পেজ থাকবে" to " pages will remain",
         " পেজ সাজানো হবে" to " pages will be arranged",
         "অপ্রয়োজনীয় পেজ বাদ দিন" to "Remove pages you don't need",
