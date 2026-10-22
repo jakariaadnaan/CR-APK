@@ -2,6 +2,21 @@ package com.example.callrec
 
 object Dict7 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        "PDF Edit" to "PDF Edit",
+        "PDF বা ছবি খুলে এডিট করুন" to "Open a PDF or pictures and edit",
+        "PDF বা ছবি খুলে পেজ এডিট করুন" to "Open a PDF or pictures and edit the pages",
+        "PDF সংরক্ষণ" to "Save PDF",
+        "আরও এডিট করুন" to "Edit More",
+        "এডিট করতে ফাইল খুলুন" to "Open a file to edit",
+        "কাজ হচ্ছে…" to "Working…",
+        "ছবি খোলা যায়নি" to "Could not open the pictures",
+        "থাকি" to "Stay",
+        "ফোন থেকে একটি PDF অথবা এক বা একাধিক ছবি বাছুন" to "Choose a PDF or one or more pictures from your phone",
+        "বের হই" to "Leave",
+        "রিসাইজ" to "Resize",
+        "শেষ পেজটি মুছে ফেলা যাবে না" to "The last page cannot be deleted",
+        "সংরক্ষণ না করলে এডিটগুলো হারিয়ে যাবে। বের হবেন?" to "Unsaved edits will be lost. Leave?",
+        "↶ পূর্বাবস্থা" to "↶ Undo",
         "PDF ফাইল" to "PDF file",
         "বাছুন" to "Choose",
         "PDF তৈরি হয়েছে" to "PDF created",
