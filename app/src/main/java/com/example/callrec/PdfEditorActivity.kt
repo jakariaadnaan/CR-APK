@@ -17,6 +17,16 @@ import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.Bundle
 import android.os.ParcelFileDescriptor
+import android.print.PageRange
+import android.print.PrintAttributes
+import android.print.PrintDocumentAdapter
+import android.print.PrintDocumentInfo
+import android.print.PrintManager
+import android.provider.DocumentsContract
+import com.tom_roush.pdfbox.multipdf.PDFMergerUtility
+import com.tom_roush.pdfbox.multipdf.Splitter
+import com.tom_roush.pdfbox.pdmodel.encryption.AccessPermission
+import com.tom_roush.pdfbox.pdmodel.encryption.StandardProtectionPolicy
 import android.view.Gravity
 import android.view.View
 import android.widget.FrameLayout
@@ -65,6 +75,11 @@ class PdfEditorActivity : GuardedActivity() {
     private var placing = false
     private var sigBmp: Bitmap? = null
     private var placeView: PlaceView? = null
+    private var lockPass: String? = null
+    private var lockAes256 = true
+    private var pendingSplit: List<Int>? = null
+    private var pendingEvery = 1
+    private var exportFmt = 1
     private var wmSizeText = 0.96f
     private var wmSizeLogo = 0.5f
     private var wmTab = 0
@@ -401,7 +416,7 @@ class PdfEditorActivity : GuardedActivity() {
     }
 
     /** Runs an edit on a copy of the current file; the copy becomes the new current file. */
-    private fun apply(edit: (PDDocument) -> Unit) {
+    private fun apply(after: (() -> Unit)? = null, edit: (PDDocument) -> Unit) {
         if (busy) return
         busy = true
         pageLabel?.text = tr("কাজ হচ্ছে…")
@@ -425,6 +440,7 @@ class PdfEditorActivity : GuardedActivity() {
                     if (pageIdx >= n) pageIdx = n - 1
                 } else Toast.makeText(this, tr("কাজটি করা যায়নি"), Toast.LENGTH_SHORT).show()
                 refreshPage()
+                if (ok) after?.invoke()
             }
         }.start()
     }
@@ -473,6 +489,11 @@ class PdfEditorActivity : GuardedActivity() {
         val tt = label(title, 16f, dText, true)
         tt.setPadding(dp(14), 0, dp(14), dp(8))
         box.addView(tt)
+        val list = LinearLayout(this)
+        list.orientation = LinearLayout.VERTICAL
+        val sv = ScrollView(this)
+        sv.addView(list)
+        box.addView(sv)
         for ((glyph, name, act) in rows) {
             val r = LinearLayout(this)
             r.gravity = Gravity.CENTER_VERTICAL
@@ -482,7 +503,7 @@ class PdfEditorActivity : GuardedActivity() {
             r.addView(gl, lp(width = dp(30), r = 12))
             r.addView(label(name, 15f, dText))
             r.setOnClickListener { d.dismiss(); act() }
-            box.addView(r)
+            list.addView(r)
         }
         d.setContentView(box)
         d.window?.setBackgroundDrawableResource(android.R.color.transparent)
@@ -495,6 +516,14 @@ class PdfEditorActivity : GuardedActivity() {
         val rows = ArrayList<Triple<String, String, () -> Unit>>()
         rows.add(Triple("Ⓦ", tr("ওয়াটারমার্ক যোগ করুন"), { watermarkDialog() }))
         rows.add(Triple("✍", tr("ডিজিটাল সই যোগ করুন"), { signDialog() }))
+        rows.add(Triple("✂", tr("PDF ভাগ করুন"), { splitDialog() }))
+        rows.add(Triple("⊕", tr("PDF জোড়া দিন"), { pickMore() }))
+        rows.add(Triple("🔒", if (lockPass != null) tr("PDF লক (চালু আছে)") else tr("PDF লক করুন"), { protectDialog() }))
+        rows.add(Triple("⇲", tr("PDF ছোট করুন"), { compressDialog() }))
+        rows.add(Triple("✎", tr("নাম বদলান"), { renameDialog() }))
+        rows.add(Triple("⎙", tr("প্রিন্ট"), { printDoc() }))
+        rows.add(Triple("⇪", tr("শেয়ার"), { shareSheet() }))
+        rows.add(Triple("🖼", tr("ছবি হিসেবে এক্সপোর্ট"), { exportDialog() }))
         sheet(baseName, rows)
     }
 
@@ -787,7 +816,7 @@ class PdfEditorActivity : GuardedActivity() {
     }
 
     /** Replaces the chosen pages with filtered pictures of themselves (the text stops being selectable). */
-    private fun filterPages(doc: PDDocument, srcFile: File, list: List<Int>, mode: Int) {
+    private fun filterPages(doc: PDDocument, srcFile: File, list: List<Int>, mode: Int, dpi: Int = 150, q: Float = 0.85f) {
         val pfd = ParcelFileDescriptor.open(srcFile, ParcelFileDescriptor.MODE_READ_ONLY)
         val rd = PdfRenderer(pfd)
         try {
@@ -795,19 +824,19 @@ class PdfEditorActivity : GuardedActivity() {
                 val pg = rd.openPage(idx)
                 val ptsW = pg.width
                 val ptsH = pg.height
-                val sc = Math.min(150f / 72f, 2000f / Math.max(ptsW, ptsH))
+                val sc = Math.min(dpi / 72f, 2000f / Math.max(ptsW, ptsH))
                 val bw = Math.max(1, Math.round(ptsW * sc))
                 val bh = Math.max(1, Math.round(ptsH * sc))
                 val bmp = Bitmap.createBitmap(bw, bh, Bitmap.Config.ARGB_8888)
                 bmp.eraseColor(Color.WHITE)
                 pg.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                 pg.close()
-                val out = filtered(bmp, mode)
+                val out = if (mode < 0) bmp else filtered(bmp, mode)
                 val np = PDPage(PDRectangle(ptsW.toFloat(), ptsH.toFloat()))
                 val old = doc.getPage(idx)
                 doc.pages.insertBefore(np, old)
                 doc.removePage(idx + 1)
-                val img = JPEGFactory.createFromImage(doc, out, 0.85f)
+                val img = JPEGFactory.createFromImage(doc, out, q)
                 PDPageContentStream(doc, np).use { cs -> cs.drawImage(img, 0f, 0f, ptsW.toFloat(), ptsH.toFloat()) }
                 if (out !== bmp) bmp.recycle()
                 out.recycle()
@@ -891,6 +920,394 @@ class PdfEditorActivity : GuardedActivity() {
         page.cropBox = box
     }
 
+
+    // ------------------------------------------------------------------ file menu
+
+    /** Copies the current file out, adding the password first when the lock is on. */
+    private fun writeCurTo(f: File, os: java.io.OutputStream) {
+        val pw = lockPass
+        if (pw == null) {
+            f.inputStream().use { it.copyTo(os) }
+        } else {
+            PDDocument.load(f).use { doc ->
+                val policy = StandardProtectionPolicy(pw, pw, AccessPermission())
+                policy.encryptionKeyLength = if (lockAes256) 256 else 128
+                policy.isPreferAES = true
+                doc.protect(policy)
+                doc.save(os)
+            }
+        }
+    }
+
+    private fun darkField(hint: String, value: String, password: Boolean = false, number: Boolean = false): android.widget.EditText {
+        val e = android.widget.EditText(this)
+        e.setText(value)
+        e.hint = hint
+        e.setTextColor(dText)
+        e.setHintTextColor(dMuted)
+        e.textSize = 15f
+        e.setSingleLine(true)
+        e.inputType = when {
+            password -> android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+            number -> android.text.InputType.TYPE_CLASS_NUMBER
+            else -> android.text.InputType.TYPE_CLASS_TEXT
+        }
+        e.background = bg(dBg, 12, dLine, 1)
+        e.setPadding(dp(14), dp(12), dp(14), dp(12))
+        return e
+    }
+
+    private fun darkOption(title: String, on: Boolean, click: () -> Unit): View {
+        val r = LinearLayout(this)
+        r.gravity = Gravity.CENTER_VERTICAL
+        r.background = bg(if (on) Ui.mix(Ui.PRIMARY, dCard, 0.8f) else dBg, 12, if (on) Ui.PRIMARY else dLine, if (on) 2 else 1)
+        r.setPadding(dp(14), dp(12), dp(14), dp(12))
+        r.addView(label(title, 14f, dText, on), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        if (on) r.addView(label("✓", 14f, Ui.PRIMARY, true))
+        r.setOnClickListener { click() }
+        return r
+    }
+
+    /** A dark bottom form: a title, content built by [content], and Cancel / OK buttons. */
+    private fun formSheet(title: String, ok: String, content: (LinearLayout, () -> Unit) -> Unit, onOk: () -> Boolean) {
+        val d = android.app.Dialog(this)
+        val box = LinearLayout(this)
+        box.orientation = LinearLayout.VERTICAL
+        val g = GradientDrawable()
+        g.setColor(dCard)
+        g.cornerRadii = floatArrayOf(dp(20).toFloat(), dp(20).toFloat(), dp(20).toFloat(), dp(20).toFloat(), 0f, 0f, 0f, 0f)
+        box.background = g
+        box.setPadding(dp(18), dp(16), dp(18), dp(18))
+        box.addView(label(title, 16f, dText, true))
+        val body = LinearLayout(this)
+        body.orientation = LinearLayout.VERTICAL
+        val sv = ScrollView(this)
+        sv.addView(body)
+        box.addView(sv, lp(t = 12))
+        lateinit var rebuild: () -> Unit
+        rebuild = { body.removeAllViews(); content(body, rebuild) }
+        rebuild()
+        val row = LinearLayout(this)
+        row.addView(outlineButton(tr("বাতিল")) { d.dismiss() }, LinearLayout.LayoutParams(0, dp(48), 1f).also { it.setMargins(0, 0, dp(8), 0) })
+        row.addView(bigButton(ok) { if (onOk()) d.dismiss() }, LinearLayout.LayoutParams(0, dp(48), 1f))
+        box.addView(row, lp(t = 16))
+        d.setContentView(box)
+        d.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        d.window?.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
+        d.window?.setGravity(Gravity.BOTTOM)
+        d.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        d.show()
+    }
+
+    private fun renameDialog() {
+        var f: android.widget.EditText? = null
+        formSheet(tr("নাম বদলান"), tr("নাম বদলান"), { body, _ ->
+            body.addView(label(tr("নতুন নাম"), 12f, dMuted))
+            val e = darkField(tr("ফাইলের নাম"), baseName)
+            f = e
+            body.addView(e, lp(t = 6))
+        }) {
+            val n = f?.text?.toString()?.trim()?.replace(Regex("[\\\\/:*?\"<>|]"), "_")?.removeSuffix(".pdf") ?: ""
+            if (n.isEmpty()) { Toast.makeText(this, tr("নাম লিখুন"), Toast.LENGTH_SHORT).show(); false }
+            else { baseName = n; render(); true }
+        }
+    }
+
+    private fun protectDialog() {
+        var p1: android.widget.EditText? = null
+        var p2: android.widget.EditText? = null
+        var strong = lockAes256
+        formSheet(tr("PDF লক করুন"), tr("ঠিক আছে"), { body, rebuild ->
+            body.addView(label(tr("সংরক্ষণ বা শেয়ারের সময় PDF-এ এই পাসওয়ার্ড বসবে। ফাঁকা রাখলে লক বন্ধ থাকবে।"), 12f, dMuted))
+            val a = darkField(tr("পাসওয়ার্ড"), p1?.text?.toString() ?: lockPass ?: "", password = true)
+            val b = darkField(tr("আবার লিখুন"), p2?.text?.toString() ?: lockPass ?: "", password = true)
+            p1 = a
+            p2 = b
+            body.addView(a, lp(t = 10))
+            body.addView(b, lp(t = 8))
+            body.addView(label(tr("নিরাপত্তার মাত্রা"), 12f, dMuted), lp(t = 12, b = 6))
+            body.addView(darkOption("AES-256 (" + tr("প্রস্তাবিত") + ")", strong) { strong = true; rebuild() }, lp(b = 6))
+            body.addView(darkOption("AES-128", !strong) { strong = false; rebuild() }, lp())
+        }) {
+            val a = p1?.text?.toString() ?: ""
+            val b = p2?.text?.toString() ?: ""
+            if (a.isEmpty() && b.isEmpty()) { lockPass = null; Toast.makeText(this, tr("লক বন্ধ আছে"), Toast.LENGTH_SHORT).show(); true }
+            else if (a != b) { Toast.makeText(this, tr("পাসওয়ার্ড মেলেনি"), Toast.LENGTH_SHORT).show(); false }
+            else { lockPass = a; lockAes256 = strong; Toast.makeText(this, tr("সংরক্ষণের সময় PDF লক হবে"), Toast.LENGTH_SHORT).show(); true }
+        }
+    }
+
+    private fun compressDialog() {
+        var level = 1
+        formSheet(tr("PDF ছোট করুন"), tr("ছোট করুন"), { body, rebuild ->
+            body.addView(label(tr("পেজগুলো ছবি হয়ে যায়, তাই লেখা সিলেক্ট বা কপি করা যাবে না।"), 12f, dMuted))
+            val names = listOf(tr("কম (সেরা মান)"), tr("মাঝারি (প্রস্তাবিত)"), tr("বেশি (সবচেয়ে ছোট)"))
+            for (k in 0..2) body.addView(darkOption(names[k], level == k) { level = k; rebuild() }, lp(t = if (k == 0) 10 else 6))
+        }) {
+            val dpi = intArrayOf(150, 110, 72)[level]
+            val q = floatArrayOf(0.8f, 0.65f, 0.45f)[level]
+            val before = cur().length()
+            val src = cur()
+            apply({
+                val after = cur().length()
+                Toast.makeText(this, tr("আগে: ") + Img.human(before) + tr("  →  এখন: ") + Img.human(after), Toast.LENGTH_LONG).show()
+            }) { doc -> filterPages(doc, src, (0 until doc.numberOfPages).toList(), -1, dpi, q) }
+            true
+        }
+    }
+
+    private fun splitDialog() {
+        var mode = 0
+        var spec: android.widget.EditText? = null
+        var every: android.widget.EditText? = null
+        formSheet(tr("PDF ভাগ করুন"), tr("ভাগ করুন"), { body, rebuild ->
+            body.addView(darkOption(tr("বাছা পেজ দিয়ে নতুন PDF"), mode == 0) { mode = 0; rebuild() }, lp(b = 6))
+            body.addView(darkOption(tr("প্রতি কয়েক পেজে আলাদা ফাইল"), mode == 1) { mode = 1; rebuild() }, lp())
+            if (mode == 0) {
+                val e = darkField(tr("যেমন: 1-3, 5, 8-"), spec?.text?.toString() ?: "")
+                spec = e
+                body.addView(e, lp(t = 10))
+                body.addView(label(tr("মোট ") + bn(pageCount.toString()) + tr(" পেজ। এডিটর আগের মতোই থাকবে, ভাগ করা ফাইল আলাদা সংরক্ষিত হবে।"), 11f, dMuted), lp(t = 6))
+            } else {
+                val e = darkField("1", every?.text?.toString() ?: "1", number = true)
+                every = e
+                body.addView(e, lp(t = 10))
+                body.addView(label(tr("ফোল্ডার বাছতে হবে, ফাইলের নাম হবে নাম_part1.pdf, নাম_part2.pdf…"), 11f, dMuted), lp(t = 6))
+            }
+        }) {
+            if (mode == 0) {
+                val l = parsePageSpec(spec?.text?.toString() ?: "", pageCount)
+                if (l == null) { Toast.makeText(this, tr("পেজ নম্বর ঠিক নেই (মোট ") + bn(pageCount.toString()) + tr(" পেজ)"), Toast.LENGTH_LONG).show(); false }
+                else {
+                    pendingSplit = l
+                    val i = Intent(Intent.ACTION_CREATE_DOCUMENT)
+                    i.addCategory(Intent.CATEGORY_OPENABLE)
+                    i.type = "application/pdf"
+                    i.putExtra(Intent.EXTRA_TITLE, baseName + "_pages.pdf")
+                    saveOrAsk(i, 75)
+                    true
+                }
+            } else {
+                val n = asciiDigits(every?.text?.toString() ?: "").toIntOrNull()
+                if (n == null || n < 1) { Toast.makeText(this, tr("পেজ সংখ্যা ঠিক নেই"), Toast.LENGTH_SHORT).show(); false }
+                else { pendingEvery = n; treeOrAsk(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), 76); true }
+            }
+        }
+    }
+
+    private fun doSplitPages(out: Uri) {
+        val list = pendingSplit ?: return
+        val f = cur()
+        busy = true
+        Thread {
+            var ok = true
+            try {
+                PDDocument.load(f).use { doc ->
+                    val nd = PDDocument()
+                    for (i in list) nd.importPage(doc.getPage(i))
+                    contentResolver.openOutputStream(out)?.use { nd.save(it) }
+                    nd.close()
+                }
+            } catch (e: Throwable) { ok = false }
+            runOnUiThread {
+                busy = false
+                if (ok) Usage.done(this, "PdfEditorActivity", Img.size(this, out), Img.name(this, out))
+                Toast.makeText(this, if (ok) tr("সংরক্ষিত হয়েছে: ") + bn(list.size.toString()) + tr(" পেজের PDF") else tr("কাজটি করা যায়নি"), Toast.LENGTH_LONG).show()
+            }
+        }.start()
+    }
+
+    private fun doSplitEvery(tree: Uri) {
+        val f = cur()
+        val n = pendingEvery
+        val base = baseName
+        busy = true
+        Thread {
+            var made = 0
+            try {
+                val parent = DocumentsContract.buildDocumentUriUsingTree(tree, DocumentsContract.getTreeDocumentId(tree))
+                PDDocument.load(f).use { doc ->
+                    val sp = Splitter()
+                    sp.setSplitAtPage(n)
+                    for ((i, part) in sp.split(doc).withIndex()) {
+                        val u = DocumentsContract.createDocument(contentResolver, parent, "application/pdf", base + "_part" + (i + 1) + ".pdf")
+                        if (u != null) {
+                            contentResolver.openOutputStream(u)?.use { part.save(it) }
+                            made++
+                        }
+                        part.close()
+                    }
+                }
+            } catch (e: Throwable) { }
+            runOnUiThread {
+                busy = false
+                if (made > 0) Usage.done(this, "PdfEditorActivity", 0, "")
+                Toast.makeText(this, if (made > 0) tr("সংরক্ষিত হয়েছে: ") + bn(made.toString()) + tr("টি ফাইল") else tr("কাজটি করা যায়নি"), Toast.LENGTH_LONG).show()
+            }
+        }.start()
+    }
+
+    private fun pickMore() {
+        val i = Intent(Intent.ACTION_OPEN_DOCUMENT)
+        i.addCategory(Intent.CATEGORY_OPENABLE)
+        i.type = "*/*"
+        i.putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("application/pdf", "image/*"))
+        i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        startActivityForResult(i, 77)
+    }
+
+    /** Adds the pages of the chosen PDFs, or the chosen pictures as new pages, after the current pages. */
+    private fun mergeIn(list: List<Uri>) {
+        apply { doc ->
+            val util = PDFMergerUtility()
+            for ((k, u) in list.withIndex()) {
+                val mime = contentResolver.getType(u) ?: ""
+                val tmp = File(cacheDir, "merge_in_$k.pdf")
+                if (mime.startsWith("image/")) {
+                    val b = Img.decode(this, u, 2200) ?: continue
+                    val pd = PdfDocument()
+                    val s = 842f / Math.max(b.width, b.height)
+                    val pw = Math.max(1, (b.width * s).toInt())
+                    val ph = Math.max(1, (b.height * s).toInt())
+                    val page = pd.startPage(PdfDocument.PageInfo.Builder(pw, ph, 1).create())
+                    page.canvas.drawColor(Color.WHITE)
+                    page.canvas.drawBitmap(b, null, RectF(0f, 0f, pw.toFloat(), ph.toFloat()), Paint(Paint.FILTER_BITMAP_FLAG))
+                    pd.finishPage(page)
+                    tmp.outputStream().use { pd.writeTo(it) }
+                    pd.close()
+                    b.recycle()
+                } else {
+                    contentResolver.openInputStream(u)?.use { ins -> tmp.outputStream().use { ins.copyTo(it) } }
+                }
+                PDDocument.load(tmp).use { other -> util.appendDocument(doc, other) }
+            }
+        }
+    }
+
+    private fun printDoc() {
+        val f = cur()
+        val n = pageCount
+        val name = baseName
+        val pm = getSystemService(PRINT_SERVICE) as PrintManager
+        pm.print(name, object : PrintDocumentAdapter() {
+            override fun onLayout(old: PrintAttributes?, attrs: PrintAttributes?, cancel: android.os.CancellationSignal?, cb: LayoutResultCallback, extras: Bundle?) {
+                if (cancel?.isCanceled == true) { cb.onLayoutCancelled(); return }
+                cb.onLayoutFinished(PrintDocumentInfo.Builder("$name.pdf").setContentType(PrintDocumentInfo.CONTENT_TYPE_DOCUMENT).setPageCount(n).build(), true)
+            }
+            override fun onWrite(pages: Array<out PageRange>?, dest: ParcelFileDescriptor, cancel: android.os.CancellationSignal?, cb: WriteResultCallback) {
+                try {
+                    java.io.FileOutputStream(dest.fileDescriptor).use { o -> f.inputStream().use { it.copyTo(o) } }
+                    cb.onWriteFinished(arrayOf(PageRange.ALL_PAGES))
+                } catch (e: Throwable) { cb.onWriteFailed(e.message) }
+            }
+        }, null)
+    }
+
+    private fun shareSheet() {
+        val rows = ArrayList<Triple<String, String, () -> Unit>>()
+        rows.add(Triple("PDF", tr("PDF শেয়ার করুন"), { shareFile(0) }))
+        rows.add(Triple("JPG", tr("এই পেজ JPG হিসেবে"), { shareFile(1) }))
+        rows.add(Triple("PNG", tr("এই পেজ PNG হিসেবে"), { shareFile(2) }))
+        sheet(tr("শেয়ার"), rows)
+    }
+
+    private fun renderBitmap(f: File, idx: Int, dpi: Int): Bitmap? {
+        return try {
+            val pfd = ParcelFileDescriptor.open(f, ParcelFileDescriptor.MODE_READ_ONLY)
+            val rd = PdfRenderer(pfd)
+            try {
+                val pg = rd.openPage(idx)
+                val sc = Math.min(dpi / 72f, 3000f / Math.max(pg.width, pg.height))
+                val b = Bitmap.createBitmap(Math.max(1, Math.round(pg.width * sc)), Math.max(1, Math.round(pg.height * sc)), Bitmap.Config.ARGB_8888)
+                b.eraseColor(Color.WHITE)
+                pg.render(b, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                pg.close()
+                b
+            } finally {
+                rd.close()
+                pfd.close()
+            }
+        } catch (e: Throwable) { null }
+    }
+
+    private fun shareFile(kind: Int) {
+        if (busy) return
+        busy = true
+        val f = cur()
+        val idx = pageIdx
+        val base = baseName.replace(Regex("[^A-Za-z0-9_-]"), "_").ifEmpty { "document" }
+        Thread {
+            var name = ""
+            var mime = "application/pdf"
+            try {
+                val dir = File(cacheDir, "share")
+                dir.mkdirs()
+                dir.listFiles()?.forEach { it.delete() }
+                when (kind) {
+                    0 -> { name = "$base.pdf"; File(dir, name).outputStream().use { writeCurTo(f, it) } }
+                    else -> {
+                        val b = renderBitmap(f, idx, 200) ?: throw IllegalStateException()
+                        val png = kind == 2
+                        name = base + "_page" + (idx + 1) + (if (png) ".png" else ".jpg")
+                        mime = if (png) "image/png" else "image/jpeg"
+                        File(dir, name).writeBytes(Img.encode(b, if (png) 0 else 1, 92))
+                        b.recycle()
+                    }
+                }
+            } catch (e: Throwable) { name = "" }
+            runOnUiThread {
+                busy = false
+                if (name.isEmpty()) { Toast.makeText(this, tr("কাজটি করা যায়নি"), Toast.LENGTH_SHORT).show(); return@runOnUiThread }
+                val u = Uri.parse("content://com.example.callrec.share/" + Uri.encode(name))
+                val i = Intent(Intent.ACTION_SEND)
+                i.type = mime
+                i.putExtra(Intent.EXTRA_STREAM, u)
+                i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                startActivity(Intent.createChooser(i, tr("শেয়ার")))
+            }
+        }.start()
+    }
+
+    private fun exportDialog() {
+        formSheet(tr("ছবি হিসেবে এক্সপোর্ট"), tr("ফোল্ডার বাছুন"), { body, rebuild ->
+            body.addView(label(tr("প্রতিটি পেজ আলাদা ছবি হয়ে বাছা ফোল্ডারে যাবে।"), 12f, dMuted))
+            body.addView(darkOption("JPG", exportFmt == 1) { exportFmt = 1; rebuild() }, lp(t = 10, b = 6))
+            body.addView(darkOption("PNG", exportFmt == 0) { exportFmt = 0; rebuild() }, lp())
+        }) {
+            treeOrAsk(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), 78)
+            true
+        }
+    }
+
+    private fun doExport(tree: Uri) {
+        val f = cur()
+        val n = pageCount
+        val fmt = exportFmt
+        val base = baseName
+        busy = true
+        Thread {
+            var made = 0
+            try {
+                val parent = DocumentsContract.buildDocumentUriUsingTree(tree, DocumentsContract.getTreeDocumentId(tree))
+                for (i in 0 until n) {
+                    val b = renderBitmap(f, i, 200) ?: continue
+                    val bytes = Img.encode(b, fmt, 92)
+                    b.recycle()
+                    val u = DocumentsContract.createDocument(contentResolver, parent, if (fmt == 0) "image/png" else "image/jpeg", base + "_page" + (i + 1) + (if (fmt == 0) ".png" else ".jpg"))
+                    if (u != null) {
+                        contentResolver.openOutputStream(u)?.use { it.write(bytes) }
+                        made++
+                    }
+                }
+            } catch (e: Throwable) { }
+            runOnUiThread {
+                busy = false
+                if (made > 0) Usage.done(this, "PdfEditorActivity", 0, "")
+                Toast.makeText(this, if (made > 0) tr("সংরক্ষিত হয়েছে: ") + bn(made.toString()) + tr("টি ছবি") else tr("কাজটি করা যায়নি"), Toast.LENGTH_LONG).show()
+            }
+        }.start()
+    }
+
     // ------------------------------------------------------------------ save and result
 
     private fun save() {
@@ -908,7 +1325,7 @@ class PdfEditorActivity : GuardedActivity() {
         Thread {
             var ok = true
             try {
-                contentResolver.openOutputStream(out)?.use { o -> f.inputStream().use { it.copyTo(o) } }
+                contentResolver.openOutputStream(out)?.use { o -> writeCurTo(f, o) }
             } catch (e: Throwable) { ok = false }
             runOnUiThread {
                 busy = false
@@ -980,6 +1397,15 @@ class PdfEditorActivity : GuardedActivity() {
                 if (l.isNotEmpty()) openImages(l)
             }
             73 -> data.data?.let { writeOut(it) }
+            75 -> data.data?.let { doSplitPages(it) }
+            76 -> data.data?.let { doSplitEvery(it) }
+            77 -> {
+                val cd = data.clipData
+                val l = ArrayList<Uri>()
+                if (cd != null) for (k in 0 until cd.itemCount) l.add(cd.getItemAt(k).uri) else data.data?.let { l.add(it) }
+                if (l.isNotEmpty()) mergeIn(l)
+            }
+            78 -> data.data?.let { doExport(it) }
         }
     }
 }

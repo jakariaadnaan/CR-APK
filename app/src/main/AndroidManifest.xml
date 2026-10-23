@@ -123,6 +123,7 @@
         <activity android:name=".PdfSplitActivity" android:exported="false" />
         <activity android:name=".PdfLockActivity" android:exported="false" />
         <activity android:name=".PdfEditorActivity" android:exported="false" />
+        <provider android:name=".ShareProvider" android:authorities="com.example.callrec.share" android:exported="false" android:grantUriPermissions="true" />
         <activity android:name=".AudioConvertActivity" android:exported="false" />
         <activity android:name=".VideoToAudioActivity" android:exported="false" />
         <activity android:name=".VideoInfoActivity" android:exported="false" />
