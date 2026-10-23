@@ -65,6 +65,8 @@ class PdfEditorActivity : GuardedActivity() {
     private var placing = false
     private var sigBmp: Bitmap? = null
     private var placeView: PlaceView? = null
+    private var wmSizeText = 0.96f
+    private var wmSizeLogo = 0.5f
     private var wmTab = 0
     private var wmText = ""
     private var wmLogo: Uri? = null
@@ -553,6 +555,29 @@ class PdfEditorActivity : GuardedActivity() {
             box.addView(pick, lp())
             box.addView(label(tr("লোগো বা ছবি পেজের মাঝখানে হালকা করে বসবে।"), 11f, dMuted), lp(t = 6))
         }
+        // size: from the tiniest mark up to the whole page width
+        val sizeNow = { if (wmTab == 0) wmSizeText else wmSizeLogo }
+        val head = LinearLayout(this)
+        head.gravity = Gravity.CENTER_VERTICAL
+        head.addView(label(tr("আকার"), 12f, dMuted), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        val pct = label(bn(Math.round(sizeNow() * 100).toString()) + "%", 12f, dText, true)
+        head.addView(pct)
+        box.addView(head, lp(t = 14))
+        val sb = android.widget.SeekBar(this)
+        sb.max = 1000
+        sb.progress = Math.round((sizeNow() - 0.01f) / 0.99f * 1000f).coerceIn(0, 1000)
+        sb.progressTintList = android.content.res.ColorStateList.valueOf(Ui.PRIMARY)
+        sb.thumbTintList = android.content.res.ColorStateList.valueOf(Ui.PRIMARY)
+        sb.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(s: android.widget.SeekBar?, v: Int, fromUser: Boolean) {
+                val f = 0.01f + v / 1000f * 0.99f
+                if (wmTab == 0) wmSizeText = f else wmSizeLogo = f
+                pct.text = bn(Math.max(1, Math.round(f * 100)).toString()) + "%"
+            }
+            override fun onStartTrackingTouch(s: android.widget.SeekBar?) {}
+            override fun onStopTrackingTouch(s: android.widget.SeekBar?) {}
+        })
+        box.addView(sb, lp(t = 2))
         val row = LinearLayout(this)
         row.addView(outlineButton(tr("বাতিল")) { d.dismiss() }, LinearLayout.LayoutParams(0, dp(48), 1f).also { it.setMargins(0, 0, dp(8), 0) })
         row.addView(bigButton(tr("চালিয়ে যান")) {
@@ -589,6 +614,7 @@ class PdfEditorActivity : GuardedActivity() {
         val tab = wmTab
         val text = wmText
         val logo = wmLogo
+        val sizeF = if (tab == 0) wmSizeText else wmSizeLogo
         apply { doc ->
             val bmp = (if (tab == 0) textBitmap(text) else Img.decode(this, logo!!, 900)) ?: throw IllegalStateException()
             val img = LosslessFactory.createFromImage(doc, bmp)
@@ -600,7 +626,7 @@ class PdfEditorActivity : GuardedActivity() {
                 val page = doc.getPage(k)
                 val box = page.cropBox
                 val m = Math.min(box.width, box.height)
-                val tw = if (tab == 0) m * 0.96f else m * 0.5f
+                val tw = m * sizeF
                 val th = tw * aspect
                 val cx = box.lowerLeftX + box.width / 2f
                 val cy = box.lowerLeftY + box.height / 2f
