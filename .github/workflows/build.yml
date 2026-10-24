@@ -21,7 +21,10 @@ jobs:
           gradle-version: "8.9"
 
       - name: Build debug APK
-        run: gradle assembleDebug --no-daemon --stacktrace
+        run: set -o pipefail; gradle assembleDebug --no-daemon 2>&1 | tee build.log
+      - name: Show errors
+        if: failure()
+        run: grep -E "^e: |What went wrong|Could not|requires|minCompileSdk" -A2 build.log | head -20 | while IFS= read -r l; do echo "::error::$l"; done
 
       - uses: actions/upload-artifact@v6
         with:
