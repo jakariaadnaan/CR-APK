@@ -99,6 +99,10 @@ class PdfEditorActivity : GuardedActivity() {
     private var ocrLang = 0
     private var ocrAll = true
     private var ocrText = ""
+    private var enh = EnhParams()
+    private var enhAll = false
+    private var enhIv: ImageView? = null
+    private var enhToken = 0
     private var subTitle = ""
     private var subSub = ""
     private var subBtn = ""
@@ -469,7 +473,7 @@ class PdfEditorActivity : GuardedActivity() {
             tools.addView(glyphTool("⟲", tr("আবার তুলুন")) { retakePick() }, w())
             tools.addView(glyphTool("⌗", tr("ক্রপ")) { startCrop() }, w())
             tools.addView(glyphTool("↻", tr("ঘোরান")) { rotate() }, w())
-            tools.addView(glyphTool("◐", tr("ফিল্টার")) { filter() }, w())
+            tools.addView(glyphTool("◐", tr("ফিল্টার")) { enhancePage() }, w())
             tools.addView(glyphTool("⤢", tr("রিসাইজ")) { resizePage() }, w())
             tools.addView(glyphTool("✕", tr("মুছুন")) { deletePage() }, w())
             root.addView(tools, lp(l = 12, r = 12))
@@ -1459,7 +1463,7 @@ class PdfEditorActivity : GuardedActivity() {
     }
 
     /** Replaces the chosen pages with filtered pictures of themselves (the text stops being selectable). */
-    private fun filterPages(doc: PDDocument, srcFile: File, list: List<Int>, mode: Int, dpi: Int = 150, q: Float = 0.85f) {
+    private fun filterPages(doc: PDDocument, srcFile: File, list: List<Int>, mode: Int, dpi: Int = 150, q: Float = 0.85f, params: EnhParams? = null) {
         val pfd = ParcelFileDescriptor.open(srcFile, ParcelFileDescriptor.MODE_READ_ONLY)
         val rd = PdfRenderer(pfd)
         try {
@@ -1474,7 +1478,7 @@ class PdfEditorActivity : GuardedActivity() {
                 bmp.eraseColor(Color.WHITE)
                 pg.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                 pg.close()
-                val out = if (mode < 0) bmp else filtered(bmp, mode)
+                val out = if (params != null) enhance(bmp, params) else if (mode < 0) bmp else filtered(bmp, mode)
                 val np = PDPage(PDRectangle(ptsW.toFloat(), ptsH.toFloat()))
                 val old = doc.getPage(idx)
                 doc.pages.insertBefore(np, old)
@@ -1516,6 +1520,171 @@ class PdfEditorActivity : GuardedActivity() {
             out.setPixels(px, 0, out.width, 0, 0, out.width, out.height)
         }
         return out
+    }
+
+    // ------------------------------------------------------------------ clean-up and filters
+
+    private fun enhance(src: Bitmap, p: EnhParams): Bitmap {
+        var bm = src
+        if (p.clean) bm = whitenBackground(src)
+        val out = Bitmap.createBitmap(bm.width, bm.height, Bitmap.Config.ARGB_8888)
+        val cm = ColorMatrix()
+        cm.setSaturation(if (p.gray || p.bw) 0f else p.sat)
+        val c = p.contrast
+        val b = p.bright + (1 - c) * 128f
+        cm.postConcat(ColorMatrix(floatArrayOf(c, 0f, 0f, 0f, b, 0f, c, 0f, 0f, b, 0f, 0f, c, 0f, b, 0f, 0f, 0f, 1f, 0f)))
+        val paint = Paint(Paint.FILTER_BITMAP_FLAG)
+        paint.colorFilter = ColorMatrixColorFilter(cm)
+        Canvas(out).drawBitmap(bm, 0f, 0f, paint)
+        if (bm !== src) bm.recycle()
+        if (p.bw) {
+            val n = out.width * out.height
+            val px = IntArray(n)
+            out.getPixels(px, 0, out.width, 0, 0, out.width, out.height)
+            var thr = 150
+            if (!p.clean) {
+                var sum = 0L
+                for (v in px) sum += (v shr 8) and 0xFF
+                thr = (sum / Math.max(1, n) * 0.82f).toInt()
+            }
+            for (k in 0 until n) px[k] = if (((px[k] shr 8) and 0xFF) > thr) Color.WHITE else Color.BLACK
+            out.setPixels(px, 0, out.width, 0, 0, out.width, out.height)
+        }
+        return out
+    }
+
+    /** Divides the picture by a blurred copy of its own paper colour: removes shadows and uneven light, makes paper white. */
+    private fun whitenBackground(src: Bitmap): Bitmap {
+        val w = src.width
+        val h = src.height
+        val sw = Math.max(4, w / 16)
+        val sh = Math.max(4, h / 16)
+        val small = Bitmap.createScaledBitmap(src, sw, sh, true)
+        val sp = IntArray(sw * sh)
+        small.getPixels(sp, 0, sw, 0, 0, sw, sh)
+        small.recycle()
+        // grow the light parts (text is thin, so it disappears and only the paper is left)
+        var cur = sp
+        for (round in 0 until 2) {
+            val nx = IntArray(sw * sh)
+            for (y in 0 until sh) for (x in 0 until sw) {
+                var r = 0; var g = 0; var b = 0
+                for (dy in -1..1) for (dx in -1..1) {
+                    val xx = (x + dx).coerceIn(0, sw - 1)
+                    val yy = (y + dy).coerceIn(0, sh - 1)
+                    val v = cur[yy * sw + xx]
+                    r = Math.max(r, Color.red(v)); g = Math.max(g, Color.green(v)); b = Math.max(b, Color.blue(v))
+                }
+                nx[y * sw + x] = Color.rgb(r, g, b)
+            }
+            cur = nx
+        }
+        val bgSmall = Bitmap.createBitmap(sw, sh, Bitmap.Config.ARGB_8888)
+        bgSmall.setPixels(cur, 0, sw, 0, 0, sw, sh)
+        val bgBig = Bitmap.createScaledBitmap(bgSmall, w, h, true)
+        bgSmall.recycle()
+        val a = IntArray(w * h)
+        val bgp = IntArray(w * h)
+        src.getPixels(a, 0, w, 0, 0, w, h)
+        bgBig.getPixels(bgp, 0, w, 0, 0, w, h)
+        bgBig.recycle()
+        for (k in a.indices) {
+            val v = a[k]
+            val g = bgp[k]
+            val r = Math.min(255, Color.red(v) * 255 / Math.max(40, Color.red(g)))
+            val gr = Math.min(255, Color.green(v) * 255 / Math.max(40, Color.green(g)))
+            val bl = Math.min(255, Color.blue(v) * 255 / Math.max(40, Color.blue(g)))
+            a[k] = Color.rgb(r, gr, bl)
+        }
+        val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        out.setPixels(a, 0, w, 0, 0, w, h)
+        return out
+    }
+
+    private fun enhancePage() {
+        if (curBmp == null || busy) return
+        enh = EnhParams()
+        enhAll = false
+        lateinit var build: (LinearLayout) -> Unit
+        build = { body ->
+            val iv = ImageView(this)
+            iv.scaleType = ImageView.ScaleType.FIT_CENTER
+            iv.setBackgroundColor(Color.WHITE)
+            enhIv = iv
+            body.addView(iv, lp(height = (resources.displayMetrics.heightPixels * 0.36f).toInt()))
+            updateEnhPreview()
+            val hs = android.widget.HorizontalScrollView(this)
+            hs.isHorizontalScrollBarEnabled = false
+            val row = LinearLayout(this)
+            val presets = listOf(tr("মূল") to EnhParams(), tr("অটো") to EnhParams(clean = true, contrast = 1.1f, bright = 4f),
+                tr("সাদাকালো") to EnhParams(clean = true, bw = true), tr("গ্রেস্কেল") to EnhParams(gray = true, clean = true),
+                tr("উজ্জ্বল রঙ") to EnhParams(clean = true, contrast = 1.2f, bright = 8f, sat = 1.2f))
+            for ((n, pr) in presets) {
+                val c = label(n, 13f, dText, true)
+                c.gravity = Gravity.CENTER
+                c.background = bg(dCard, 18, dLine, 1)
+                c.setPadding(dp(16), dp(9), dp(16), dp(9))
+                c.setOnClickListener { enh = pr.copy(); subBuild = build; render() }
+                row.addView(c, lp(r = 8))
+            }
+            hs.addView(row)
+            body.addView(hs, lp(t = 12))
+            fun slider(name: String, min: Float, max: Float, v: Float, set: (Float) -> Unit) {
+                val hd = LinearLayout(this)
+                hd.addView(label(name, 12f, dMuted), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+                body.addView(hd, lp(t = 12))
+                val sb = android.widget.SeekBar(this)
+                sb.max = 1000
+                sb.progress = ((v - min) / (max - min) * 1000f).toInt().coerceIn(0, 1000)
+                sb.progressTintList = android.content.res.ColorStateList.valueOf(Ui.PRIMARY)
+                sb.thumbTintList = android.content.res.ColorStateList.valueOf(Ui.PRIMARY)
+                sb.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
+                    override fun onProgressChanged(s: android.widget.SeekBar?, pv: Int, fromUser: Boolean) {
+                        if (fromUser) { set(min + pv / 1000f * (max - min)); updateEnhPreview() }
+                    }
+                    override fun onStartTrackingTouch(s: android.widget.SeekBar?) {}
+                    override fun onStopTrackingTouch(s: android.widget.SeekBar?) {}
+                })
+                body.addView(sb)
+            }
+            slider(tr("উজ্জ্বলতা"), -60f, 60f, enh.bright) { enh.bright = it }
+            slider(tr("কনট্রাস্ট"), 0.6f, 2f, enh.contrast) { enh.contrast = it }
+            slider(tr("রঙের গাঢ়তা"), 0f, 2f, enh.sat) { enh.sat = it }
+            val sw = android.widget.Switch(this)
+            sw.text = tr("ব্যাকগ্রাউন্ড সাদা ও ছায়া কমানো")
+            sw.setTextColor(dText)
+            sw.isChecked = enh.clean
+            sw.setOnCheckedChangeListener { _, on -> enh.clean = on; updateEnhPreview() }
+            body.addView(sw, lp(t = 14))
+            val sw2 = android.widget.Switch(this)
+            sw2.text = tr("সব পেজে প্রয়োগ করুন")
+            sw2.setTextColor(dText)
+            sw2.isChecked = enhAll
+            sw2.setOnCheckedChangeListener { _, on -> enhAll = on }
+            body.addView(sw2, lp(t = 10))
+            body.addView(label(tr("পরে ইচ্ছা হলে পূর্বাবস্থায় মূল ছবি ফিরে পাবেন।"), 11f, dMuted), lp(t = 8))
+        }
+        openSub(tr("ছবি পরিষ্কার"), "", tr("ঠিক আছে"), dark = true, cancel = true, build = build) {
+            val list = if (enhAll) (0 until pageCount).toList() else listOf(pageIdx)
+            val src = cur()
+            val pr = enh.copy()
+            stage = 1
+            render()
+            apply { doc -> filterPages(doc, src, list, -1, 150, 0.85f, pr) }
+        }
+    }
+
+    private fun updateEnhPreview() {
+        val src = curBmp ?: return
+        val iv = enhIv ?: return
+        val token = ++enhToken
+        val pr = enh.copy()
+        Thread {
+            val s = Math.min(1f, 700f / src.width)
+            val small = if (s < 1f) Bitmap.createScaledBitmap(src, Math.max(1, (src.width * s).toInt()), Math.max(1, (src.height * s).toInt()), true) else src
+            val out = enhance(small, pr)
+            runOnUiThread { if (token == enhToken && enhIv === iv) iv.setImageBitmap(out) }
+        }.start()
     }
 
     // ------------------------------------------------------------------ Recent Files
@@ -2921,3 +3090,13 @@ private class AnnotView(ctx: Context, val items: ArrayList<AnnotItem>) : View(ct
         return true
     }
 }
+
+/** The settings of the clean-up page: brightness, contrast, colour strength, and a few switches. */
+private data class EnhParams(
+    var bright: Float = 0f,
+    var contrast: Float = 1f,
+    var sat: Float = 1f,
+    var gray: Boolean = false,
+    var bw: Boolean = false,
+    var clean: Boolean = false
+)

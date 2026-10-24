@@ -2,6 +2,18 @@ package com.example.callrec
 
 object Dict7 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        "মূল" to "Original",
+        "অটো" to "Auto",
+        "সাদাকালো" to "Black & White",
+        "গ্রেস্কেল" to "Grayscale",
+        "উজ্জ্বল রঙ" to "Vivid colour",
+        "উজ্জ্বলতা" to "Brightness",
+        "কনট্রাস্ট" to "Contrast",
+        "রঙের গাঢ়তা" to "Colour strength",
+        "ব্যাকগ্রাউন্ড সাদা ও ছায়া কমানো" to "Whiten background and reduce shadows",
+        "সব পেজে প্রয়োগ করুন" to "Apply to all pages",
+        "পরে ইচ্ছা হলে পূর্বাবস্থায় মূল ছবি ফিরে পাবেন।" to "You can get the original back with Undo.",
+        "ছবি পরিষ্কার" to "Clean-up",
         "হিন্দি" to "Hindi",
         "বাংলা চেনা পরিষ্কার ছাপা লেখায় ভালো চলে, হাতের লেখায় ভুল হবে।" to "Bangla works well on clear printed text, handwriting will have mistakes.",
         "ছবির লেখা চিনুন (OCR)" to "Recognize Text (OCR)",
