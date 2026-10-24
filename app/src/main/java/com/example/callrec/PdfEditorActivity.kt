@@ -1158,7 +1158,7 @@ class PdfEditorActivity : GuardedActivity() {
         lateinit var build: (LinearLayout) -> Unit
         build = { body ->
             body.addView(label(tr("লেখার ভাষা"), 14f, Ui.TEXT, true), lp(b = 8))
-            val langs = listOf(tr("ইংরেজি ও অন্যান্য লাতিন ভাষা"), tr("হিন্দি, নেপালি, মারাঠি"), tr("চীনা"), tr("জাপানি"), tr("কোরিয়ান"))
+            val langs = listOf(tr("ইংরেজি ও অন্যান্য লাতিন ভাষা"), tr("বাংলা"), tr("হিন্দি"), tr("চীনা"))
             for ((k, n) in langs.withIndex()) {
                 val on = ocrLang == k
                 val r = LinearLayout(this)
@@ -1184,7 +1184,7 @@ class PdfEditorActivity : GuardedActivity() {
                 r.setOnClickListener { ocrAll = kk == 0; subBuild = build; render() }
                 body.addView(r, lp(b = 6))
             }
-            body.addView(label(tr("বাংলা লেখা এখনো চেনা যায় না।"), 11f, Ui.MUTED), lp(t = 10))
+            body.addView(label(tr("বাংলা চেনা পরিষ্কার ছাপা লেখায় ভালো চলে, হাতের লেখায় ভুল হবে।"), 11f, Ui.MUTED), lp(t = 10))
         }
         openSub(tr("ছবির লেখা চিনুন"), tr("স্ক্যান করা পেজ বা ছবি থেকে লেখা বের করুন"), tr("লেখা চিনুন"), build = build) { runOcr() }
     }
@@ -1202,22 +1202,39 @@ class PdfEditorActivity : GuardedActivity() {
             val sb = StringBuilder()
             var failed = false
             try {
-                val rec: com.google.mlkit.vision.text.TextRecognizer = when (lang) {
-                    1 -> com.google.mlkit.vision.text.TextRecognition.getClient(com.google.mlkit.vision.text.devanagari.DevanagariTextRecognizerOptions.Builder().build())
-                    2 -> com.google.mlkit.vision.text.TextRecognition.getClient(com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions.Builder().build())
-                    3 -> com.google.mlkit.vision.text.TextRecognition.getClient(com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions.Builder().build())
-                    4 -> com.google.mlkit.vision.text.TextRecognition.getClient(com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions.Builder().build())
-                    else -> com.google.mlkit.vision.text.TextRecognition.getClient(com.google.mlkit.vision.text.latin.TextRecognizerOptions.DEFAULT_OPTIONS)
+                var rec: com.google.mlkit.vision.text.TextRecognizer? = null
+                var tess: com.googlecode.tesseract.android.TessBaseAPI? = null
+                if (lang == 1) {
+                    val root = File(filesDir, "tess")
+                    val td = File(root, "tessdata")
+                    td.mkdirs()
+                    for (n in listOf("ben.traineddata", "eng.traineddata")) {
+                        val o = File(td, n)
+                        if (!o.exists() || o.length() == 0L) assets.open("tessdata/$n").use { i -> o.outputStream().use { i.copyTo(it) } }
+                    }
+                    val t = com.googlecode.tesseract.android.TessBaseAPI()
+                    if (!t.init(root.absolutePath, "ben+eng")) throw IllegalStateException()
+                    tess = t
+                } else {
+                    rec = when (lang) {
+                        2 -> com.google.mlkit.vision.text.TextRecognition.getClient(com.google.mlkit.vision.text.devanagari.DevanagariTextRecognizerOptions.Builder().build())
+                        3 -> com.google.mlkit.vision.text.TextRecognition.getClient(com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions.Builder().build())
+                        else -> com.google.mlkit.vision.text.TextRecognition.getClient(com.google.mlkit.vision.text.latin.TextRecognizerOptions.DEFAULT_OPTIONS)
+                    }
                 }
                 for ((k, i) in pages.withIndex()) {
                     runOnUiThread { dlg.setMessage(tr("লেখা চেনা হচ্ছে… ") + bn((k + 1).toString()) + " / " + bn(pages.size.toString())) }
-                    val b = renderBitmap(f, i, 220) ?: continue
-                    val t = com.google.android.gms.tasks.Tasks.await(rec.process(com.google.mlkit.vision.common.InputImage.fromBitmap(b, 0)))
+                    val b = renderBitmap(f, i, if (tess != null) 300 else 220) ?: continue
+                    val txt = if (tess != null) {
+                        tess.setImage(b)
+                        tess.utF8Text ?: ""
+                    } else com.google.android.gms.tasks.Tasks.await(rec!!.process(com.google.mlkit.vision.common.InputImage.fromBitmap(b, 0))).text
                     b.recycle()
                     if (pages.size > 1) sb.append("--- ").append(tr("পেজ ")).append(i + 1).append(" ---\n")
-                    sb.append(t.text.trim()).append("\n\n")
+                    sb.append(txt.trim()).append("\n\n")
                 }
-                rec.close()
+                rec?.close()
+                tess?.recycle()
             } catch (e: Throwable) { failed = true }
             runOnUiThread {
                 busy = false

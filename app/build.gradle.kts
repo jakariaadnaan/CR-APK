@@ -11,8 +11,8 @@ android {
         applicationId = "com.example.callrec"
         minSdk = 26
         targetSdk = 34
-        versionCode = 106
-        versionName = "1.06"
+        versionCode = 107
+        versionName = "1.07"
     }
 
     // A fixed key is used for every build so a new APK installs over the old one and keeps the data.
@@ -50,6 +50,5 @@ dependencies {
     implementation("com.google.mlkit:text-recognition:16.0.1")
     implementation("com.google.mlkit:text-recognition-devanagari:16.0.1")
     implementation("com.google.mlkit:text-recognition-chinese:16.0.1")
-    implementation("com.google.mlkit:text-recognition-japanese:16.0.1")
-    implementation("com.google.mlkit:text-recognition-korean:16.0.1")
+    implementation("cz.adaptech.tesseract4android:tesseract4android:4.7.0")
 }
