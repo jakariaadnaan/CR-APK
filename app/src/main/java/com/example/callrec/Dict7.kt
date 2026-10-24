@@ -2,6 +2,17 @@ package com.example.callrec
 
 object Dict7 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        "লেখা, হাইলাইট ও আঁকা" to "Text, Highlight & Draw",
+        "কলম" to "Pen",
+        "হাইলাইট" to "Highlight",
+        "আন্ডারলাইন" to "Underline",
+        "কাটা দাগ" to "Strikethrough",
+        "বর্গ" to "Square",
+        "বৃত্ত" to "Circle",
+        "তীর" to "Arrow",
+        "টিক" to "Tick",
+        "↶ শেষটা মুছুন" to "↶ Remove last",
+        "এখানে লিখুন" to "Type here",
         "স্ক্যানার পাওয়া যায়নি, সাধারণ ক্যামেরা খুলছে" to "Scanner not available, opening the normal camera",
         "স্ক্যান করা যায়নি" to "Could not scan",
         "ক্যামেরায় স্ক্যান করুন" to "Scan with Camera",

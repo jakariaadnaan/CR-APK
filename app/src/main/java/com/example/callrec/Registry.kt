@@ -70,7 +70,6 @@ object Registry {
         Tool("pdftext", "PDF থেকে লেখা", "লেখা বের করে .txt করুন", "pdf", PdfTextActivity::class.java, keywords = "pdf to text extract text txt"),
         Tool("pdfimgs", "PDF থেকে ছবি", "ভেতরের ছবিগুলো আলাদা করুন", "pdf", PdfImagesActivity::class.java, keywords = "extract images pdf pictures"),
         Tool("web2pdf", "ওয়েবপেজ থেকে PDF", "ওয়েব ঠিকানা থেকে PDF সংরক্ষণ", "pdf", WebToPdfActivity::class.java, online = true, keywords = "webpage website html url to pdf print"),
-        Tool("campdf", "ক্যামেরা থেকে PDF", "ছবি তুলে PDF বানান", "pdf", CameraPdfActivity::class.java, keywords = "camera scan document photo pdf"),
         Tool("invoice", "ইনভয়েস বানান", "পণ্যের তালিকা থেকে বিল PDF", "pdf", InvoicePdfActivity::class.java, keywords = "invoice bill receipt memo pdf"),
         Tool("pdfnup", "এক শিটে একাধিক পেজ", "২/৪/৬/৯ পেজ বা বুকলেট", "pdf", PdfNupActivity::class.java, keywords = "pages per sheet n-up booklet print pdf"),
         Tool("pdfsize", "পেজ সাইজ বদলান", "A4, A3, Letter ইত্যাদি", "pdf", PdfPageSizeActivity::class.java, keywords = "page size resize a4 a3 letter pdf"),

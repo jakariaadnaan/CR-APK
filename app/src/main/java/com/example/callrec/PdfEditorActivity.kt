@@ -91,6 +91,11 @@ class PdfEditorActivity : GuardedActivity() {
     private var pageLabel: TextView? = null
     private var undoBtn: TextView? = null
     private var wmPreview = false
+    private var annotating = false
+    private var annotMode = 0
+    private var annotColor = Color.parseColor("#E53935")
+    private val annotItems = ArrayList<AnnotItem>()
+    private var annotView: AnnotView? = null
     private var subTitle = ""
     private var subSub = ""
     private var subBtn = ""
@@ -372,7 +377,7 @@ class PdfEditorActivity : GuardedActivity() {
         head.addView(un)
         val mn = label("⋮", 22f, dText, true)
         mn.setPadding(dp(10), dp(4), dp(4), dp(4))
-        mn.setOnClickListener { if (!busy && !cropping && !placing && !wmPreview) openMenu() }
+        mn.setOnClickListener { if (!busy && !cropping && !placing && !wmPreview && !annotating) openMenu() }
         head.addView(mn)
         root.addView(head, lp())
 
@@ -417,6 +422,16 @@ class PdfEditorActivity : GuardedActivity() {
             area.removeAllViews()
             area.addView(pv, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT).also { it.setMargins(dp(8), dp(4), dp(8), dp(4)) })
         }
+        if (annotating && curBmp != null) {
+            val av = AnnotView(this, annotItems)
+            av.bmp = curBmp
+            av.mode = annotMode
+            av.color = annotColor
+            av.askText = { u, v -> askAnnotText(u, v) }
+            annotView = av
+            area.removeAllViews()
+            area.addView(av, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT).also { it.setMargins(dp(8), dp(4), dp(8), dp(4)) })
+        }
         root.addView(area, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
 
         val pl = label("", 12f, dMuted)
@@ -424,7 +439,9 @@ class PdfEditorActivity : GuardedActivity() {
         pageLabel = pl
         root.addView(pl, lp(t = 4, b = 6))
 
-        if (placing) {
+        if (annotating) {
+            annotBar()
+        } else if (placing) {
             val br = LinearLayout(this)
             br.setPadding(dp(16), dp(10), dp(16), dp(14))
             br.addView(outlineButton(tr("বাতিল")) { placing = false; render() }, LinearLayout.LayoutParams(0, dp(52), 1f).also { it.setMargins(0, 0, dp(8), 0) })
@@ -476,7 +493,7 @@ class PdfEditorActivity : GuardedActivity() {
     private fun refreshPage() {
         pageLabel?.text = tr("পেজ ") + bn((pageIdx + 1).toString()) + " / " + bn(pageCount.toString())
         undoBtn?.alpha = if (history.size > 1) 1f else 0.35f
-        if (cropping || placing) return
+        if (cropping || placing || annotating) return
         val f = cur()
         val idx = pageIdx
         val token = ++renderToken
@@ -639,6 +656,7 @@ class PdfEditorActivity : GuardedActivity() {
         row("⤓", tr("ডিভাইসে সংরক্ষণ"), true) { save() }
         row("⇪", tr("এক্সপোর্ট করুন…"), true) { exportPage() }
         line()
+        row("✎", tr("লেখা, হাইলাইট ও আঁকা"), false) { startAnnot() }
         row("Ⓦ", tr("ওয়াটারমার্ক যোগ করুন"), false) { watermarkDialog() }
         row("✍", tr("ডিজিটাল সই যোগ করুন"), false) { signDialog() }
         row("✂", tr("PDF ভাগ করুন"), false) { splitDialog() }
@@ -928,11 +946,205 @@ class PdfEditorActivity : GuardedActivity() {
                 val cy = box.lowerLeftY + box.height / 2f
                 PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true, true).use { cs ->
                     cs.setGraphicsStateParameters(gs)
-                    if (tab == 0) cs.transform(Matrix.getRotateInstance(Math.toRadians(45.0), cx, cy))
+                    if (tab == 0) cs.transform(rotAbout(Math.toRadians(45.0), cx, cy))
                     cs.drawImage(img, cx - tw / 2f, cy - th / 2f, tw, th)
                 }
             }
             bmp.recycle()
+        }
+    }
+
+    // ------------------------------------------------------------------ annotate: pen, highlight, text, shapes
+
+    private fun startAnnot() {
+        if (curBmp == null || busy) return
+        annotItems.clear()
+        annotMode = 0
+        annotColor = Color.parseColor("#E53935")
+        annotating = true
+        render()
+    }
+
+    private fun annotBar() {
+        val tools = listOf(
+            Triple(0, "✎", tr("কলম")), Triple(1, "▮", tr("হাইলাইট")), Triple(2, "T", tr("লেখা")),
+            Triple(3, "U", tr("আন্ডারলাইন")), Triple(4, "S", tr("কাটা দাগ")), Triple(5, "▭", tr("বর্গ")),
+            Triple(6, "◯", tr("বৃত্ত")), Triple(7, "➜", tr("তীর")), Triple(8, "✓", tr("টিক"))
+        )
+        val hs = android.widget.HorizontalScrollView(this)
+        hs.isHorizontalScrollBarEnabled = false
+        val row = LinearLayout(this)
+        row.background = bg(dCard, 16)
+        for ((m, g, n) in tools) {
+            val on = annotMode == m
+            val c = LinearLayout(this)
+            c.orientation = LinearLayout.VERTICAL
+            c.gravity = Gravity.CENTER
+            c.setPadding(dp(14), dp(8), dp(14), dp(6))
+            val gl = label(g, 20f, if (on) Ui.PRIMARY else dText, true)
+            gl.gravity = Gravity.CENTER
+            c.addView(gl)
+            val l = label(n, 11f, if (on) Ui.PRIMARY else dMuted)
+            l.gravity = Gravity.CENTER
+            c.addView(l)
+            c.setOnClickListener {
+                annotMode = m
+                if (m == 1) annotColor = Color.parseColor("#FFD400")
+                if (m == 4) annotColor = Color.parseColor("#E53935")
+                render()
+            }
+            row.addView(c)
+        }
+        hs.addView(row)
+        root.addView(hs, lp(l = 12, r = 12))
+
+        val cr = LinearLayout(this)
+        cr.gravity = Gravity.CENTER_VERTICAL
+        cr.setPadding(dp(16), dp(8), dp(16), dp(0))
+        for (hex in listOf("#111111", "#E53935", "#1E63F5", "#2E9E5B", "#FFD400")) {
+            val col = Color.parseColor(hex)
+            val dot = View(this)
+            dot.background = bg(col, 14, if (col == annotColor) Ui.PRIMARY else dLine, if (col == annotColor) 3 else 1)
+            dot.setOnClickListener { annotColor = col; render() }
+            cr.addView(dot, lp(width = dp(28), height = dp(28), r = 12))
+        }
+        cr.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
+        val un = label(tr("↶ শেষটা মুছুন"), 13f, Ui.PRIMARY, true)
+        un.setOnClickListener { if (annotItems.isNotEmpty()) { annotItems.removeAt(annotItems.size - 1); annotView?.invalidate() } }
+        cr.addView(un)
+        root.addView(cr, lp())
+
+        val br = LinearLayout(this)
+        br.setPadding(dp(16), dp(10), dp(16), dp(14))
+        br.addView(outlineButton(tr("বাতিল")) { annotating = false; annotItems.clear(); render() }, LinearLayout.LayoutParams(0, dp(52), 1f).also { it.setMargins(0, 0, dp(8), 0) })
+        br.addView(bigButton(tr("প্রয়োগ করুন")) { applyAnnot() }, LinearLayout.LayoutParams(0, dp(52), 1f))
+        root.addView(br, lp())
+    }
+
+    private fun askAnnotText(u: Float, v: Float) {
+        val e = android.widget.EditText(this)
+        e.hint = tr("এখানে লিখুন")
+        android.app.AlertDialog.Builder(this).setView(e)
+            .setPositiveButton(tr("ঠিক আছে")) { _, _ ->
+                val t = e.text.toString().trim()
+                if (t.isNotEmpty()) {
+                    val a = AnnotItem(2, annotColor)
+                    a.pts.add(android.graphics.PointF(u, v))
+                    a.text = t
+                    a.bmp = annotTextBitmap(t, annotColor)
+                    annotItems.add(a)
+                    annotView?.invalidate()
+                }
+            }.setNegativeButton(tr("বাতিল"), null).show()
+    }
+
+    private fun applyAnnot() {
+        val list = annotItems.toList()
+        val idx = pageIdx
+        annotating = false
+        annotItems.clear()
+        render()
+        if (list.isEmpty()) return
+        apply { doc -> bakeAnnots(doc, doc.getPage(idx), list) }
+    }
+
+    private fun rotAbout(rad: Double, px: Float, py: Float): Matrix {
+        val c = Math.cos(rad).toFloat()
+        val s = Math.sin(rad).toFloat()
+        return Matrix(c, s, -s, c, px - px * c + py * s, py - px * s - py * c)
+    }
+
+    private fun bakeAnnots(doc: PDDocument, page: PDPage, list: List<AnnotItem>) {
+        val cb = page.cropBox
+        val rot = ((page.rotation % 360) + 360) % 360
+        val w = cb.width
+        val h = cb.height
+        val llx = cb.lowerLeftX
+        val lly = cb.lowerLeftY
+        val swap = rot == 90 || rot == 270
+        val dw = if (swap) h else w
+        val dh = if (swap) w else h
+        fun mx(u: Float, v: Float): Float = when (rot) { 0 -> llx + u * w; 90 -> llx + v * w; 180 -> llx + (1 - u) * w; else -> llx + (1 - v) * w }
+        fun my(u: Float, v: Float): Float = when (rot) { 0 -> lly + (1 - v) * h; 90 -> lly + u * h; 180 -> lly + v * h; else -> lly + (1 - u) * h }
+        val lw = Math.max(1f, dw * 0.004f)
+        PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true, true).use { cs ->
+            for (a in list) {
+                val rr = Color.red(a.color)
+                val gg = Color.green(a.color)
+                val bb = Color.blue(a.color)
+                cs.saveGraphicsState()
+                cs.setStrokingColor(rr, gg, bb)
+                cs.setLineCapStyle(1)
+                cs.setLineJoinStyle(1)
+                cs.setLineWidth(lw)
+                fun poly(pts: List<android.graphics.PointF>, close: Boolean) {
+                    cs.moveTo(mx(pts[0].x, pts[0].y), my(pts[0].x, pts[0].y))
+                    for (k in 1 until pts.size) cs.lineTo(mx(pts[k].x, pts[k].y), my(pts[k].x, pts[k].y))
+                    if (close) cs.closePath()
+                    cs.stroke()
+                }
+                val p = a.pts
+                when (a.mode) {
+                    0 -> if (p.size >= 2) poly(p, false)
+                    1 -> if (p.size >= 2) {
+                        val gs = PDExtendedGraphicsState()
+                        gs.strokingAlphaConstant = 0.35f
+                        gs.nonStrokingAlphaConstant = 0.35f
+                        cs.setGraphicsStateParameters(gs)
+                        cs.setLineWidth(dw * 0.03f)
+                        cs.setLineCapStyle(0)
+                        poly(p, false)
+                    }
+                    3, 4 -> if (p.size >= 2) { cs.setLineWidth(lw * 1.4f); poly(listOf(p[0], p[p.size - 1]), false) }
+                    5 -> if (p.size >= 2) {
+                        val a0 = p[0]; val a1 = p[p.size - 1]
+                        poly(listOf(a0, android.graphics.PointF(a1.x, a0.y), a1, android.graphics.PointF(a0.x, a1.y)), true)
+                    }
+                    6 -> if (p.size >= 2) {
+                        val a0 = p[0]; val a1 = p[p.size - 1]
+                        val cu = (a0.x + a1.x) / 2f; val cv = (a0.y + a1.y) / 2f
+                        val ru = Math.abs(a1.x - a0.x) / 2f; val rv = Math.abs(a1.y - a0.y) / 2f
+                        val pts = ArrayList<android.graphics.PointF>()
+                        for (k in 0 until 48) {
+                            val t = k * 2 * Math.PI / 48
+                            pts.add(android.graphics.PointF(cu + (ru * Math.cos(t)).toFloat(), cv + (rv * Math.sin(t)).toFloat()))
+                        }
+                        poly(pts, true)
+                    }
+                    7 -> if (p.size >= 2) {
+                        val a0 = p[0]; val a1 = p[p.size - 1]
+                        poly(listOf(a0, a1), false)
+                        val ang = Math.atan2(((a1.y - a0.y) * dh).toDouble(), ((a1.x - a0.x) * dw).toDouble())
+                        val hl = dw * 0.03
+                        for (sgn in intArrayOf(-1, 1)) {
+                            val t = ang + Math.PI + sgn * 0.5
+                            poly(listOf(a1, android.graphics.PointF(a1.x + (hl * Math.cos(t) / dw).toFloat(), a1.y + (hl * Math.sin(t) / dh).toFloat())), false)
+                        }
+                    }
+                    8 -> if (p.isNotEmpty()) {
+                        val sz = dw * 0.05f
+                        val q = p[0]
+                        cs.setLineWidth(lw * 2f)
+                        poly(listOf(
+                            android.graphics.PointF(q.x - 0.5f * sz / dw, q.y),
+                            android.graphics.PointF(q.x - 0.15f * sz / dw, q.y + 0.4f * sz / dh),
+                            android.graphics.PointF(q.x + 0.55f * sz / dw, q.y - 0.5f * sz / dh)), false)
+                    }
+                    2 -> {
+                        val tb = a.bmp
+                        if (tb != null && p.isNotEmpty()) {
+                            val img = LosslessFactory.createFromImage(doc, tb)
+                            val th = dh * 0.035f
+                            val tw = th * tb.width / tb.height
+                            val x0 = mx(p[0].x, p[0].y)
+                            val y0 = my(p[0].x, p[0].y)
+                            if (rot != 0) cs.transform(rotAbout(Math.toRadians(rot.toDouble()), x0, y0))
+                            cs.drawImage(img, x0, y0 - th, tw, th)
+                        }
+                    }
+                }
+                cs.restoreGraphicsState()
+            }
         }
     }
 
@@ -2386,6 +2598,169 @@ private class PlaceView(ctx: Context) : View(ctx) {
             }
             else -> moving = false
         }
+        return true
+    }
+}
+
+/** One drawn mark on the page, kept as fractions of the page picture (0..1, from the top-left). */
+private class AnnotItem(val mode: Int, val color: Int) {
+    val pts = ArrayList<android.graphics.PointF>()
+    var text = ""
+    var bmp: Bitmap? = null
+}
+
+/** Text as a transparent picture in the given colour (so Bangla works too). */
+private fun annotTextBitmap(text: String, color: Int): Bitmap {
+    val p = Paint(Paint.ANTI_ALIAS_FLAG)
+    p.textSize = 120f
+    p.color = color
+    val w = Math.ceil(p.measureText(text).toDouble()).toInt() + 8
+    val fm = p.fontMetrics
+    val h = Math.ceil((fm.descent - fm.ascent).toDouble()).toInt() + 4
+    val b = Bitmap.createBitmap(Math.max(1, w), Math.max(1, h), Bitmap.Config.ARGB_8888)
+    Canvas(b).drawText(text, 4f, 2f - fm.ascent, p)
+    return b
+}
+
+/** Shows the page and lets the finger draw marks on it. */
+private class AnnotView(ctx: Context, val items: ArrayList<AnnotItem>) : View(ctx) {
+    var bmp: Bitmap? = null
+    var mode = 0
+    var color = Color.RED
+    var askText: ((Float, Float) -> Unit)? = null
+    private val img = RectF()
+    private val d = ctx.resources.displayMetrics.density
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+    private var cur: AnnotItem? = null
+    private var downX = 0f
+    private var downY = 0f
+    private var moved = false
+
+    private fun fit() {
+        val bm = bmp ?: return
+        val s = Math.min(width.toFloat() / bm.width, height.toFloat() / bm.height)
+        val w = bm.width * s
+        val h = bm.height * s
+        img.set((width - w) / 2f, (height - h) / 2f, (width + w) / 2f, (height + h) / 2f)
+    }
+
+    private fun sx(u: Float) = img.left + u * img.width()
+    private fun sy(v: Float) = img.top + v * img.height()
+
+    private fun line(c: Canvas, pts: List<android.graphics.PointF>, close: Boolean) {
+        val path = Path()
+        path.moveTo(sx(pts[0].x), sy(pts[0].y))
+        for (k in 1 until pts.size) path.lineTo(sx(pts[k].x), sy(pts[k].y))
+        if (close) path.close()
+        c.drawPath(path, paint)
+    }
+
+    private fun drawItem(c: Canvas, a: AnnotItem) {
+        val p = a.pts
+        paint.style = Paint.Style.STROKE
+        paint.strokeCap = Paint.Cap.ROUND
+        paint.strokeJoin = Paint.Join.ROUND
+        paint.color = a.color
+        paint.alpha = 255
+        paint.strokeWidth = Math.max(2f * d, img.width() * 0.004f)
+        val w = img.width()
+        val h = img.height()
+        when (a.mode) {
+            0 -> if (p.size >= 2) line(c, p, false)
+            1 -> if (p.size >= 2) {
+                paint.strokeWidth = w * 0.03f
+                paint.strokeCap = Paint.Cap.BUTT
+                paint.alpha = 90
+                line(c, p, false)
+            }
+            3, 4 -> if (p.size >= 2) { paint.strokeWidth *= 1.4f; line(c, listOf(p[0], p[p.size - 1]), false) }
+            5 -> if (p.size >= 2) {
+                val a0 = p[0]; val a1 = p[p.size - 1]
+                line(c, listOf(a0, android.graphics.PointF(a1.x, a0.y), a1, android.graphics.PointF(a0.x, a1.y)), true)
+            }
+            6 -> if (p.size >= 2) {
+                val a0 = p[0]; val a1 = p[p.size - 1]
+                c.drawOval(RectF(sx(Math.min(a0.x, a1.x)), sy(Math.min(a0.y, a1.y)), sx(Math.max(a0.x, a1.x)), sy(Math.max(a0.y, a1.y))), paint)
+            }
+            7 -> if (p.size >= 2) {
+                val a0 = p[0]; val a1 = p[p.size - 1]
+                line(c, listOf(a0, a1), false)
+                val ang = Math.atan2(((a1.y - a0.y) * h).toDouble(), ((a1.x - a0.x) * w).toDouble())
+                val hl = w * 0.03
+                for (sgn in intArrayOf(-1, 1)) {
+                    val t = ang + Math.PI + sgn * 0.5
+                    line(c, listOf(a1, android.graphics.PointF(a1.x + (hl * Math.cos(t) / w).toFloat(), a1.y + (hl * Math.sin(t) / h).toFloat())), false)
+                }
+            }
+            8 -> if (p.isNotEmpty()) {
+                val sz = w * 0.05f
+                val q = p[0]
+                paint.strokeWidth *= 2f
+                line(c, listOf(
+                    android.graphics.PointF(q.x - 0.5f * sz / w, q.y),
+                    android.graphics.PointF(q.x - 0.15f * sz / w, q.y + 0.4f * sz / h),
+                    android.graphics.PointF(q.x + 0.55f * sz / w, q.y - 0.5f * sz / h)), false)
+            }
+            2 -> {
+                val tb = a.bmp
+                if (tb != null && p.isNotEmpty()) {
+                    val th = h * 0.035f
+                    val tw = th * tb.width / tb.height
+                    c.drawBitmap(tb, null, RectF(sx(p[0].x), sy(p[0].y), sx(p[0].x) + tw, sy(p[0].y) + th), Paint(Paint.FILTER_BITMAP_FLAG))
+                }
+            }
+        }
+    }
+
+    override fun onDraw(c: Canvas) {
+        val bm = bmp ?: return
+        fit()
+        c.drawBitmap(bm, null, img, paint)
+        for (a in items) drawItem(c, a)
+        cur?.let { drawItem(c, it) }
+    }
+
+    override fun onTouchEvent(e: android.view.MotionEvent): Boolean {
+        if (img.width() <= 0f) return true
+        val u = ((e.x - img.left) / img.width()).coerceIn(0f, 1f)
+        val v = ((e.y - img.top) / img.height()).coerceIn(0f, 1f)
+        when (e.actionMasked) {
+            android.view.MotionEvent.ACTION_DOWN -> {
+                parent?.requestDisallowInterceptTouchEvent(true)
+                downX = e.x; downY = e.y; moved = false
+                if (mode != 2 && mode != 8) {
+                    val a = AnnotItem(mode, color)
+                    a.pts.add(android.graphics.PointF(u, v))
+                    cur = a
+                }
+            }
+            android.view.MotionEvent.ACTION_MOVE -> {
+                if (Math.abs(e.x - downX) > 8 * d || Math.abs(e.y - downY) > 8 * d) moved = true
+                val a = cur
+                if (a != null) {
+                    when (mode) {
+                        0, 1 -> a.pts.add(android.graphics.PointF(u, v))
+                        3, 4 -> { while (a.pts.size > 1) a.pts.removeAt(1); a.pts.add(android.graphics.PointF(u, a.pts[0].y)) }
+                        else -> { while (a.pts.size > 1) a.pts.removeAt(1); a.pts.add(android.graphics.PointF(u, v)) }
+                    }
+                }
+            }
+            android.view.MotionEvent.ACTION_UP -> {
+                val a = cur
+                if (a != null && moved && a.pts.size >= 2) items.add(a)
+                cur = null
+                if (!moved) {
+                    if (mode == 2) askText?.invoke(u, v)
+                    else if (mode == 8) {
+                        val t = AnnotItem(8, color)
+                        t.pts.add(android.graphics.PointF(u, v))
+                        items.add(t)
+                    }
+                }
+            }
+            android.view.MotionEvent.ACTION_CANCEL -> cur = null
+        }
+        invalidate()
         return true
     }
 }
