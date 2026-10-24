@@ -182,9 +182,40 @@ class PdfEditorActivity : GuardedActivity() {
         if (!loading) {
             col.addView(bigButton(tr("PDF বাছুন")) { pickPdf() }, lp(height = dp(52), t = 18))
             col.addView(outlineButton(tr("ছবি বাছুন")) { pickImages() }, lp(height = dp(52), t = 10))
+            col.addView(outlineButton(tr("ক্যামেরায় স্ক্যান করুন")) { camStart() }, lp(height = dp(52), t = 10))
             col.addView(outlineButton(tr("সাম্প্রতিক ফাইল")) { stage = 4; render() }, lp(height = dp(52), t = 10))
         }
         root.addView(scroll, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
+    }
+
+    private var camUri: Uri? = null
+
+    private fun camStart() {
+        if (checkSelfPermission(android.Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(android.Manifest.permission.CAMERA), 90)
+            return
+        }
+        try {
+            val v = android.content.ContentValues()
+            v.put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, "scan_" + System.currentTimeMillis() + ".jpg")
+            v.put(android.provider.MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+            val u = contentResolver.insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, v) ?: throw IllegalStateException()
+            camUri = u
+            val i = Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE)
+            i.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, u)
+            i.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            startActivityForResult(i, 91)
+        } catch (e: Throwable) {
+            Toast.makeText(this, tr("ক্যামেরা খোলা যায়নি"), Toast.LENGTH_LONG).show()
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 90) {
+            if (grantResults.isNotEmpty() && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) camStart()
+            else Toast.makeText(this, tr("ক্যামেরার অনুমতি দিন"), Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun pickPdf() {
@@ -2025,6 +2056,13 @@ class PdfEditorActivity : GuardedActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 91) {
+            val u = camUri
+            if (resultCode == Activity.RESULT_OK && u != null) openImages(listOf(u))
+            else if (u != null) try { contentResolver.delete(u, null, null) } catch (e: Throwable) { }
+            camUri = null
+            return
+        }
         if (requestCode == 74) {
             if (resultCode == Activity.RESULT_OK) data?.data?.let { wmLogo = it }
             wmTab = 1
