@@ -182,10 +182,43 @@ class PdfEditorActivity : GuardedActivity() {
         if (!loading) {
             col.addView(bigButton(tr("PDF বাছুন")) { pickPdf() }, lp(height = dp(52), t = 18))
             col.addView(outlineButton(tr("ছবি বাছুন")) { pickImages() }, lp(height = dp(52), t = 10))
-            col.addView(outlineButton(tr("ক্যামেরায় স্ক্যান করুন")) { camStart() }, lp(height = dp(52), t = 10))
+            col.addView(outlineButton(tr("ক্যামেরায় স্ক্যান করুন")) { scanStart(false) }, lp(height = dp(52), t = 10))
             col.addView(outlineButton(tr("সাম্প্রতিক ফাইল")) { stage = 4; render() }, lp(height = dp(52), t = 10))
         }
         root.addView(scroll, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
+    }
+
+    private var scanAppend = false
+
+    /** Google's on-device scanner: edge detection, crop, perspective, clean-up, filters, many pages. */
+    private fun scanStart(append: Boolean) {
+        if (busy) return
+        scanAppend = append
+        try {
+            val o = com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.Builder()
+                .setGalleryImportAllowed(true)
+                .setPageLimit(30)
+                .setResultFormats(com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_PDF)
+                .setScannerMode(com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.SCANNER_MODE_FULL)
+                .build()
+            com.google.mlkit.vision.documentscanner.GmsDocumentScanning.getClient(o).getStartScanIntent(this)
+                .addOnSuccessListener { sender ->
+                    try { startIntentSenderForResult(sender, 92, null, 0, 0, 0) } catch (e: Throwable) { scanFallback() }
+                }
+                .addOnFailureListener { scanFallback() }
+        } catch (e: Throwable) { scanFallback() }
+    }
+
+    private fun scanFallback() {
+        Toast.makeText(this, tr("স্ক্যানার পাওয়া যায়নি, সাধারণ ক্যামেরা খুলছে"), Toast.LENGTH_LONG).show()
+        camStart()
+    }
+
+    private fun scanDone(data: Intent?) {
+        val r = com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult.fromActivityResultIntent(data)
+        val u = r?.pdf?.uri
+        if (u == null) { Toast.makeText(this, tr("স্ক্যান করা যায়নি"), Toast.LENGTH_SHORT).show(); return }
+        if (scanAppend && stage == 1) mergeIn(listOf(u)) else openPdf(u)
     }
 
     private var camUri: Uri? = null
@@ -425,7 +458,7 @@ class PdfEditorActivity : GuardedActivity() {
             bar.orientation = LinearLayout.VERTICAL
             bar.setPadding(dp(16), dp(10), dp(16), dp(14))
             val brow = LinearLayout(this)
-            brow.addView(outlineButton(tr("আরও স্ক্যান")) { if (!busy) pickMore() }, LinearLayout.LayoutParams(0, dp(52), 1f).also { it.setMargins(0, 0, dp(8), 0) })
+            brow.addView(outlineButton(tr("আরও স্ক্যান")) { scanStart(true) }, LinearLayout.LayoutParams(0, dp(52), 1f).also { it.setMargins(0, 0, dp(8), 0) })
             brow.addView(bigButton(tr("PDF সংরক্ষণ")) { save() }, LinearLayout.LayoutParams(0, dp(52), 1f))
             bar.addView(brow, lp())
             root.addView(bar, lp())
@@ -2056,6 +2089,10 @@ class PdfEditorActivity : GuardedActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 92) {
+            if (resultCode == Activity.RESULT_OK) scanDone(data)
+            return
+        }
         if (requestCode == 91) {
             val u = camUri
             if (resultCode == Activity.RESULT_OK && u != null) openImages(listOf(u))

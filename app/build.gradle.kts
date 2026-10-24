@@ -11,8 +11,8 @@ android {
         applicationId = "com.example.callrec"
         minSdk = 26
         targetSdk = 34
-        versionCode = 103
-        versionName = "1.03"
+        versionCode = 104
+        versionName = "1.04"
     }
 
     // A fixed key is used for every build so a new APK installs over the old one and keeps the data.
@@ -46,4 +46,5 @@ dependencies {
     implementation("com.tom-roush:pdfbox-android:2.0.27.0")
     // QR and barcode encode/decode
     implementation("com.google.zxing:core:3.5.3")
+    implementation("com.google.android.gms:play-services-mlkit-document-scanner:16.0.0")
 }
