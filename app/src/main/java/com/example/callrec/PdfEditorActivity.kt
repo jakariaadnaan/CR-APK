@@ -115,6 +115,7 @@ class PdfEditorActivity : GuardedActivity() {
             1 -> if (history.size > 1) confirmLeave() else { stage = 0; history.clear(); render() }
             2 -> { stage = 1; render() }
             3 -> { stage = 1; render() }
+            4 -> { stage = 0; render() }
             else -> super.onBackPressed()
         }
     }
@@ -139,6 +140,7 @@ class PdfEditorActivity : GuardedActivity() {
             0 -> renderUpload()
             1 -> renderEditor()
             3 -> renderSub()
+            4 -> renderRecent()
             else -> renderSaved()
         }
     }
@@ -179,6 +181,7 @@ class PdfEditorActivity : GuardedActivity() {
         if (!loading) {
             col.addView(bigButton(tr("PDF বাছুন")) { pickPdf() }, lp(height = dp(52), t = 18))
             col.addView(outlineButton(tr("ছবি বাছুন")) { pickImages() }, lp(height = dp(52), t = 10))
+            col.addView(outlineButton(tr("সাম্প্রতিক ফাইল")) { stage = 4; render() }, lp(height = dp(52), t = 10))
         }
         root.addView(scroll, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
     }
@@ -676,6 +679,7 @@ class PdfEditorActivity : GuardedActivity() {
                     outUri = u
                     outSize = Img.size(this, u)
                     Usage.done(this, "PdfEditorActivity", outSize, Img.name(this, u))
+                    RecentPdf.add(this, u, Img.name(this, u), outSize)
                     stage = 2
                     render()
                 } else Toast.makeText(this, tr("সংরক্ষণ করা যায়নি"), Toast.LENGTH_LONG).show()
@@ -1064,6 +1068,88 @@ class PdfEditorActivity : GuardedActivity() {
             out.setPixels(px, 0, out.width, 0, 0, out.width, out.height)
         }
         return out
+    }
+
+    // ------------------------------------------------------------------ Recent Files
+
+    private fun renderRecent() {
+        root.addView(pdfHeader(tr("সাম্প্রতিক ফাইল"), "", { stage = 0; render() }), lp())
+        val scroll = ScrollView(this)
+        val col = LinearLayout(this)
+        col.orientation = LinearLayout.VERTICAL
+        col.setPadding(dp(16), dp(8), dp(16), dp(16))
+        scroll.addView(col)
+        val items = RecentPdf.list(this)
+        if (items.isEmpty()) {
+            val t = label(tr("এখনো কোনো ফাইল সংরক্ষণ করা হয়নি"), 14f, Ui.MUTED)
+            t.gravity = Gravity.CENTER
+            col.addView(t, lp(t = 60))
+        }
+        for (it in items) {
+            val u = Uri.parse(it.uri)
+            val r = LinearLayout(this)
+            r.gravity = Gravity.CENTER_VERTICAL
+            r.background = bg(Ui.CARD, 14, Ui.LINE, 1)
+            r.setPadding(dp(10), dp(10), dp(6), dp(10))
+            val th = thumbView(44, 56)
+            pdfThumb(u, 150) { b, _ -> if (b != null) th.setImageBitmap(b) }
+            r.addView(th, lp(width = dp(44), height = dp(56), r = 12))
+            val c = LinearLayout(this)
+            c.orientation = LinearLayout.VERTICAL
+            val n = label(it.name, 14f, Ui.TEXT, true)
+            n.maxLines = 2
+            c.addView(n)
+            val dt = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.US).format(java.util.Date(it.time))
+            c.addView(label(bn(dt) + " · " + Img.human(it.size), 12f, Ui.MUTED), lp(t = 2))
+            r.addView(c, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            val sh = label("⇗", 19f, Ui.TEXT, true)
+            sh.setPadding(dp(10), dp(8), dp(8), dp(8))
+            sh.setOnClickListener { _ ->
+                val i = Intent(Intent.ACTION_SEND)
+                i.type = "application/pdf"
+                i.putExtra(Intent.EXTRA_STREAM, u)
+                i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                try { startActivity(Intent.createChooser(i, tr("শেয়ার"))) } catch (e: Throwable) { Toast.makeText(this, tr("ফাইলটি পাওয়া যায়নি"), Toast.LENGTH_SHORT).show() }
+            }
+            r.addView(sh)
+            val mn = label("⋮", 20f, Ui.TEXT, true)
+            mn.setPadding(dp(8), dp(8), dp(8), dp(8))
+            mn.setOnClickListener { _ -> recentMenu(it) }
+            r.addView(mn)
+            r.setOnClickListener { _ -> openPdf(u) }
+            col.addView(r, lp(b = 8))
+        }
+        root.addView(scroll, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
+    }
+
+    private fun recentMenu(it: RecentPdf.Item) {
+        val u = Uri.parse(it.uri)
+        val items = arrayOf(tr("খুলুন"), tr("নাম বদলান"), tr("তালিকা থেকে সরান"), tr("ফাইল মুছুন"))
+        android.app.AlertDialog.Builder(this).setTitle(it.name).setItems(items) { _, w ->
+            when (w) {
+                0 -> openPdf(u)
+                1 -> {
+                    val e = android.widget.EditText(this)
+                    e.setText(it.name.removeSuffix(".pdf"))
+                    android.app.AlertDialog.Builder(this).setTitle(tr("নাম বদলান")).setView(e)
+                        .setPositiveButton(tr("নাম বদলান")) { _, _ ->
+                            val nn = e.text.toString().trim().replace(Regex("[\\\\/:*?\"<>|]"), "_")
+                            if (nn.isNotEmpty()) {
+                                try { DocumentsContract.renameDocument(contentResolver, u, "$nn.pdf") } catch (x: Throwable) { }
+                                RecentPdf.rename(this, it.uri, "$nn.pdf")
+                                render()
+                            }
+                        }.setNegativeButton(tr("বাতিল"), null).show()
+                }
+                2 -> { RecentPdf.remove(this, it.uri); render() }
+                3 -> android.app.AlertDialog.Builder(this).setMessage(tr("আপনি কি এই ফাইলটি মুছে ফেলতে চান?"))
+                    .setPositiveButton(tr("হ্যাঁ, মুছুন")) { _, _ ->
+                        try { DocumentsContract.deleteDocument(contentResolver, u) } catch (x: Throwable) { }
+                        RecentPdf.remove(this, it.uri)
+                        render()
+                    }.setNegativeButton(tr("বাতিল"), null).show()
+            }
+        }.show()
     }
 
     // ------------------------------------------------------------------ full pages (stage 3)
@@ -1860,6 +1946,7 @@ class PdfEditorActivity : GuardedActivity() {
                     outUri = out
                     outSize = Img.size(this, out)
                     Usage.done(this, "PdfEditorActivity", outSize, Img.name(this, out))
+                    RecentPdf.add(this, out, Img.name(this, out), outSize)
                     stage = 2
                     render()
                 } else Toast.makeText(this, tr("সংরক্ষণ করা যায়নি"), Toast.LENGTH_LONG).show()
