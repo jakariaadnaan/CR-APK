@@ -90,6 +90,15 @@ class PdfEditorActivity : GuardedActivity() {
     private var pageView: ImageView? = null
     private var pageLabel: TextView? = null
     private var undoBtn: TextView? = null
+    private var subTitle = ""
+    private var subSub = ""
+    private var subBtn = ""
+    private var subDark = false
+    private var subBuild: ((LinearLayout) -> Unit)? = null
+    private var subGo: (() -> Unit)? = null
+    private var subCancel: (() -> Unit)? = null
+    private val mergeAdd = ArrayList<Uri>()
+    private var mergeName = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -105,6 +114,7 @@ class PdfEditorActivity : GuardedActivity() {
         when (stage) {
             1 -> if (history.size > 1) confirmLeave() else { stage = 0; history.clear(); render() }
             2 -> { stage = 1; render() }
+            3 -> { stage = 1; render() }
             else -> super.onBackPressed()
         }
     }
@@ -119,7 +129,7 @@ class PdfEditorActivity : GuardedActivity() {
 
     private fun render() {
         root.removeAllViews()
-        val dark = stage == 1
+        val dark = stage == 1 || (stage == 3 && subDark)
         root.setBackgroundColor(if (dark) dBg else Ui.BG)
         window.statusBarColor = if (dark) dBg else Ui.BG
         window.navigationBarColor = if (dark) dBg else Ui.NAV
@@ -128,6 +138,7 @@ class PdfEditorActivity : GuardedActivity() {
         when (stage) {
             0 -> renderUpload()
             1 -> renderEditor()
+            3 -> renderSub()
             else -> renderSaved()
         }
     }
@@ -361,17 +372,21 @@ class PdfEditorActivity : GuardedActivity() {
             val tools = LinearLayout(this)
             tools.background = bg(dCard, 16)
             val w = { LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f) }
+            tools.addView(glyphTool("⟲", tr("আবার তুলুন")) { retakePick() }, w())
             tools.addView(glyphTool("⌗", tr("ক্রপ")) { startCrop() }, w())
             tools.addView(glyphTool("↻", tr("ঘোরান")) { rotate() }, w())
             tools.addView(glyphTool("◐", tr("ফিল্টার")) { filter() }, w())
-            tools.addView(glyphTool("⤢", tr("রিসাইজ")) { resize() }, w())
+            tools.addView(glyphTool("⤢", tr("রিসাইজ")) { resizePage() }, w())
             tools.addView(glyphTool("✕", tr("মুছুন")) { deletePage() }, w())
             root.addView(tools, lp(l = 12, r = 12))
 
             val bar = LinearLayout(this)
             bar.orientation = LinearLayout.VERTICAL
             bar.setPadding(dp(16), dp(10), dp(16), dp(14))
-            bar.addView(bigButton(tr("PDF সংরক্ষণ")) { save() }, lp(height = dp(52)))
+            val brow = LinearLayout(this)
+            brow.addView(outlineButton(tr("আরও স্ক্যান")) { if (!busy) pickMore() }, LinearLayout.LayoutParams(0, dp(52), 1f).also { it.setMargins(0, 0, dp(8), 0) })
+            brow.addView(bigButton(tr("PDF সংরক্ষণ")) { save() }, LinearLayout.LayoutParams(0, dp(52), 1f))
+            bar.addView(brow, lp())
             root.addView(bar, lp())
         }
         refreshPage()
@@ -513,18 +528,194 @@ class PdfEditorActivity : GuardedActivity() {
     }
 
     private fun openMenu() {
-        val rows = ArrayList<Triple<String, String, () -> Unit>>()
-        rows.add(Triple("Ⓦ", tr("ওয়াটারমার্ক যোগ করুন"), { watermarkDialog() }))
-        rows.add(Triple("✍", tr("ডিজিটাল সই যোগ করুন"), { signDialog() }))
-        rows.add(Triple("✂", tr("PDF ভাগ করুন"), { splitDialog() }))
-        rows.add(Triple("⊕", tr("PDF জোড়া দিন"), { pickMore() }))
-        rows.add(Triple("🔒", if (lockPass != null) tr("PDF লক (চালু আছে)") else tr("PDF লক করুন"), { protectDialog() }))
-        rows.add(Triple("⇲", tr("PDF ছোট করুন"), { compressDialog() }))
-        rows.add(Triple("✎", tr("নাম বদলান"), { renameDialog() }))
-        rows.add(Triple("⎙", tr("প্রিন্ট"), { printDoc() }))
-        rows.add(Triple("⇪", tr("শেয়ার"), { shareSheet() }))
-        rows.add(Triple("🖼", tr("ছবি হিসেবে এক্সপোর্ট"), { exportDialog() }))
-        sheet(baseName, rows)
+        val d = android.app.Dialog(this)
+        val box = LinearLayout(this)
+        box.orientation = LinearLayout.VERTICAL
+        val g = GradientDrawable()
+        g.setColor(Ui.CARD)
+        g.cornerRadii = floatArrayOf(dp(22).toFloat(), dp(22).toFloat(), dp(22).toFloat(), dp(22).toFloat(), 0f, 0f, 0f, 0f)
+        box.background = g
+        box.setPadding(dp(16), dp(10), dp(16), dp(14))
+        val handle = View(this)
+        handle.background = bg(Ui.LINE, 3)
+        box.addView(handle, lp(width = dp(40), height = dp(4)).also { it.gravity = Gravity.CENTER_HORIZONTAL })
+        box.addView(fileCard(), lp(t = 12, b = 4))
+        val list = LinearLayout(this)
+        list.orientation = LinearLayout.VERTICAL
+        val sv = ScrollView(this)
+        sv.addView(list)
+        box.addView(sv, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
+        fun row(glyph: String, name: String, chev: Boolean, act: () -> Unit) {
+            val r = LinearLayout(this)
+            r.gravity = Gravity.CENTER_VERTICAL
+            r.setPadding(dp(6), dp(13), dp(6), dp(13))
+            val gl = label(glyph, 17f, Ui.TEXT, true)
+            gl.gravity = Gravity.CENTER
+            r.addView(gl, lp(width = dp(30), r = 12))
+            r.addView(label(name, 15f, Ui.TEXT), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            if (chev) r.addView(label("›", 20f, Ui.MUTED))
+            r.setOnClickListener { d.dismiss(); act() }
+            list.addView(r)
+        }
+        fun line() {
+            val v = View(this)
+            v.setBackgroundColor(Ui.LINE)
+            list.addView(v, lp(height = dp(1), t = 4, b = 4))
+        }
+        row("⤓", tr("ডিভাইসে সংরক্ষণ"), true) { save() }
+        row("⇪", tr("এক্সপোর্ট করুন…"), true) { exportPage() }
+        line()
+        row("Ⓦ", tr("ওয়াটারমার্ক যোগ করুন"), false) { watermarkDialog() }
+        row("✍", tr("ডিজিটাল সই যোগ করুন"), false) { signDialog() }
+        row("✂", tr("PDF ভাগ করুন"), false) { splitDialog() }
+        row("⊕", tr("PDF জোড়া দিন"), false) { mergePage() }
+        row("🔒", if (lockPass != null) tr("PDF লক (চালু আছে)") else tr("PDF লক করুন"), false) { protectPage() }
+        row("⇲", tr("PDF ছোট করুন"), false) { compressPage() }
+        line()
+        row("✎", tr("নাম বদলান"), false) { renameDialog() }
+        row("🗀", tr("ফোল্ডারে সরান"), false) { moveToFolder() }
+        row("⇗", tr("শেয়ার"), false) { shareSheet() }
+        row("⎙", tr("প্রিন্ট"), false) { printDoc() }
+        row("🗑", tr("মুছুন"), false) { deleteDoc() }
+        d.setContentView(box)
+        d.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        d.window?.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, (resources.displayMetrics.heightPixels * 0.86f).toInt())
+        d.window?.setGravity(Gravity.BOTTOM)
+        d.show()
+    }
+
+    /** A small card with the first-page picture, the name, the date and the size. */
+    private fun fileCard(): View {
+        val c = LinearLayout(this)
+        c.gravity = Gravity.CENTER_VERTICAL
+        c.background = bg(Ui.BG, 14, Ui.LINE, 1)
+        c.setPadding(dp(10), dp(10), dp(10), dp(10))
+        val th = thumbView(44, 56)
+        curBmp?.let { th.setImageBitmap(it) }
+        c.addView(th, lp(width = dp(44), height = dp(56), r = 12))
+        val col = LinearLayout(this)
+        col.orientation = LinearLayout.VERTICAL
+        val n = label(baseName, 14f, Ui.TEXT, true)
+        n.maxLines = 1
+        n.ellipsize = android.text.TextUtils.TruncateAt.MIDDLE
+        col.addView(n)
+        val dt = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.US).format(java.util.Date())
+        col.addView(label(bn(dt) + " · " + Img.human(cur().length()), 12f, Ui.MUTED), lp(t = 2))
+        c.addView(col, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        return c
+    }
+
+    /** A white bottom sheet with a title, content, and two buttons. [danger] paints the title and OK red. */
+    private fun confirmSheet(title: String, body: View, ok: String, danger: Boolean, onOk: () -> Unit) {
+        val d = android.app.Dialog(this)
+        val box = LinearLayout(this)
+        box.orientation = LinearLayout.VERTICAL
+        val g = GradientDrawable()
+        g.setColor(Ui.CARD)
+        g.cornerRadii = floatArrayOf(dp(22).toFloat(), dp(22).toFloat(), dp(22).toFloat(), dp(22).toFloat(), 0f, 0f, 0f, 0f)
+        box.background = g
+        box.setPadding(dp(18), dp(10), dp(18), dp(18))
+        val handle = View(this)
+        handle.background = bg(Ui.LINE, 3)
+        box.addView(handle, lp(width = dp(40), height = dp(4)).also { it.gravity = Gravity.CENTER_HORIZONTAL })
+        val t = label(title, 17f, if (danger) Ui.RED else Ui.TEXT, true)
+        t.gravity = Gravity.CENTER
+        box.addView(t, lp(t = 12))
+        box.addView(body, lp(t = 14))
+        val row = LinearLayout(this)
+        row.addView(outlineButton(tr("বাতিল")) { d.dismiss() }, LinearLayout.LayoutParams(0, dp(48), 1f).also { it.setMargins(0, 0, dp(8), 0) })
+        val okb = bigButton(ok) { d.dismiss(); onOk() }
+        if (danger) okb.background = bg(Ui.RED, 14)
+        row.addView(okb, LinearLayout.LayoutParams(0, dp(48), 1f))
+        box.addView(row, lp(t = 18))
+        d.setContentView(box)
+        d.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        d.window?.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
+        d.window?.setGravity(Gravity.BOTTOM)
+        d.show()
+    }
+
+    private fun deleteDoc() {
+        val col = LinearLayout(this)
+        col.orientation = LinearLayout.VERTICAL
+        col.addView(fileCard())
+        val q = label(tr("আপনি কি এই ফাইলটি মুছে ফেলতে চান?"), 14f, Ui.TEXT)
+        col.addView(q, lp(t = 14))
+        col.addView(label(tr("এডিটরের কপি বন্ধ হবে। আগে সংরক্ষণ করা ফাইল ফোনে যেমন আছে তেমনই থাকবে।"), 12f, Ui.MUTED), lp(t = 4))
+        confirmSheet(tr("মুছুন"), col, tr("হ্যাঁ, মুছুন"), true) {
+            history.clear()
+            lockPass = null
+            stage = 0
+            render()
+        }
+    }
+
+    private fun moveToFolder() {
+        if (busy) return
+        treeOrAsk(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), 79)
+    }
+
+    private fun doMove(tree: Uri) {
+        val f = cur()
+        val base = baseName
+        busy = true
+        Thread {
+            var out: Uri? = null
+            try {
+                val parent = DocumentsContract.buildDocumentUriUsingTree(tree, DocumentsContract.getTreeDocumentId(tree))
+                val u = DocumentsContract.createDocument(contentResolver, parent, "application/pdf", "$base.pdf")
+                if (u != null) {
+                    contentResolver.openOutputStream(u)?.use { writeCurTo(f, it) }
+                    out = u
+                }
+            } catch (e: Throwable) { }
+            runOnUiThread {
+                busy = false
+                val u = out
+                if (u != null) {
+                    outUri = u
+                    outSize = Img.size(this, u)
+                    Usage.done(this, "PdfEditorActivity", outSize, Img.name(this, u))
+                    stage = 2
+                    render()
+                } else Toast.makeText(this, tr("সংরক্ষণ করা যায়নি"), Toast.LENGTH_LONG).show()
+            }
+        }.start()
+    }
+
+    // Retake: replace the current page with a new picture
+    private fun retakePick() {
+        if (busy) return
+        val i = Intent(Intent.ACTION_OPEN_DOCUMENT)
+        i.addCategory(Intent.CATEGORY_OPENABLE)
+        i.type = "image/*"
+        startActivityForResult(i, 80)
+    }
+
+    private fun retakeWith(u: Uri) {
+        val idx = pageIdx
+        apply { doc ->
+            val b = Img.decode(this, u, 2200) ?: throw IllegalStateException()
+            val pd = PdfDocument()
+            val sc = 842f / Math.max(b.width, b.height)
+            val pw = Math.max(1, (b.width * sc).toInt())
+            val ph = Math.max(1, (b.height * sc).toInt())
+            val page = pd.startPage(PdfDocument.PageInfo.Builder(pw, ph, 1).create())
+            page.canvas.drawColor(Color.WHITE)
+            page.canvas.drawBitmap(b, null, RectF(0f, 0f, pw.toFloat(), ph.toFloat()), Paint(Paint.FILTER_BITMAP_FLAG))
+            pd.finishPage(page)
+            val tmp = File(cacheDir, "retake.pdf")
+            tmp.outputStream().use { pd.writeTo(it) }
+            pd.close()
+            b.recycle()
+            PDDocument.load(tmp).use { other ->
+                val old = doc.getPage(idx)
+                val imp = doc.importPage(other.getPage(0))
+                doc.removePage(doc.numberOfPages - 1)
+                doc.pages.insertBefore(imp, old)
+                doc.removePage(old)
+            }
+        }
     }
 
     // ------------------------------------------------------------------ watermark
@@ -875,18 +1066,271 @@ class PdfEditorActivity : GuardedActivity() {
         return out
     }
 
-    private fun resize() {
-        val names = arrayOf("A4", "A3", "A5", "US Letter")
-        val sizes = arrayOf(PDRectangle.A4, PDRectangle.A3, PDRectangle.A5, PDRectangle.LETTER)
-        android.app.AlertDialog.Builder(this)
-            .setTitle(tr("পেজ সাইজ"))
-            .setItems(names) { _, w ->
-                val target = sizes[w]
-                apply { doc ->
-                    for (k in 0 until doc.numberOfPages) fitTo(doc, doc.getPage(k), target)
-                }
+    // ------------------------------------------------------------------ full pages (stage 3)
+
+    private fun openSub(title: String, sub: String, btn: String, dark: Boolean = false, cancel: Boolean = false,
+                        build: (LinearLayout) -> Unit, go: () -> Unit) {
+        subTitle = title
+        subSub = sub
+        subBtn = btn
+        subDark = dark
+        subBuild = build
+        subGo = go
+        subCancel = if (cancel) ({ stage = 1; render() }) else null
+        stage = 3
+        render()
+    }
+
+    private fun renderSub() {
+        val tc = if (subDark) dText else Ui.TEXT
+        val mc = if (subDark) dMuted else Ui.MUTED
+        val head = LinearLayout(this)
+        head.gravity = Gravity.CENTER_VERTICAL
+        head.setPadding(dp(8), dp(10), dp(12), dp(4))
+        val b = LinearLayout(this)
+        b.gravity = Gravity.CENTER
+        b.addView(iconView(R.drawable.ic_back, 24, tc))
+        b.setOnClickListener { onBackPressed() }
+        head.addView(b, LinearLayout.LayoutParams(dp(44), dp(44)))
+        root.addView(head, lp())
+        val scroll = ScrollView(this)
+        val col = LinearLayout(this)
+        col.orientation = LinearLayout.VERTICAL
+        col.setPadding(dp(20), dp(4), dp(20), dp(16))
+        scroll.addView(col)
+        col.addView(label(subTitle, 26f, tc, true))
+        if (subSub.isNotEmpty()) col.addView(label(subSub, 13f, mc), lp(t = 6))
+        val body = LinearLayout(this)
+        body.orientation = LinearLayout.VERTICAL
+        col.addView(body, lp(t = 16))
+        subBuild?.invoke(body)
+        root.addView(scroll, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
+        val bar = LinearLayout(this)
+        bar.setPadding(dp(16), dp(10), dp(16), dp(14))
+        if (subCancel != null) bar.addView(outlineButton(tr("বাতিল")) { subCancel?.invoke() }, LinearLayout.LayoutParams(0, dp(52), 1f).also { it.setMargins(0, 0, dp(8), 0) })
+        bar.addView(bigButton(subBtn) { if (!busy) subGo?.invoke() }, LinearLayout.LayoutParams(0, dp(52), 1f))
+        root.addView(bar, lp())
+    }
+
+    private fun smallFileRow(name: String, sub: String, uri: Uri?, bmp: Bitmap?, onRemove: (() -> Unit)?): View {
+        val c = LinearLayout(this)
+        c.gravity = Gravity.CENTER_VERTICAL
+        c.background = bg(Ui.CARD, 14, Ui.LINE, 1)
+        c.setPadding(dp(10), dp(10), dp(12), dp(10))
+        val th = thumbView(44, 56)
+        if (bmp != null) th.setImageBitmap(bmp)
+        else if (uri != null) pdfThumb(uri, 150) { b, _ -> if (b != null) th.setImageBitmap(b) }
+        c.addView(th, lp(width = dp(44), height = dp(56), r = 12))
+        val col = LinearLayout(this)
+        col.orientation = LinearLayout.VERTICAL
+        val n = label(name, 14f, Ui.TEXT, true)
+        n.maxLines = 1
+        n.ellipsize = android.text.TextUtils.TruncateAt.MIDDLE
+        col.addView(n)
+        col.addView(label(sub, 12f, Ui.MUTED), lp(t = 2))
+        c.addView(col, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        if (onRemove != null) {
+            val x = label("✕", 16f, Ui.MUTED, true)
+            x.setPadding(dp(10), dp(6), dp(4), dp(6))
+            x.setOnClickListener { onRemove() }
+            c.addView(x)
+        }
+        return c
+    }
+
+    private fun curSub(): String = Img.human(cur().length()) + " · " + bn(pageCount.toString()) + tr(" পেজ")
+
+    private fun mergePage() {
+        mergeAdd.clear()
+        mergeName = baseName + " - " + tr("জোড়া")
+        var nameField: android.widget.EditText? = null
+        lateinit var build: (LinearLayout) -> Unit
+        build = { body ->
+            body.addView(label(tr("ফাইলের নাম"), 12f, Ui.MUTED))
+            val e = android.widget.EditText(this)
+            e.setText(mergeName)
+            styleInput(e)
+            e.setSingleLine(true)
+            nameField = e
+            body.addView(e, lp(t = 6))
+            body.addView(smallFileRow(baseName, curSub(), null, curBmp, null), lp(t = 16))
+            for ((k, u) in mergeAdd.withIndex()) {
+                val nm = Img.name(this, u)
+                body.addView(smallFileRow(nm, Img.human(Img.size(this, u)), u, null) {
+                    mergeName = nameField?.text?.toString() ?: mergeName
+                    mergeAdd.removeAt(k)
+                    subBuild = build
+                    render()
+                }, lp(t = 8))
             }
-            .show()
+            body.addView(outlineButton("+  " + tr("আরও ফাইল যোগ করুন")) {
+                mergeName = nameField?.text?.toString() ?: mergeName
+                subBuild = build
+                pickMergeFiles()
+            }, lp(height = dp(48), t = 14))
+        }
+        openSub(tr("PDF জোড়া দিন"), tr("এই ফাইলের সাথে জোড়া দিতে আরও ফাইল বাছুন"), tr("জোড়া দিন"), build = build) {
+            val n = (nameField?.text?.toString() ?: mergeName).trim().replace(Regex("[\\\\/:*?\"<>|]"), "_").removeSuffix(".pdf")
+            if (mergeAdd.isEmpty()) { Toast.makeText(this, tr("আরও অন্তত একটি ফাইল যোগ করুন"), Toast.LENGTH_SHORT).show(); return@openSub }
+            if (n.isNotEmpty()) baseName = n
+            val l = ArrayList(mergeAdd)
+            mergeAdd.clear()
+            stage = 1
+            render()
+            mergeIn(l)
+        }
+    }
+
+    private fun pickMergeFiles() {
+        val i = Intent(Intent.ACTION_OPEN_DOCUMENT)
+        i.addCategory(Intent.CATEGORY_OPENABLE)
+        i.type = "*/*"
+        i.putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("application/pdf", "image/*"))
+        i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        startActivityForResult(i, 81)
+    }
+
+    /** A password box with an eye button to show or hide the text. */
+    private fun passRow(hint: String): Pair<View, android.widget.EditText> {
+        val r = LinearLayout(this)
+        r.gravity = Gravity.CENTER_VERTICAL
+        r.background = bg(Ui.CARD, 12, Ui.LINE, 1)
+        val e = android.widget.EditText(this)
+        e.hint = hint
+        e.setTextColor(Ui.TEXT)
+        e.setHintTextColor(Ui.MUTED)
+        e.textSize = 15f
+        e.setSingleLine(true)
+        e.background = null
+        e.setPadding(dp(14), dp(14), dp(6), dp(14))
+        val hidden = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        val shown = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+        e.inputType = hidden
+        r.addView(e, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        val eye = label("👁", 18f, Ui.PRIMARY, true)
+        eye.setPadding(dp(8), dp(8), dp(14), dp(8))
+        var vis = false
+        eye.setOnClickListener {
+            vis = !vis
+            e.inputType = if (vis) shown else hidden
+            e.setSelection(e.text.length)
+            eye.alpha = if (vis) 1f else 0.6f
+        }
+        eye.alpha = 0.6f
+        r.addView(eye)
+        return Pair(r, e)
+    }
+
+    private fun protectPage() {
+        var p1: android.widget.EditText? = null
+        var p2: android.widget.EditText? = null
+        openSub(tr("PDF লক করুন"),
+            tr("সংরক্ষণ বা শেয়ারের সময় PDF-এ এই পাসওয়ার্ড বসবে। পাসওয়ার্ড ছাড়া ফাইল খোলা যাবে না। পাসওয়ার্ড ভুলে গেলে ফাইল আর খোলা যাবে না। ফাঁকা রেখে চাপলে লক বন্ধ হবে।"),
+            tr("লক করুন"), build = { body ->
+                body.addView(label(tr("পাসওয়ার্ড"), 12f, Ui.MUTED))
+                val a = passRow("••••••••")
+                a.second.setText(lockPass ?: "")
+                p1 = a.second
+                body.addView(a.first, lp(t = 6))
+                body.addView(label(tr("পাসওয়ার্ড আবার লিখুন"), 12f, Ui.MUTED), lp(t = 16))
+                val b = passRow("••••••••")
+                b.second.setText(lockPass ?: "")
+                p2 = b.second
+                body.addView(b.first, lp(t = 6))
+            }) {
+            val a = p1?.text?.toString() ?: ""
+            val b = p2?.text?.toString() ?: ""
+            if (a != b) { Toast.makeText(this, tr("পাসওয়ার্ড মেলেনি"), Toast.LENGTH_SHORT).show(); return@openSub }
+            lockPass = if (a.isEmpty()) null else a
+            lockAes256 = true
+            Toast.makeText(this, if (a.isEmpty()) tr("লক বন্ধ আছে") else tr("সংরক্ষণের সময় PDF লক হবে"), Toast.LENGTH_SHORT).show()
+            stage = 1
+            render()
+        }
+    }
+
+    private fun compressPage() {
+        var level = 1
+        lateinit var build: (LinearLayout) -> Unit
+        build = { body ->
+            body.addView(smallFileRow(baseName, curSub(), null, curBmp, null))
+            body.addView(label(tr("ছোট করার মাত্রা বাছুন"), 14f, Ui.TEXT, true), lp(t = 22, b = 8))
+            val names = listOf(tr("বেশি ছোট করা"), tr("মাঝারি ছোট করা"), tr("কম ছোট করা"))
+            val subs = listOf(tr("সবচেয়ে ছোট, মান কম"), tr("মাঝারি আকার, মাঝারি মান"), tr("বড় আকার, সেরা মান"))
+            for (k in 0..2) {
+                val r = LinearLayout(this)
+                r.gravity = Gravity.CENTER_VERTICAL
+                r.setPadding(dp(4), dp(10), dp(4), dp(10))
+                val on = level == k
+                val dot = LinearLayout(this)
+                dot.gravity = Gravity.CENTER
+                dot.background = bg(Color.TRANSPARENT, 11, Ui.PRIMARY, 2)
+                if (on) { val in2 = View(this); in2.background = bg(Ui.PRIMARY, 6); dot.addView(in2, LinearLayout.LayoutParams(dp(12), dp(12))) }
+                r.addView(dot, lp(width = dp(22), height = dp(22), r = 12))
+                val c = LinearLayout(this)
+                c.orientation = LinearLayout.VERTICAL
+                c.addView(label(names[k], 15f, Ui.TEXT, true))
+                c.addView(label(subs[k], 12f, Ui.MUTED), lp(t = 1))
+                r.addView(c)
+                val kk = k
+                r.setOnClickListener { level = kk; subBuild = build; render() }
+                body.addView(r)
+            }
+        }
+        openSub(tr("PDF ছোট করুন"), tr("আপনার PDF ফাইলের আকার কমান"), tr("ছোট করুন"), build = build) {
+            val lv = intArrayOf(2, 1, 0)[level]
+            val dpi = intArrayOf(150, 110, 72)[lv]
+            val q = floatArrayOf(0.8f, 0.65f, 0.45f)[lv]
+            val before = cur().length()
+            val src = cur()
+            stage = 1
+            render()
+            apply({
+                val after = cur().length()
+                Toast.makeText(this, tr("আগে: ") + Img.human(before) + tr("  →  এখন: ") + Img.human(after), Toast.LENGTH_LONG).show()
+            }) { doc -> filterPages(doc, src, (0 until doc.numberOfPages).toList(), -1, dpi, q) }
+        }
+    }
+
+    private var resizePick = 0
+
+    private fun resizePage() {
+        resizePick = 0
+        lateinit var build: (LinearLayout) -> Unit
+        build = { body ->
+            val iv = ImageView(this)
+            iv.scaleType = ImageView.ScaleType.FIT_CENTER
+            iv.setBackgroundColor(Color.WHITE)
+            curBmp?.let { iv.setImageBitmap(it) }
+            body.addView(iv, lp(height = (resources.displayMetrics.heightPixels * 0.5f).toInt()))
+            body.addView(label(tr("পেজ ") + bn((pageIdx + 1).toString()) + " / " + bn(pageCount.toString()), 12f, dMuted).also { it.gravity = Gravity.CENTER }, lp(t = 6))
+            val hs = android.widget.HorizontalScrollView(this)
+            hs.isHorizontalScrollBarEnabled = false
+            val row = LinearLayout(this)
+            val names = listOf(tr("অটো ফিট"), "A4", "A3", "A5", "US Letter")
+            for ((k, nm) in names.withIndex()) {
+                val c = LinearLayout(this)
+                c.orientation = LinearLayout.VERTICAL
+                c.gravity = Gravity.CENTER
+                val on = resizePick == k
+                c.background = bg(if (on) Ui.mix(Ui.PRIMARY, dCard, 0.7f) else dCard, 12, if (on) Ui.PRIMARY else dLine, if (on) 2 else 1)
+                c.setPadding(dp(14), dp(10), dp(14), dp(10))
+                c.addView(label(if (k == 0) "⛶" else "▯", 20f, if (on) Ui.PRIMARY else dText, true).also { it.gravity = Gravity.CENTER })
+                c.addView(label(nm, 11f, if (on) Ui.PRIMARY else dMuted).also { it.gravity = Gravity.CENTER }, lp(t = 2))
+                val kk = k
+                c.setOnClickListener { resizePick = kk; subBuild = build; render() }
+                row.addView(c, lp(r = 8))
+            }
+            hs.addView(row)
+            body.addView(hs, lp(t = 14))
+        }
+        openSub(tr("রিসাইজ"), "", tr("ঠিক আছে"), dark = true, cancel = true, build = build) {
+            val sizes = arrayOf(null, PDRectangle.A4, PDRectangle.A3, PDRectangle.A5, PDRectangle.LETTER)
+            val target = sizes[resizePick]
+            stage = 1
+            render()
+            if (target != null) apply { doc -> for (k in 0 until doc.numberOfPages) fitTo(doc, doc.getPage(k), target) }
+        }
     }
 
     /** Scales a page's content to fit the target size (keeping its portrait or landscape direction), centred. */
@@ -943,8 +1387,8 @@ class PdfEditorActivity : GuardedActivity() {
         val e = android.widget.EditText(this)
         e.setText(value)
         e.hint = hint
-        e.setTextColor(dText)
-        e.setHintTextColor(dMuted)
+        e.setTextColor(Ui.TEXT)
+        e.setHintTextColor(Ui.MUTED)
         e.textSize = 15f
         e.setSingleLine(true)
         e.inputType = when {
@@ -952,7 +1396,7 @@ class PdfEditorActivity : GuardedActivity() {
             number -> android.text.InputType.TYPE_CLASS_NUMBER
             else -> android.text.InputType.TYPE_CLASS_TEXT
         }
-        e.background = bg(dBg, 12, dLine, 1)
+        e.background = bg(Ui.BG, 12, Ui.LINE, 1)
         e.setPadding(dp(14), dp(12), dp(14), dp(12))
         return e
     }
@@ -960,9 +1404,9 @@ class PdfEditorActivity : GuardedActivity() {
     private fun darkOption(title: String, on: Boolean, click: () -> Unit): View {
         val r = LinearLayout(this)
         r.gravity = Gravity.CENTER_VERTICAL
-        r.background = bg(if (on) Ui.mix(Ui.PRIMARY, dCard, 0.8f) else dBg, 12, if (on) Ui.PRIMARY else dLine, if (on) 2 else 1)
+        r.background = bg(if (on) Ui.mix(Ui.PRIMARY, Ui.CARD, 0.9f) else Ui.BG, 12, if (on) Ui.PRIMARY else Ui.LINE, if (on) 2 else 1)
         r.setPadding(dp(14), dp(12), dp(14), dp(12))
-        r.addView(label(title, 14f, dText, on), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        r.addView(label(title, 14f, Ui.TEXT, on), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         if (on) r.addView(label("✓", 14f, Ui.PRIMARY, true))
         r.setOnClickListener { click() }
         return r
@@ -974,11 +1418,11 @@ class PdfEditorActivity : GuardedActivity() {
         val box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
         val g = GradientDrawable()
-        g.setColor(dCard)
+        g.setColor(Ui.CARD)
         g.cornerRadii = floatArrayOf(dp(20).toFloat(), dp(20).toFloat(), dp(20).toFloat(), dp(20).toFloat(), 0f, 0f, 0f, 0f)
         box.background = g
         box.setPadding(dp(18), dp(16), dp(18), dp(18))
-        box.addView(label(title, 16f, dText, true))
+        box.addView(label(title, 16f, Ui.TEXT, true))
         val body = LinearLayout(this)
         body.orientation = LinearLayout.VERTICAL
         val sv = ScrollView(this)
@@ -1204,11 +1648,94 @@ class PdfEditorActivity : GuardedActivity() {
     }
 
     private fun shareSheet() {
-        val rows = ArrayList<Triple<String, String, () -> Unit>>()
-        rows.add(Triple("PDF", tr("PDF শেয়ার করুন"), { shareFile(0) }))
-        rows.add(Triple("JPG", tr("এই পেজ JPG হিসেবে"), { shareFile(1) }))
-        rows.add(Triple("PNG", tr("এই পেজ PNG হিসেবে"), { shareFile(2) }))
-        sheet(tr("শেয়ার"), rows)
+        val d = android.app.Dialog(this)
+        val box = LinearLayout(this)
+        box.orientation = LinearLayout.VERTICAL
+        val g = GradientDrawable()
+        g.setColor(Ui.CARD)
+        g.cornerRadii = floatArrayOf(dp(22).toFloat(), dp(22).toFloat(), dp(22).toFloat(), dp(22).toFloat(), 0f, 0f, 0f, 0f)
+        box.background = g
+        box.setPadding(dp(16), dp(10), dp(16), dp(18))
+        val handle = View(this)
+        handle.background = bg(Ui.LINE, 3)
+        box.addView(handle, lp(width = dp(40), height = dp(4)).also { it.gravity = Gravity.CENTER_HORIZONTAL })
+        val t = label(tr("শেয়ার"), 17f, Ui.TEXT, true)
+        t.gravity = Gravity.CENTER
+        box.addView(t, lp(t = 12, b = 6))
+        val sizes = ArrayList<TextView>()
+        fun row(glyph: String, name: String, kind: Int, size: String) {
+            val r = LinearLayout(this)
+            r.gravity = Gravity.CENTER_VERTICAL
+            r.setPadding(dp(6), dp(13), dp(6), dp(13))
+            r.addView(label(glyph, 16f, Ui.TEXT, true).also { it.gravity = Gravity.CENTER }, lp(width = dp(32), r = 10))
+            r.addView(label(name, 15f, Ui.TEXT))
+            val sz = label(size, 12f, Ui.MUTED)
+            r.addView(sz, lp(l = 8))
+            sizes.add(sz)
+            r.setOnClickListener { d.dismiss(); shareFile(kind) }
+            box.addView(r)
+        }
+        row("PDF", tr("PDF শেয়ার"), 0, "(" + Img.human(cur().length()) + ")")
+        row("JPG", tr("এই পেজ JPG"), 1, "")
+        row("PNG", tr("এই পেজ PNG"), 2, "")
+        val f = cur()
+        val idx = pageIdx
+        Thread {
+            var jpg = 0
+            var png = 0
+            try {
+                val b = renderBitmap(f, idx, 200)
+                if (b != null) {
+                    jpg = Img.encode(b, 1, 92).size
+                    png = Img.encode(b, 0, 92).size
+                    b.recycle()
+                }
+            } catch (e: Throwable) { }
+            runOnUiThread {
+                if (jpg > 0) sizes[1].text = "(" + Img.human(jpg.toLong()) + ")"
+                if (png > 0) sizes[2].text = "(" + Img.human(png.toLong()) + ")"
+            }
+        }.start()
+        d.setContentView(box)
+        d.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        d.window?.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
+        d.window?.setGravity(Gravity.BOTTOM)
+        d.show()
+    }
+
+    private fun exportPage() {
+        lateinit var build: (LinearLayout) -> Unit
+        build = { body ->
+            fun head(t: String) = body.addView(label(t, 12f, Ui.MUTED), lp(t = 14, b = 4))
+            fun row(name: String, ext: String, sel: Boolean, soon: Boolean, click: () -> Unit) {
+                val r = LinearLayout(this)
+                r.gravity = Gravity.CENTER_VERTICAL
+                r.setPadding(dp(4), dp(13), dp(4), dp(13))
+                val n = label(name, 15f, if (soon) Ui.MUTED else Ui.TEXT, sel)
+                r.addView(n)
+                r.addView(label(" ($ext)", 12f, Ui.MUTED), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+                if (soon) r.addView(label(tr("শীঘ্রই"), 11f, Ui.PRIMARY, true))
+                else if (sel) r.addView(label("✓", 16f, Ui.PRIMARY, true))
+                if (!soon) r.setOnClickListener { click() }
+                body.addView(r)
+                val v = View(this)
+                v.setBackgroundColor(Ui.LINE)
+                body.addView(v, lp(height = dp(1)))
+            }
+            head(tr("ডকুমেন্ট"))
+            row("Microsoft Word", ".docx", false, true) {}
+            row("Microsoft Excel", ".xlsx", false, true) {}
+            row("Microsoft PowerPoint", ".pptx", false, true) {}
+            row("Rich Text Format", ".rtf", false, true) {}
+            head(tr("ছবি"))
+            row("Joint Photographic", ".jpeg", exportFmt == 1, false) { exportFmt = 1; subBuild = build; render() }
+            row("Portable Network Graphics", ".png", exportFmt == 0, false) { exportFmt = 0; subBuild = build; render() }
+            row("Graphics Interchange", ".gif", false, true) {}
+            row("Tagged Image File", ".tiff", false, true) {}
+        }
+        openSub(tr("এক্সপোর্ট করুন…"), "\"" + baseName + "\" " + tr("এক্সপোর্ট করুন"), tr("এক্সপোর্ট"), build = build) {
+            treeOrAsk(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), 78)
+        }
     }
 
     private fun renderBitmap(f: File, idx: Int, dpi: Int): Bitmap? {
@@ -1405,7 +1932,14 @@ class PdfEditorActivity : GuardedActivity() {
                 if (cd != null) for (k in 0 until cd.itemCount) l.add(cd.getItemAt(k).uri) else data.data?.let { l.add(it) }
                 if (l.isNotEmpty()) mergeIn(l)
             }
+            81 -> {
+                val cd = data.clipData
+                if (cd != null) for (k in 0 until cd.itemCount) mergeAdd.add(cd.getItemAt(k).uri) else data.data?.let { mergeAdd.add(it) }
+                if (stage == 3) render()
+            }
             78 -> data.data?.let { doExport(it) }
+            79 -> data.data?.let { doMove(it) }
+            80 -> data.data?.let { retakeWith(it) }
         }
     }
 }
