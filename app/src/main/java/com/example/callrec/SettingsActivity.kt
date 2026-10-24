@@ -93,23 +93,6 @@ class SettingsActivity : GuardedActivity() {
         }.show()
     }
 
-    private fun showAbout() {
-        val ver = try { packageManager.getPackageInfo(packageName, 0).versionName } catch (e: Throwable) { "?" }
-        val sb = StringBuilder()
-        sb.append(tr("সংস্করণ: ")).append(bn(ver ?: "?")).append("\n\n")
-        var total = 0
-        for (i in dataKeys.indices) {
-            val n = Store.read(this, dataKeys[i]).length()
-            total += n
-            sb.append(dataNames[i]).append(": ").append(bn(n.toString())).append(tr("টি\n"))
-        }
-        val size = try { java.io.File(applicationInfo.dataDir, "shared_prefs/appdata.xml").length() } catch (e: Throwable) { 0L }
-        sb.append(tr("\nমোট এন্ট্রি: ")).append(bn(total.toString()))
-        sb.append(tr("\nজমানো ডেটার আকার: ")).append(Img.human(size))
-        sb.append(tr("\n\nডেটা শুধু এই ফোনেই থাকে। ব্যাকআপ না নিলে অ্যাপ মুছলে ডেটাও যাবে।"))
-        AlertDialog.Builder(this).setTitle(tr("আমার খাতা")).setMessage(sb.toString()).setPositiveButton(tr("ঠিক আছে"), null).show()
-    }
-
     override fun onResume() {
         super.onResume()
         if (::box.isInitialized) render()
@@ -436,7 +419,6 @@ class SettingsActivity : GuardedActivity() {
 
     private fun renderData() {
         box.addView(row(tr("ডেটা মুছুন"), tr("খাতা, নোট ইত্যাদি মুছে ফেলুন"), null) { askDelete() }, lp(b = 8))
-        box.addView(row(tr("অ্যাপ সম্পর্কে"), tr("সংস্করণ ও জমানো ডেটা"), null) { showAbout() }, lp(b = 8))
     }
 
     // ------------------------------------------------------------------ PIN dialogs
