@@ -96,6 +96,9 @@ class PdfEditorActivity : GuardedActivity() {
     private var annotColor = Color.parseColor("#E53935")
     private val annotItems = ArrayList<AnnotItem>()
     private var annotView: AnnotView? = null
+    private var ocrLang = 0
+    private var ocrAll = true
+    private var ocrText = ""
     private var subTitle = ""
     private var subSub = ""
     private var subBtn = ""
@@ -657,6 +660,7 @@ class PdfEditorActivity : GuardedActivity() {
         row("⇪", tr("এক্সপোর্ট করুন…"), true) { exportPage() }
         line()
         row("✎", tr("লেখা, হাইলাইট ও আঁকা"), false) { startAnnot() }
+        row("🔍", tr("ছবির লেখা চিনুন (OCR)"), false) { ocrPage() }
         row("Ⓦ", tr("ওয়াটারমার্ক যোগ করুন"), false) { watermarkDialog() }
         row("✍", tr("ডিজিটাল সই যোগ করুন"), false) { signDialog() }
         row("✂", tr("PDF ভাগ করুন"), false) { splitDialog() }
@@ -1146,6 +1150,140 @@ class PdfEditorActivity : GuardedActivity() {
                 cs.restoreGraphicsState()
             }
         }
+    }
+
+    // ------------------------------------------------------------------ OCR
+
+    private fun ocrPage() {
+        lateinit var build: (LinearLayout) -> Unit
+        build = { body ->
+            body.addView(label(tr("লেখার ভাষা"), 14f, Ui.TEXT, true), lp(b = 8))
+            val langs = listOf(tr("ইংরেজি ও অন্যান্য লাতিন ভাষা"), tr("হিন্দি, নেপালি, মারাঠি"), tr("চীনা"), tr("জাপানি"), tr("কোরিয়ান"))
+            for ((k, n) in langs.withIndex()) {
+                val on = ocrLang == k
+                val r = LinearLayout(this)
+                r.gravity = Gravity.CENTER_VERTICAL
+                r.background = bg(if (on) Ui.mix(Ui.PRIMARY, Ui.CARD, 0.9f) else Ui.CARD, 12, if (on) Ui.PRIMARY else Ui.LINE, if (on) 2 else 1)
+                r.setPadding(dp(14), dp(13), dp(14), dp(13))
+                r.addView(label(n, 14f, Ui.TEXT, on), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+                if (on) r.addView(label("✓", 14f, Ui.PRIMARY, true))
+                val kk = k
+                r.setOnClickListener { ocrLang = kk; subBuild = build; render() }
+                body.addView(r, lp(b = 6))
+            }
+            body.addView(label(tr("কোন পেজ"), 14f, Ui.TEXT, true), lp(t = 14, b = 8))
+            for ((k, n) in listOf(tr("সব পেজ"), tr("শুধু এই পেজ")).withIndex()) {
+                val on = (k == 0) == ocrAll
+                val r = LinearLayout(this)
+                r.gravity = Gravity.CENTER_VERTICAL
+                r.background = bg(if (on) Ui.mix(Ui.PRIMARY, Ui.CARD, 0.9f) else Ui.CARD, 12, if (on) Ui.PRIMARY else Ui.LINE, if (on) 2 else 1)
+                r.setPadding(dp(14), dp(13), dp(14), dp(13))
+                r.addView(label(n, 14f, Ui.TEXT, on), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+                if (on) r.addView(label("✓", 14f, Ui.PRIMARY, true))
+                val kk = k
+                r.setOnClickListener { ocrAll = kk == 0; subBuild = build; render() }
+                body.addView(r, lp(b = 6))
+            }
+            body.addView(label(tr("বাংলা লেখা এখনো চেনা যায় না।"), 11f, Ui.MUTED), lp(t = 10))
+        }
+        openSub(tr("ছবির লেখা চিনুন"), tr("স্ক্যান করা পেজ বা ছবি থেকে লেখা বের করুন"), tr("লেখা চিনুন"), build = build) { runOcr() }
+    }
+
+    private fun runOcr() {
+        if (busy) return
+        busy = true
+        val f = cur()
+        val n = pageCount
+        val pages = if (ocrAll) (0 until n).toList() else listOf(pageIdx)
+        val lang = ocrLang
+        val dlg = android.app.AlertDialog.Builder(this).setMessage(tr("লেখা চেনা হচ্ছে…")).setCancelable(false).create()
+        dlg.show()
+        Thread {
+            val sb = StringBuilder()
+            var failed = false
+            try {
+                val rec: com.google.mlkit.vision.text.TextRecognizer = when (lang) {
+                    1 -> com.google.mlkit.vision.text.TextRecognition.getClient(com.google.mlkit.vision.text.devanagari.DevanagariTextRecognizerOptions.Builder().build())
+                    2 -> com.google.mlkit.vision.text.TextRecognition.getClient(com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions.Builder().build())
+                    3 -> com.google.mlkit.vision.text.TextRecognition.getClient(com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions.Builder().build())
+                    4 -> com.google.mlkit.vision.text.TextRecognition.getClient(com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions.Builder().build())
+                    else -> com.google.mlkit.vision.text.TextRecognition.getClient(com.google.mlkit.vision.text.latin.TextRecognizerOptions.DEFAULT_OPTIONS)
+                }
+                for ((k, i) in pages.withIndex()) {
+                    runOnUiThread { dlg.setMessage(tr("লেখা চেনা হচ্ছে… ") + bn((k + 1).toString()) + " / " + bn(pages.size.toString())) }
+                    val b = renderBitmap(f, i, 220) ?: continue
+                    val t = com.google.android.gms.tasks.Tasks.await(rec.process(com.google.mlkit.vision.common.InputImage.fromBitmap(b, 0)))
+                    b.recycle()
+                    if (pages.size > 1) sb.append("--- ").append(tr("পেজ ")).append(i + 1).append(" ---\n")
+                    sb.append(t.text.trim()).append("\n\n")
+                }
+                rec.close()
+            } catch (e: Throwable) { failed = true }
+            runOnUiThread {
+                busy = false
+                dlg.dismiss()
+                val txt = sb.toString().trim()
+                if (failed && txt.isEmpty()) Toast.makeText(this, tr("লেখা চেনা যায়নি। প্রথমবার ইন্টারনেট লাগতে পারে।"), Toast.LENGTH_LONG).show()
+                else if (txt.isEmpty()) Toast.makeText(this, tr("কোনো লেখা পাওয়া যায়নি"), Toast.LENGTH_LONG).show()
+                else ocrResult(txt)
+            }
+        }.start()
+    }
+
+    private fun ocrResult(text: String) {
+        var et: android.widget.EditText? = null
+        openSub(tr("চেনা লেখা"), tr("দরকারে লেখা ঠিক করে নিন"), tr("কপি করুন"), build = { body ->
+            val e = android.widget.EditText(this)
+            e.setText(if (ocrText.isNotEmpty()) ocrText else text)
+            e.setTextColor(Ui.TEXT)
+            e.textSize = 14f
+            e.gravity = Gravity.TOP
+            e.minLines = 10
+            e.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            e.background = bg(Ui.CARD, 12, Ui.LINE, 1)
+            e.setPadding(dp(14), dp(12), dp(14), dp(12))
+            et = e
+            body.addView(e, lp())
+            val row = LinearLayout(this)
+            row.addView(outlineButton(tr("TXT সংরক্ষণ")) { ocrText = e.text.toString(); saveText(false) }, LinearLayout.LayoutParams(0, dp(48), 1f).also { it.setMargins(0, 0, dp(8), 0) })
+            row.addView(outlineButton(tr("DOCX সংরক্ষণ")) { ocrText = e.text.toString(); saveText(true) }, LinearLayout.LayoutParams(0, dp(48), 1f))
+            body.addView(row, lp(t = 12))
+        }) {
+            val t = et?.text?.toString() ?: text
+            (getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager).setPrimaryClip(android.content.ClipData.newPlainText("ocr", t))
+            Toast.makeText(this, tr("কপি হয়েছে"), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun saveText(docx: Boolean) {
+        val i = Intent(Intent.ACTION_CREATE_DOCUMENT)
+        i.addCategory(Intent.CATEGORY_OPENABLE)
+        i.type = if (docx) "application/vnd.openxmlformats-officedocument.wordprocessingml.document" else "text/plain"
+        i.putExtra(Intent.EXTRA_TITLE, baseName + (if (docx) ".docx" else ".txt"))
+        saveOrAsk(i, if (docx) 94 else 93)
+    }
+
+    private fun writeText(u: Uri, docx: Boolean) {
+        val t = ocrText
+        var ok = true
+        try {
+            contentResolver.openOutputStream(u)?.use { o ->
+                if (!docx) o.write(t.toByteArray(Charsets.UTF_8))
+                else {
+                    fun esc(x: String) = x.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                    val body = StringBuilder()
+                    for (line in t.split("\n")) body.append("<w:p><w:r><w:t xml:space=\"preserve\">").append(esc(line)).append("</w:t></w:r></w:p>")
+                    val z = java.util.zip.ZipOutputStream(o)
+                    fun put(name: String, c: String) { z.putNextEntry(java.util.zip.ZipEntry(name)); z.write(c.toByteArray(Charsets.UTF_8)); z.closeEntry() }
+                    put("[Content_Types].xml", "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/><Default Extension=\"xml\" ContentType=\"application/xml\"/><Override PartName=\"/word/document.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"/></Types>")
+                    put("_rels/.rels", "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"word/document.xml\"/></Relationships>")
+                    put("word/document.xml", "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><w:document xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><w:body>$body</w:body></w:document>")
+                    z.finish()
+                }
+            }
+        } catch (e: Throwable) { ok = false }
+        if (ok) Usage.done(this, "PdfEditorActivity", Img.size(this, u), Img.name(this, u))
+        Toast.makeText(this, if (ok) tr("সংরক্ষিত হয়েছে") else tr("সংরক্ষণ করা যায়নি"), Toast.LENGTH_LONG).show()
     }
 
     // ------------------------------------------------------------------ digital signature
@@ -2343,6 +2481,8 @@ class PdfEditorActivity : GuardedActivity() {
             }
             78 -> data.data?.let { doExport(it) }
             79 -> data.data?.let { doMove(it) }
+            93 -> data.data?.let { writeText(it, false) }
+            94 -> data.data?.let { writeText(it, true) }
             80 -> data.data?.let { retakeWith(it) }
         }
     }
