@@ -90,6 +90,7 @@ class PdfEditorActivity : GuardedActivity() {
     private var pageView: ImageView? = null
     private var pageLabel: TextView? = null
     private var undoBtn: TextView? = null
+    private var wmPreview = false
     private var subTitle = ""
     private var subSub = ""
     private var subBtn = ""
@@ -307,7 +308,7 @@ class PdfEditorActivity : GuardedActivity() {
         head.addView(un)
         val mn = label("⋮", 22f, dText, true)
         mn.setPadding(dp(10), dp(4), dp(4), dp(4))
-        mn.setOnClickListener { if (!busy && !cropping && !placing) openMenu() }
+        mn.setOnClickListener { if (!busy && !cropping && !placing && !wmPreview) openMenu() }
         head.addView(mn)
         root.addView(head, lp())
 
@@ -364,6 +365,12 @@ class PdfEditorActivity : GuardedActivity() {
             br.setPadding(dp(16), dp(10), dp(16), dp(14))
             br.addView(outlineButton(tr("বাতিল")) { placing = false; render() }, LinearLayout.LayoutParams(0, dp(52), 1f).also { it.setMargins(0, 0, dp(8), 0) })
             br.addView(bigButton(tr("সই বসান")) { applySignature() }, LinearLayout.LayoutParams(0, dp(52), 1f))
+            root.addView(br, lp())
+        } else if (wmPreview) {
+            val br = LinearLayout(this)
+            br.setPadding(dp(16), dp(10), dp(16), dp(14))
+            br.addView(outlineButton(tr("বাতিল")) { wmPreview = false; undo(); render() }, LinearLayout.LayoutParams(0, dp(52), 1f).also { it.setMargins(0, 0, dp(8), 0) })
+            br.addView(bigButton(tr("রাখুন")) { wmPreview = false; render() }, LinearLayout.LayoutParams(0, dp(52), 1f))
             root.addView(br, lp())
         } else if (cropping) {
             val br = LinearLayout(this)
@@ -635,6 +642,7 @@ class PdfEditorActivity : GuardedActivity() {
         d.window?.setBackgroundDrawableResource(android.R.color.transparent)
         d.window?.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
         d.window?.setGravity(Gravity.BOTTOM)
+        d.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         d.show()
     }
 
@@ -729,15 +737,15 @@ class PdfEditorActivity : GuardedActivity() {
         val box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
         val g = GradientDrawable()
-        g.setColor(dCard)
+        g.setColor(Ui.CARD)
         g.cornerRadii = floatArrayOf(dp(20).toFloat(), dp(20).toFloat(), dp(20).toFloat(), dp(20).toFloat(), 0f, 0f, 0f, 0f)
         box.background = g
         box.setPadding(dp(18), dp(16), dp(18), dp(18))
-        box.addView(label(tr("ওয়াটারমার্ক যোগ করুন"), 16f, dText, true))
+        box.addView(label(tr("ওয়াটারমার্ক যোগ করুন"), 16f, Ui.TEXT, true))
         val tabs = LinearLayout(this)
         for ((k, n) in listOf(tr("লেখা"), tr("লোগো")).withIndex()) {
             val on = wmTab == k
-            val t = label(n, 14f, if (on) Ui.PRIMARY else dMuted, true)
+            val t = label(n, 14f, if (on) Ui.PRIMARY else Ui.MUTED, true)
             t.gravity = Gravity.CENTER
             t.setPadding(0, dp(12), 0, dp(10))
             t.setOnClickListener { wmTab = k; d.dismiss(); watermarkDialog() }
@@ -745,29 +753,29 @@ class PdfEditorActivity : GuardedActivity() {
             c.orientation = LinearLayout.VERTICAL
             c.addView(t)
             val ln = View(this)
-            ln.setBackgroundColor(if (on) Ui.PRIMARY else dLine)
+            ln.setBackgroundColor(if (on) Ui.PRIMARY else Ui.LINE)
             c.addView(ln, lp(height = if (on) dp(2) else 1))
             tabs.addView(c, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         }
         box.addView(tabs, lp(t = 6, b = 14))
         var input: android.widget.EditText? = null
         if (wmTab == 0) {
-            box.addView(label(tr("আপনার লেখা"), 12f, dMuted))
+            box.addView(label(tr("আপনার লেখা"), 12f, Ui.MUTED))
             val e = android.widget.EditText(this)
             e.setText(wmText)
-            e.setTextColor(dText)
-            e.setHintTextColor(dMuted)
+            e.setTextColor(Ui.TEXT)
+            e.setHintTextColor(Ui.MUTED)
             e.hint = tr("যেমন: গোপনীয়")
             e.textSize = 15f
             e.setSingleLine(true)
-            e.background = bg(dBg, 12, dLine, 1)
+            e.background = bg(Ui.BG, 12, Ui.LINE, 1)
             e.setPadding(dp(14), dp(12), dp(14), dp(12))
             box.addView(e, lp(t = 6))
             input = e
         } else {
             val pick = label(if (wmLogo == null) tr("ছবি বাছুন") else Img.name(this, wmLogo!!), 14f, Ui.PRIMARY, true)
             pick.gravity = Gravity.CENTER
-            pick.background = bg(dBg, 12, dLine, 1)
+            pick.background = bg(Ui.BG, 12, Ui.LINE, 1)
             pick.setPadding(dp(14), dp(14), dp(14), dp(14))
             pick.setOnClickListener {
                 d.dismiss()
@@ -777,14 +785,14 @@ class PdfEditorActivity : GuardedActivity() {
                 startActivityForResult(i, 74)
             }
             box.addView(pick, lp())
-            box.addView(label(tr("লোগো বা ছবি পেজের মাঝখানে হালকা করে বসবে।"), 11f, dMuted), lp(t = 6))
+            box.addView(label(tr("লোগো বা ছবি পেজের মাঝখানে হালকা করে বসবে।"), 11f, Ui.MUTED), lp(t = 6))
         }
         // size: from the tiniest mark up to the whole page width
         val sizeNow = { if (wmTab == 0) wmSizeText else wmSizeLogo }
         val head = LinearLayout(this)
         head.gravity = Gravity.CENTER_VERTICAL
-        head.addView(label(tr("আকার"), 12f, dMuted), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        val pct = label(bn(Math.round(sizeNow() * 100).toString()) + "%", 12f, dText, true)
+        head.addView(label(tr("আকার"), 12f, Ui.MUTED), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        val pct = label(bn(Math.round(sizeNow() * 100).toString()) + "%", 12f, Ui.TEXT, true)
         head.addView(pct)
         box.addView(head, lp(t = 14))
         val sb = android.widget.SeekBar(this)
@@ -839,7 +847,7 @@ class PdfEditorActivity : GuardedActivity() {
         val text = wmText
         val logo = wmLogo
         val sizeF = if (tab == 0) wmSizeText else wmSizeLogo
-        apply { doc ->
+        apply({ wmPreview = true; render() }) { doc ->
             val bmp = (if (tab == 0) textBitmap(text) else Img.decode(this, logo!!, 900)) ?: throw IllegalStateException()
             val img = LosslessFactory.createFromImage(doc, bmp)
             val gs = PDExtendedGraphicsState()
@@ -868,54 +876,63 @@ class PdfEditorActivity : GuardedActivity() {
 
     private fun savedSigFile() = File(filesDir, "signature.png")
 
+    private fun sigDir() = File(filesDir, "sigs").also { it.mkdirs() }
+
     private fun signDialog() {
-        val d = android.app.Dialog(this)
-        val box = LinearLayout(this)
-        box.orientation = LinearLayout.VERTICAL
-        val g = GradientDrawable()
-        g.setColor(dCard)
-        g.cornerRadii = floatArrayOf(dp(20).toFloat(), dp(20).toFloat(), dp(20).toFloat(), dp(20).toFloat(), 0f, 0f, 0f, 0f)
-        box.background = g
-        box.setPadding(dp(18), dp(16), dp(18), dp(18))
-        box.addView(label(tr("ডিজিটাল সই"), 16f, dText, true))
-        box.addView(label(tr("নিচের সাদা জায়গায় আঙুল দিয়ে সই আঁকুন"), 12f, dMuted), lp(t = 2, b = 10))
-        val pad = SignPad(this)
-        box.addView(pad, lp(height = dp(200)))
-        val clr = label(tr("মুছে আবার আঁকুন"), 13f, Ui.PRIMARY, true)
-        clr.setPadding(0, dp(10), 0, dp(4))
-        clr.setOnClickListener { pad.clear() }
-        box.addView(clr)
-        val saved = savedSigFile()
-        if (saved.exists()) {
-            val us = label(tr("আগের সংরক্ষিত সই ব্যবহার করুন"), 13f, Ui.PRIMARY, true)
-            us.setPadding(0, dp(6), 0, dp(4))
-            us.setOnClickListener {
-                val b = android.graphics.BitmapFactory.decodeFile(saved.absolutePath)
-                if (b != null) { d.dismiss(); startPlacing(b) }
-            }
-            box.addView(us)
-        }
-        val row = LinearLayout(this)
-        row.addView(outlineButton(tr("বাতিল")) { d.dismiss() }, LinearLayout.LayoutParams(0, dp(48), 1f).also { it.setMargins(0, 0, dp(8), 0) })
-        row.addView(bigButton(tr("চালিয়ে যান")) {
-            val b = pad.result()
-            if (b == null) { Toast.makeText(this, tr("আগে সই আঁকুন"), Toast.LENGTH_SHORT).show(); return@bigButton }
-            try { saved.outputStream().use { b.compress(Bitmap.CompressFormat.PNG, 100, it) } } catch (e: Throwable) { }
-            d.dismiss()
+        // the older single saved signature moves into the library
+        val old = savedSigFile()
+        if (old.exists()) { try { old.copyTo(File(sigDir(), "sig_old.png"), true); old.delete() } catch (e: Throwable) { } }
+        var pad: SignPad? = null
+        openSub(tr("ডিজিটাল সই"), tr("আঙুল দিয়ে সই আঁকুন অথবা লাইব্রেরি থেকে বেছে নিন"), tr("চালিয়ে যান"), dark = true, cancel = true,
+            build = { body ->
+                val pp = SignPad(this)
+                pad = pp
+                body.addView(pp, lp(height = (resources.displayMetrics.heightPixels * 0.42f).toInt()))
+                val clr = label(tr("মুছে আবার আঁকুন"), 13f, Ui.PRIMARY, true)
+                clr.setPadding(0, dp(12), 0, dp(4))
+                clr.setOnClickListener { pp.clear() }
+                body.addView(clr)
+                val files = (sigDir().listFiles() ?: emptyArray()).sortedByDescending { it.lastModified() }
+                if (files.isNotEmpty()) {
+                    body.addView(label(tr("সই লাইব্রেরি"), 12f, dMuted), lp(t = 14, b = 6))
+                    val hs = android.widget.HorizontalScrollView(this)
+                    hs.isHorizontalScrollBarEnabled = false
+                    val row = LinearLayout(this)
+                    for (f in files.take(8)) {
+                        val bm = android.graphics.BitmapFactory.decodeFile(f.absolutePath) ?: continue
+                        val iv = ImageView(this)
+                        iv.setImageBitmap(bm)
+                        iv.setBackgroundColor(Color.WHITE)
+                        iv.setPadding(dp(8), dp(8), dp(8), dp(8))
+                        iv.scaleType = ImageView.ScaleType.FIT_CENTER
+                        iv.setOnClickListener { startPlacing(bm) }
+                        iv.setOnLongClickListener {
+                            f.delete()
+                            subBuild?.let { _ -> render() }
+                            true
+                        }
+                        row.addView(iv, lp(width = dp(110), height = dp(64), r = 8))
+                    }
+                    hs.addView(row)
+                    body.addView(hs)
+                    body.addView(label(tr("মুছতে সইয়ে চেপে ধরুন"), 11f, dMuted), lp(t = 6))
+                }
+            }) {
+            val b = pad?.result()
+            if (b == null) { Toast.makeText(this, tr("আগে সই আঁকুন"), Toast.LENGTH_SHORT).show(); return@openSub }
+            try {
+                File(sigDir(), "sig_" + System.currentTimeMillis() + ".png").outputStream().use { b.compress(Bitmap.CompressFormat.PNG, 100, it) }
+                (sigDir().listFiles() ?: emptyArray()).sortedByDescending { it.lastModified() }.drop(8).forEach { it.delete() }
+            } catch (e: Throwable) { }
             startPlacing(b)
-        }, LinearLayout.LayoutParams(0, dp(48), 1f))
-        box.addView(row, lp(t = 12))
-        d.setContentView(box)
-        d.window?.setBackgroundDrawableResource(android.R.color.transparent)
-        d.window?.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
-        d.window?.setGravity(Gravity.BOTTOM)
-        d.show()
+        }
     }
 
     private fun startPlacing(b: Bitmap) {
         if (curBmp == null) return
         sigBmp = b
         placing = true
+        stage = 1
         render()
     }
 
@@ -1925,11 +1942,24 @@ class PdfEditorActivity : GuardedActivity() {
 
     private fun save() {
         if (busy) return
-        val i = Intent(Intent.ACTION_CREATE_DOCUMENT)
-        i.addCategory(Intent.CATEGORY_OPENABLE)
-        i.type = "application/pdf"
-        i.putExtra(Intent.EXTRA_TITLE, baseName + "_edited.pdf")
-        saveOrAsk(i, 73)
+        val e = android.widget.EditText(this)
+        e.setText(baseName)
+        styleInput(e)
+        e.setSingleLine(true)
+        e.setSelection(e.text.length)
+        val col = LinearLayout(this)
+        col.orientation = LinearLayout.VERTICAL
+        col.addView(label(tr("ফাইলের নাম"), 12f, Ui.MUTED))
+        col.addView(e, lp(t = 6))
+        confirmSheet(tr("PDF সংরক্ষণ"), col, tr("সংরক্ষণ"), false) {
+            val n = e.text.toString().trim().replace(Regex("[\\\\/:*?\"<>|]"), "_").removeSuffix(".pdf")
+            if (n.isNotEmpty()) baseName = n
+            val i = Intent(Intent.ACTION_CREATE_DOCUMENT)
+            i.addCategory(Intent.CATEGORY_OPENABLE)
+            i.type = "application/pdf"
+            i.putExtra(Intent.EXTRA_TITLE, baseName + ".pdf")
+            saveOrAsk(i, 73)
+        }
     }
 
     private fun writeOut(out: Uri) {
@@ -2138,6 +2168,7 @@ private class SignPad(ctx: Context) : View(ctx) {
     private val path = Path()
     private val ink = Paint(Paint.ANTI_ALIAS_FLAG)
     private val back = Paint()
+    private val show = Paint(Paint.ANTI_ALIAS_FLAG)
     private var minX = 1e9f
     private var minY = 1e9f
     private var maxX = -1e9f
@@ -2150,7 +2181,12 @@ private class SignPad(ctx: Context) : View(ctx) {
         ink.strokeCap = Paint.Cap.ROUND
         ink.strokeJoin = Paint.Join.ROUND
         ink.color = Color.parseColor("#14151C")
-        back.color = Color.WHITE
+        back.color = Color.parseColor("#232532")
+        show.style = Paint.Style.STROKE
+        show.strokeWidth = 3.5f * d
+        show.strokeCap = Paint.Cap.ROUND
+        show.strokeJoin = Paint.Join.ROUND
+        show.color = Color.WHITE
     }
 
     fun clear() {
@@ -2167,7 +2203,7 @@ private class SignPad(ctx: Context) : View(ctx) {
 
     override fun onDraw(c: Canvas) {
         c.drawRoundRect(0f, 0f, width.toFloat(), height.toFloat(), 14f * d, 14f * d, back)
-        c.drawPath(path, ink)
+        c.drawPath(path, show)
     }
 
     override fun onTouchEvent(e: android.view.MotionEvent): Boolean {

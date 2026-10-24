@@ -2,6 +2,10 @@ package com.example.callrec
 
 object Dict7 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        "রাখুন" to "Keep",
+        "আঙুল দিয়ে সই আঁকুন অথবা লাইব্রেরি থেকে বেছে নিন" to "Draw your signature or pick one from the library",
+        "সই লাইব্রেরি" to "Signature library",
+        "মুছতে সইয়ে চেপে ধরুন" to "Long-press a signature to delete it",
         "সাম্প্রতিক ফাইল" to "Recent Files",
         "এখনো কোনো ফাইল সংরক্ষণ করা হয়নি" to "No files saved yet",
         "ফাইলটি পাওয়া যায়নি" to "File not found",
