@@ -128,7 +128,7 @@ class PdfEditorActivity : GuardedActivity() {
             1 -> if (history.size > 1) confirmLeave() else { stage = 0; history.clear(); render() }
             2 -> { stage = 1; render() }
             3 -> { stage = 1; render() }
-            4 -> { stage = 0; render() }
+            4 -> { if (libSel.isNotEmpty()) { libSel.clear(); render() } else { stage = 0; render() } }
             else -> super.onBackPressed()
         }
     }
@@ -195,7 +195,7 @@ class PdfEditorActivity : GuardedActivity() {
             col.addView(bigButton(tr("PDF বাছুন")) { pickPdf() }, lp(height = dp(52), t = 18))
             col.addView(outlineButton(tr("ছবি বাছুন")) { pickImages() }, lp(height = dp(52), t = 10))
             col.addView(outlineButton(tr("ক্যামেরায় স্ক্যান করুন")) { scanStart(false) }, lp(height = dp(52), t = 10))
-            col.addView(outlineButton(tr("সাম্প্রতিক ফাইল")) { stage = 4; render() }, lp(height = dp(52), t = 10))
+            col.addView(outlineButton(tr("ডকুমেন্ট")) { stage = 4; render() }, lp(height = dp(52), t = 10))
         }
         root.addView(scroll, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
     }
@@ -340,6 +340,7 @@ class PdfEditorActivity : GuardedActivity() {
             return
         }
         baseName = name
+        ocrDocText = ""
         history.clear()
         history.add(f)
         pageIdx = 0
@@ -777,7 +778,7 @@ class PdfEditorActivity : GuardedActivity() {
                     outUri = u
                     outSize = Img.size(this, u)
                     Usage.done(this, "PdfEditorActivity", outSize, Img.name(this, u))
-                    RecentPdf.add(this, u, Img.name(this, u), outSize)
+                    RecentPdf.add(this, u, Img.name(this, u), outSize, ocrDocText)
                     stage = 2
                     render()
                 } else Toast.makeText(this, tr("সংরক্ষণ করা যায়নি"), Toast.LENGTH_LONG).show()
@@ -1246,7 +1247,7 @@ class PdfEditorActivity : GuardedActivity() {
                 val txt = sb.toString().trim()
                 if (failed && txt.isEmpty()) Toast.makeText(this, tr("লেখা চেনা যায়নি। প্রথমবার ইন্টারনেট লাগতে পারে।"), Toast.LENGTH_LONG).show()
                 else if (txt.isEmpty()) Toast.makeText(this, tr("কোনো লেখা পাওয়া যায়নি"), Toast.LENGTH_LONG).show()
-                else ocrResult(txt)
+                else { if (ocrAll) ocrDocText = txt; ocrResult(txt) }
             }
         }.start()
     }
@@ -1687,65 +1688,268 @@ class PdfEditorActivity : GuardedActivity() {
         }.start()
     }
 
-    // ------------------------------------------------------------------ Recent Files
+    // ------------------------------------------------------------------ document library
+
+    private var libFolder: String? = null
+    private var libTag: String? = null
+    private var libQuery = ""
+    private var libSort = 0
+    private val libSel = LinkedHashSet<String>()
+    private var libList: LinearLayout? = null
+    private var ocrDocText = ""
+
+    private fun chip(text: String, on: Boolean, click: () -> Unit): TextView {
+        val c = label(text, 13f, if (on) Color.WHITE else Ui.TEXT, on)
+        c.background = bg(if (on) Ui.PRIMARY else Ui.CARD, 18, if (on) Ui.PRIMARY else Ui.LINE, 1)
+        c.setPadding(dp(14), dp(8), dp(14), dp(8))
+        c.setOnClickListener { click() }
+        return c
+    }
 
     private fun renderRecent() {
-        root.addView(pdfHeader(tr("সাম্প্রতিক ফাইল"), "", { stage = 0; render() }), lp())
+        val rt = LinearLayout(this)
+        val right = LinearLayout(this)
+        right.gravity = Gravity.CENTER_VERTICAL
+        val sortB = label("⇅", 20f, Ui.TEXT, true)
+        sortB.setPadding(dp(10), dp(6), dp(10), dp(6))
+        sortB.setOnClickListener {
+            val names = arrayOf(tr("নতুন আগে"), tr("নাম অনুযায়ী"), tr("বড় আগে"))
+            android.app.AlertDialog.Builder(this).setTitle(tr("সাজান")).setItems(names) { _, w -> libSort = w; render() }.show()
+        }
+        right.addView(sortB)
+        val addB = label("＋", 22f, Ui.PRIMARY, true)
+        addB.setPadding(dp(10), dp(4), dp(6), dp(4))
+        addB.setOnClickListener {
+            val i = Intent(Intent.ACTION_OPEN_DOCUMENT)
+            i.addCategory(Intent.CATEGORY_OPENABLE)
+            i.type = "application/pdf"
+            i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+            startActivityForResult(i, 95)
+        }
+        right.addView(addB)
+        root.addView(pdfHeader(tr("ডকুমেন্ট"), "", { onBackPressed() }, right), lp())
+
+        val q = android.widget.EditText(this)
+        q.hint = tr("নাম, ট্যাগ বা ভেতরের লেখা খুঁজুন")
+        q.setSingleLine(true)
+        styleInput(q)
+        q.setText(libQuery)
+        q.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) { libQuery = s?.toString() ?: ""; fillLib() }
+        })
+        root.addView(q, lp(l = 16, r = 16, t = 4))
+
+        val hs = android.widget.HorizontalScrollView(this)
+        hs.isHorizontalScrollBarEnabled = false
+        val row = LinearLayout(this)
+        row.setPadding(dp(16), dp(10), dp(16), dp(2))
+        row.addView(chip(tr("সব"), libFolder == null && libTag == null) { libFolder = null; libTag = null; render() }, lp(r = 8))
+        row.addView(chip("⭐ " + tr("গুরুত্বপূর্ণ"), libFolder == "★") { libFolder = "★"; libTag = null; render() }, lp(r = 8))
+        for (f in RecentPdf.folders(this)) {
+            val ch = chip("📁 $f", libFolder == f) { libFolder = f; libTag = null; render() }
+            ch.setOnLongClickListener {
+                android.app.AlertDialog.Builder(this).setMessage(tr("ফোল্ডারটি মুছবেন? ভেতরের ফাইল মুছবে না।"))
+                    .setPositiveButton(tr("মুছুন")) { _, _ -> RecentPdf.deleteFolder(this, f); if (libFolder == f) libFolder = null; render() }
+                    .setNegativeButton(tr("বাতিল"), null).show()
+                true
+            }
+            row.addView(ch, lp(r = 8))
+        }
+        row.addView(chip("＋ " + tr("নতুন ফোল্ডার"), false) { askNewFolder { } }, lp(r = 8))
+        hs.addView(row)
+        root.addView(hs, lp())
+        val tgs = RecentPdf.tags(this)
+        if (tgs.isNotEmpty()) {
+            val hs2 = android.widget.HorizontalScrollView(this)
+            hs2.isHorizontalScrollBarEnabled = false
+            val r2 = LinearLayout(this)
+            r2.setPadding(dp(16), dp(4), dp(16), dp(2))
+            for (t in tgs) r2.addView(chip("#$t", libTag == t) { libTag = if (libTag == t) null else t; render() }, lp(r = 8))
+            hs2.addView(r2)
+            root.addView(hs2, lp())
+        }
+
         val scroll = ScrollView(this)
         val col = LinearLayout(this)
         col.orientation = LinearLayout.VERTICAL
-        col.setPadding(dp(16), dp(8), dp(16), dp(16))
+        col.setPadding(dp(16), dp(10), dp(16), dp(16))
         scroll.addView(col)
-        val items = RecentPdf.list(this)
+        libList = col
+        root.addView(scroll, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
+        fillLib()
+
+        if (libSel.isNotEmpty()) {
+            val bar = LinearLayout(this)
+            bar.background = bg(Ui.CARD, 0, Ui.LINE, 1)
+            bar.setPadding(dp(8), dp(8), dp(8), dp(8))
+            fun act(g: String, n: String, f: () -> Unit) {
+                val c = LinearLayout(this)
+                c.orientation = LinearLayout.VERTICAL
+                c.gravity = Gravity.CENTER
+                c.addView(label(g, 18f, Ui.TEXT, true).also { it.gravity = Gravity.CENTER })
+                c.addView(label(n, 10f, Ui.MUTED).also { it.gravity = Gravity.CENTER })
+                c.setOnClickListener { f() }
+                bar.addView(c, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            }
+            act("⇗", tr("শেয়ার")) { shareLib(selItems()) }
+            act("📁", tr("ফোল্ডার")) { pickFolder(libSel.toList()) }
+            act("#", tr("ট্যাগ")) { addTags(libSel.toList()) }
+            act("⭐", tr("তারা")) {
+                val items = selItems()
+                val on = items.any { !it.star }
+                RecentPdf.update(this, libSel.toList()) { it.star = on }
+                libSel.clear(); render()
+            }
+            act("🗑", tr("মুছুন")) { deleteLib(selItems()) }
+            root.addView(bar, lp())
+        }
+    }
+
+    private fun selItems(): List<RecentPdf.Item> = RecentPdf.list(this).filter { it.uri in libSel }
+
+    private fun fillLib() {
+        val col = libList ?: return
+        col.removeAllViews()
+        var items = RecentPdf.list(this)
+        items = when (libFolder) {
+            null -> items
+            "★" -> items.filter { it.star }
+            else -> items.filter { it.folder == libFolder }
+        }
+        val tg = libTag
+        if (tg != null) items = items.filter { tg in it.tags }
+        val qq = libQuery.trim().lowercase()
+        if (qq.isNotEmpty()) items = items.filter { it.name.lowercase().contains(qq) || it.tags.any { t -> t.lowercase().contains(qq) } || it.ocr.lowercase().contains(qq) }
+        items = when (libSort) {
+            1 -> items.sortedBy { it.name.lowercase() }
+            2 -> items.sortedByDescending { it.size }
+            else -> items.sortedByDescending { it.time }
+        }
         if (items.isEmpty()) {
-            val t = label(tr("এখনো কোনো ফাইল সংরক্ষণ করা হয়নি"), 14f, Ui.MUTED)
+            val t = label(if (RecentPdf.list(this).isEmpty()) tr("এখনো কোনো ডকুমেন্ট নেই। সংরক্ষণ করলে বা ＋ চাপলে এখানে আসবে।") else tr("কিছু পাওয়া যায়নি"), 14f, Ui.MUTED)
             t.gravity = Gravity.CENTER
             col.addView(t, lp(t = 60))
+            return
         }
+        col.addView(label(tr("মোট ") + bn(items.size.toString()) + tr(" ফাইল"), 12f, Ui.MUTED), lp(b = 8))
         for (it in items) {
             val u = Uri.parse(it.uri)
+            val picked = it.uri in libSel
             val r = LinearLayout(this)
             r.gravity = Gravity.CENTER_VERTICAL
-            r.background = bg(Ui.CARD, 14, Ui.LINE, 1)
+            r.background = bg(if (picked) Ui.mix(Ui.PRIMARY, Ui.CARD, 0.9f) else Ui.CARD, 14, if (picked) Ui.PRIMARY else Ui.LINE, if (picked) 2 else 1)
             r.setPadding(dp(10), dp(10), dp(6), dp(10))
+            if (libSel.isNotEmpty()) r.addView(label(if (picked) "☑" else "☐", 20f, Ui.PRIMARY, true), lp(r = 8))
             val th = thumbView(44, 56)
             pdfThumb(u, 150) { b, _ -> if (b != null) th.setImageBitmap(b) }
             r.addView(th, lp(width = dp(44), height = dp(56), r = 12))
             val c = LinearLayout(this)
             c.orientation = LinearLayout.VERTICAL
-            val n = label(it.name, 14f, Ui.TEXT, true)
+            val n = label((if (it.star) "⭐ " else "") + it.name, 14f, Ui.TEXT, true)
             n.maxLines = 2
             c.addView(n)
             val dt = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.US).format(java.util.Date(it.time))
             c.addView(label(bn(dt) + " · " + Img.human(it.size), 12f, Ui.MUTED), lp(t = 2))
+            val extra = (if (it.folder.isNotEmpty()) "📁 " + it.folder + "  " else "") + it.tags.joinToString(" ") { t -> "#$t" }
+            if (extra.isNotBlank()) c.addView(label(extra, 11f, Ui.PRIMARY), lp(t = 2))
             r.addView(c, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-            val sh = label("⇗", 19f, Ui.TEXT, true)
-            sh.setPadding(dp(10), dp(8), dp(8), dp(8))
-            sh.setOnClickListener { _ ->
-                val i = Intent(Intent.ACTION_SEND)
-                i.type = "application/pdf"
-                i.putExtra(Intent.EXTRA_STREAM, u)
-                i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                try { startActivity(Intent.createChooser(i, tr("শেয়ার"))) } catch (e: Throwable) { Toast.makeText(this, tr("ফাইলটি পাওয়া যায়নি"), Toast.LENGTH_SHORT).show() }
+            if (libSel.isEmpty()) {
+                val sh = label("⇗", 19f, Ui.TEXT, true)
+                sh.setPadding(dp(10), dp(8), dp(8), dp(8))
+                sh.setOnClickListener { _ -> shareLib(listOf(it)) }
+                r.addView(sh)
+                val mn = label("⋮", 20f, Ui.TEXT, true)
+                mn.setPadding(dp(8), dp(8), dp(8), dp(8))
+                mn.setOnClickListener { _ -> recentMenu(it) }
+                r.addView(mn)
             }
-            r.addView(sh)
-            val mn = label("⋮", 20f, Ui.TEXT, true)
-            mn.setPadding(dp(8), dp(8), dp(8), dp(8))
-            mn.setOnClickListener { _ -> recentMenu(it) }
-            r.addView(mn)
-            r.setOnClickListener { _ -> openPdf(u) }
+            r.setOnClickListener { _ ->
+                if (libSel.isNotEmpty()) { if (!libSel.add(it.uri)) libSel.remove(it.uri); render() } else openPdf(u)
+            }
+            r.setOnLongClickListener { _ -> libSel.add(it.uri); render(); true }
             col.addView(r, lp(b = 8))
         }
-        root.addView(scroll, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
+    }
+
+    private fun shareLib(items: List<RecentPdf.Item>) {
+        if (items.isEmpty()) return
+        val uris = ArrayList(items.map { Uri.parse(it.uri) })
+        val i = if (uris.size == 1) Intent(Intent.ACTION_SEND).putExtra(Intent.EXTRA_STREAM, uris[0])
+        else Intent(Intent.ACTION_SEND_MULTIPLE).putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+        i.type = "application/pdf"
+        i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        try { startActivity(Intent.createChooser(i, tr("শেয়ার"))) } catch (e: Throwable) { Toast.makeText(this, tr("ফাইলটি পাওয়া যায়নি"), Toast.LENGTH_SHORT).show() }
+    }
+
+    private fun askNewFolder(then: (String) -> Unit) {
+        val e = android.widget.EditText(this)
+        e.hint = tr("ফোল্ডারের নাম")
+        android.app.AlertDialog.Builder(this).setTitle(tr("নতুন ফোল্ডার")).setView(e)
+            .setPositiveButton(tr("তৈরি করুন")) { _, _ ->
+                val n = e.text.toString().trim().replace("\n", " ")
+                if (n.isNotEmpty()) { RecentPdf.addFolder(this, n); then(n); render() }
+            }.setNegativeButton(tr("বাতিল"), null).show()
+    }
+
+    private fun pickFolder(uris: List<String>) {
+        val fs = RecentPdf.folders(this)
+        val names = ArrayList<String>()
+        names.add(tr("(কোনো ফোল্ডার নয়)"))
+        names.addAll(fs)
+        names.add("＋ " + tr("নতুন ফোল্ডার"))
+        android.app.AlertDialog.Builder(this).setTitle(tr("ফোল্ডারে সরান")).setItems(names.toTypedArray()) { _, w ->
+            if (w == names.size - 1) askNewFolder { n -> RecentPdf.update(this, uris) { it.folder = n }; libSel.clear() }
+            else { val f = if (w == 0) "" else fs[w - 1]; RecentPdf.update(this, uris) { it.folder = f }; libSel.clear(); render() }
+        }.show()
+    }
+
+    private fun addTags(uris: List<String>) {
+        val e = android.widget.EditText(this)
+        e.hint = tr("ট্যাগ, কমা দিয়ে আলাদা করুন")
+        android.app.AlertDialog.Builder(this).setTitle(tr("ট্যাগ যোগ")).setView(e)
+            .setPositiveButton(tr("ঠিক আছে")) { _, _ ->
+                val add = e.text.toString().split(",").map { it.trim().removePrefix("#") }.filter { it.isNotEmpty() }
+                if (add.isNotEmpty()) RecentPdf.update(this, uris) { it.tags = (it.tags + add).distinct() }
+                libSel.clear(); render()
+            }.setNegativeButton(tr("বাতিল"), null).show()
+    }
+
+    private fun deleteLib(items: List<RecentPdf.Item>) {
+        if (items.isEmpty()) return
+        android.app.AlertDialog.Builder(this).setMessage(tr("আপনি কি এই ফাইলটি মুছে ফেলতে চান?") + " (" + bn(items.size.toString()) + ")")
+            .setPositiveButton(tr("হ্যাঁ, মুছুন")) { _, _ ->
+                for (it in items) try { DocumentsContract.deleteDocument(contentResolver, Uri.parse(it.uri)) } catch (x: Throwable) { }
+                RecentPdf.remove(this, items.map { it.uri })
+                libSel.clear()
+                render()
+            }.setNegativeButton(tr("বাতিল"), null).show()
     }
 
     private fun recentMenu(it: RecentPdf.Item) {
         val u = Uri.parse(it.uri)
-        val items = arrayOf(tr("খুলুন"), tr("নাম বদলান"), tr("তালিকা থেকে সরান"), tr("ফাইল মুছুন"))
+        val items = arrayOf(tr("খুলুন"), if (it.star) tr("তারা সরান") else tr("গুরুত্বপূর্ণ চিহ্ন দিন"), tr("ফোল্ডারে সরান"), tr("ট্যাগ যোগ"), tr("ট্যাগ সরান"),
+            tr("নাম বদলান"), tr("বিস্তারিত তথ্য"), tr("তালিকা থেকে সরান"), tr("ফাইল মুছুন"))
         android.app.AlertDialog.Builder(this).setTitle(it.name).setItems(items) { _, w ->
             when (w) {
                 0 -> openPdf(u)
-                1 -> {
+                1 -> { RecentPdf.update(this, listOf(it.uri)) { x -> x.star = !x.star }; render() }
+                2 -> pickFolder(listOf(it.uri))
+                3 -> addTags(listOf(it.uri))
+                4 -> {
+                    if (it.tags.isEmpty()) { Toast.makeText(this, tr("কোনো ট্যাগ নেই"), Toast.LENGTH_SHORT).show(); return@setItems }
+                    val tg = it.tags.toTypedArray()
+                    val chk = BooleanArray(tg.size)
+                    android.app.AlertDialog.Builder(this).setTitle(tr("ট্যাগ সরান"))
+                        .setMultiChoiceItems(tg, chk) { _, k, on -> chk[k] = on }
+                        .setPositiveButton(tr("সরান")) { _, _ ->
+                            val rm = tg.filterIndexed { k, _ -> chk[k] }
+                            RecentPdf.update(this, listOf(it.uri)) { x -> x.tags = x.tags - rm.toSet() }
+                            render()
+                        }.setNegativeButton(tr("বাতিল"), null).show()
+                }
+                5 -> {
                     val e = android.widget.EditText(this)
                     e.setText(it.name.removeSuffix(".pdf"))
                     android.app.AlertDialog.Builder(this).setTitle(tr("নাম বদলান")).setView(e)
@@ -1758,13 +1962,19 @@ class PdfEditorActivity : GuardedActivity() {
                             }
                         }.setNegativeButton(tr("বাতিল"), null).show()
                 }
-                2 -> { RecentPdf.remove(this, it.uri); render() }
-                3 -> android.app.AlertDialog.Builder(this).setMessage(tr("আপনি কি এই ফাইলটি মুছে ফেলতে চান?"))
-                    .setPositiveButton(tr("হ্যাঁ, মুছুন")) { _, _ ->
-                        try { DocumentsContract.deleteDocument(contentResolver, u) } catch (x: Throwable) { }
-                        RecentPdf.remove(this, it.uri)
-                        render()
-                    }.setNegativeButton(tr("বাতিল"), null).show()
+                6 -> Thread {
+                    var pages = 0
+                    try { contentResolver.openFileDescriptor(u, "r")?.use { pfd -> val r = PdfRenderer(pfd); pages = r.pageCount; r.close() } } catch (x: Throwable) { }
+                    runOnUiThread {
+                        val dt = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.US).format(java.util.Date(it.time))
+                        val msg = tr("নাম: ") + it.name + "\n" + tr("সাইজ: ") + Img.human(it.size) + "\n" + tr("পেজ: ") + bn(pages.toString()) + "\n" + tr("তারিখ: ") + bn(dt) +
+                            "\n" + tr("ফোল্ডার: ") + (if (it.folder.isEmpty()) "-" else it.folder) + "\n" + tr("ট্যাগ: ") + (if (it.tags.isEmpty()) "-" else it.tags.joinToString(", ")) +
+                            "\n" + tr("OCR লেখা: ") + (if (it.ocr.isEmpty()) tr("নেই") else tr("আছে (খোঁজা যায়)"))
+                        android.app.AlertDialog.Builder(this).setTitle(tr("বিস্তারিত তথ্য")).setMessage(msg).setPositiveButton(tr("ঠিক আছে"), null).show()
+                    }
+                }.start()
+                7 -> { RecentPdf.remove(this, it.uri); render() }
+                8 -> deleteLib(listOf(it))
             }
         }.show()
     }
@@ -2576,7 +2786,7 @@ class PdfEditorActivity : GuardedActivity() {
                     outUri = out
                     outSize = Img.size(this, out)
                     Usage.done(this, "PdfEditorActivity", outSize, Img.name(this, out))
-                    RecentPdf.add(this, out, Img.name(this, out), outSize)
+                    RecentPdf.add(this, out, Img.name(this, out), outSize, ocrDocText)
                     stage = 2
                     render()
                 } else Toast.makeText(this, tr("সংরক্ষণ করা যায়নি"), Toast.LENGTH_LONG).show()
@@ -2667,6 +2877,13 @@ class PdfEditorActivity : GuardedActivity() {
             }
             78 -> data.data?.let { doExport(it) }
             79 -> data.data?.let { doMove(it) }
+            95 -> {
+                val cd = data.clipData
+                val l = ArrayList<Uri>()
+                if (cd != null) for (k in 0 until cd.itemCount) l.add(cd.getItemAt(k).uri) else data.data?.let { l.add(it) }
+                for (u in l) RecentPdf.add(this, u, Img.name(this, u), Img.size(this, u))
+                render()
+            }
             93 -> data.data?.let { writeText(it, false) }
             94 -> data.data?.let { writeText(it, true) }
             80 -> data.data?.let { retakeWith(it) }
