@@ -2,6 +2,11 @@ package com.example.callrec
 
 object Dict7 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        "Word / Excel / PowerPoint খুলুন" to "Open Word / Excel / PowerPoint",
+        "এই PDF-এ কোনো লেখা নেই (ছবি করা PDF)। আগে \"ছবির লেখা চিনুন\" দিয়ে লেখা বের করুন, তারপর সেখান থেকে DOCX সংরক্ষণ করুন।" to "This PDF has no text (it is made of pictures). First use \"Recognize Text\", then save DOCX from there.",
+        "শুধু DOCX, XLSX ও PPTX খোলা যায়" to "Only DOCX, XLSX and PPTX can be opened",
+        "ফাইলে কোনো লেখা পাওয়া যায়নি" to "No text found in the file",
+        "ফাইল খোলা যায়নি" to "Could not open the file",
         "স্ক্যান করুন" to "Scan",
         "যেকোনো কাগজ" to "Any paper",
         "আইডি কার্ড" to "ID Card",

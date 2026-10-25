@@ -80,6 +80,7 @@ class PdfEditorActivity : GuardedActivity() {
     private var pendingSplit: List<Int>? = null
     private var pendingEvery = 1
     private var exportFmt = 1
+    private var exportKind = 0 // 0 pictures, 1 Word, 2 RTF
     private var wmSizeText = 0.96f
     private var wmSizeLogo = 0.5f
     private var wmTab = 0
@@ -194,6 +195,7 @@ class PdfEditorActivity : GuardedActivity() {
         if (!loading) {
             col.addView(bigButton(tr("PDF বাছুন")) { pickPdf() }, lp(height = dp(52), t = 18))
             col.addView(outlineButton(tr("ছবি বাছুন")) { pickImages() }, lp(height = dp(52), t = 10))
+            col.addView(outlineButton(tr("Word / Excel / PowerPoint খুলুন")) { pickOffice() }, lp(height = dp(52), t = 10))
             col.addView(label(tr("স্ক্যান করুন"), 14f, Ui.TEXT, true), lp(t = 20, b = 8))
             val modes = listOf(
                 Triple(0, tr("ডকুমেন্ট"), tr("যেকোনো কাগজ")), Triple(1, tr("আইডি কার্ড"), tr("সামনে-পেছনে এক পেজে")),
@@ -1279,6 +1281,241 @@ class PdfEditorActivity : GuardedActivity() {
                 cs.restoreGraphicsState()
             }
         }
+    }
+
+    // ------------------------------------------------------------------ simple conversions
+
+    /** PDF -> Word or RTF with the plain text only (no layout, no pictures). */
+    private fun exportText(rtf: Boolean) {
+        if (busy) return
+        busy = true
+        val f = cur()
+        val have = ocrDocText
+        Thread {
+            var text = have
+            if (text.isBlank()) {
+                try {
+                    PDDocument.load(f).use { doc ->
+                        val st = com.tom_roush.pdfbox.text.PDFTextStripper()
+                        val sb = StringBuilder()
+                        for (i in 1..doc.numberOfPages) {
+                            st.startPage = i
+                            st.endPage = i
+                            val t = st.getText(doc).trim()
+                            if (t.isNotEmpty()) { if (sb.isNotEmpty()) sb.append("\n\n"); sb.append(t) }
+                        }
+                        text = sb.toString()
+                    }
+                } catch (e: Throwable) { }
+            }
+            runOnUiThread {
+                busy = false
+                if (text.isBlank()) {
+                    Toast.makeText(this, tr("এই PDF-এ কোনো লেখা নেই (ছবি করা PDF)। আগে \"ছবির লেখা চিনুন\" দিয়ে লেখা বের করুন, তারপর সেখান থেকে DOCX সংরক্ষণ করুন।"), Toast.LENGTH_LONG).show()
+                } else {
+                    ocrText = text
+                    if (rtf) {
+                        val i = Intent(Intent.ACTION_CREATE_DOCUMENT)
+                        i.addCategory(Intent.CATEGORY_OPENABLE)
+                        i.type = "application/rtf"
+                        i.putExtra(Intent.EXTRA_TITLE, "$baseName.rtf")
+                        saveOrAsk(i, 96)
+                    } else saveText(true)
+                }
+            }
+        }.start()
+    }
+
+    private fun writeRtf(u: Uri) {
+        val sb = StringBuilder("{\\rtf1\\ansi\\ansicpg1252\\deff0{\\fonttbl{\\f0 Arial;}}\\f0\\fs24 ")
+        for (ch in ocrText) {
+            when {
+                ch == '\\' -> sb.append("\\\\")
+                ch == '{' -> sb.append("\\{")
+                ch == '}' -> sb.append("\\}")
+                ch == '\n' -> sb.append("\\par ")
+                ch == '\r' -> {}
+                ch.code < 128 -> sb.append(ch)
+                else -> sb.append("\\u").append(ch.code.toShort().toInt()).append('?')
+            }
+        }
+        sb.append("}")
+        var ok = true
+        try { contentResolver.openOutputStream(u)?.use { it.write(sb.toString().toByteArray(Charsets.US_ASCII)) } } catch (e: Throwable) { ok = false }
+        if (ok) Usage.done(this, "PdfEditorActivity", Img.size(this, u), Img.name(this, u))
+        Toast.makeText(this, if (ok) tr("সংরক্ষিত হয়েছে") else tr("সংরক্ষণ করা যায়নি"), Toast.LENGTH_LONG).show()
+    }
+
+    private fun pickOffice() {
+        val i = Intent(Intent.ACTION_OPEN_DOCUMENT)
+        i.addCategory(Intent.CATEGORY_OPENABLE)
+        i.type = "*/*"
+        i.putExtra(Intent.EXTRA_MIME_TYPES, arrayOf(
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation"))
+        startActivityForResult(i, 98)
+    }
+
+    private fun zipEntries(u: Uri): Map<String, ByteArray> {
+        val m = LinkedHashMap<String, ByteArray>()
+        contentResolver.openInputStream(u)?.use { ins ->
+            java.util.zip.ZipInputStream(ins).use { z ->
+                var e = z.nextEntry
+                while (e != null) {
+                    val n = e.name
+                    if (n.endsWith(".xml") && (n.startsWith("word/document") || n.startsWith("ppt/slides/slide") || n.startsWith("xl/sharedStrings") || n.startsWith("xl/worksheets/sheet"))) m[n] = z.readBytes()
+                    e = z.nextEntry
+                }
+            }
+        }
+        return m
+    }
+
+    private fun xmlParser(b: ByteArray): org.xmlpull.v1.XmlPullParser {
+        val p = android.util.Xml.newPullParser()
+        p.setInput(java.io.ByteArrayInputStream(b), "UTF-8")
+        return p
+    }
+
+    /** Paragraphs of a docx or slides of a pptx: every [para] element is a line, [txt] elements hold the words. */
+    private fun xmlParas(b: ByteArray, para: String, txt: String): List<String> {
+        val out = ArrayList<String>()
+        val p = xmlParser(b)
+        val cur = StringBuilder()
+        var inT = false
+        var ev = p.eventType
+        while (ev != org.xmlpull.v1.XmlPullParser.END_DOCUMENT) {
+            when (ev) {
+                org.xmlpull.v1.XmlPullParser.START_TAG -> when (p.name) { txt -> inT = true; "w:tab" -> cur.append("    "); "w:br" -> cur.append("\n") }
+                org.xmlpull.v1.XmlPullParser.TEXT -> if (inT) cur.append(p.text)
+                org.xmlpull.v1.XmlPullParser.END_TAG -> when (p.name) { txt -> inT = false; para -> { out.add(cur.toString()); cur.setLength(0) } }
+            }
+            ev = p.next()
+        }
+        if (cur.isNotEmpty()) out.add(cur.toString())
+        return out
+    }
+
+    private fun xlsxRows(shared: ByteArray?, sheet: ByteArray): List<String> {
+        val ss = ArrayList<String>()
+        if (shared != null) {
+            val p = xmlParser(shared)
+            val cur = StringBuilder()
+            var inT = false
+            var ev = p.eventType
+            while (ev != org.xmlpull.v1.XmlPullParser.END_DOCUMENT) {
+                when (ev) {
+                    org.xmlpull.v1.XmlPullParser.START_TAG -> if (p.name == "t") inT = true
+                    org.xmlpull.v1.XmlPullParser.TEXT -> if (inT) cur.append(p.text)
+                    org.xmlpull.v1.XmlPullParser.END_TAG -> { if (p.name == "t") inT = false; if (p.name == "si") { ss.add(cur.toString()); cur.setLength(0) } }
+                }
+                ev = p.next()
+            }
+        }
+        val rows = ArrayList<String>()
+        val p = xmlParser(sheet)
+        val cells = ArrayList<String>()
+        var type = ""
+        var inV = false
+        var inT = false
+        val v = StringBuilder()
+        var ev = p.eventType
+        while (ev != org.xmlpull.v1.XmlPullParser.END_DOCUMENT) {
+            when (ev) {
+                org.xmlpull.v1.XmlPullParser.START_TAG -> when (p.name) {
+                    "row" -> cells.clear()
+                    "c" -> { type = p.getAttributeValue(null, "t") ?: ""; v.setLength(0) }
+                    "v" -> inV = true
+                    "t" -> inT = true
+                }
+                org.xmlpull.v1.XmlPullParser.TEXT -> if (inV || inT) v.append(p.text)
+                org.xmlpull.v1.XmlPullParser.END_TAG -> when (p.name) {
+                    "v" -> inV = false
+                    "t" -> inT = false
+                    "c" -> cells.add(if (type == "s") (ss.getOrNull(v.toString().trim().toIntOrNull() ?: -1) ?: "") else v.toString())
+                    "row" -> rows.add(cells.joinToString("   |   ").trimEnd(' ', '|'))
+                }
+            }
+            ev = p.next()
+        }
+        return rows
+    }
+
+    private fun officeToPdf(u: Uri) {
+        loading = true
+        render()
+        val nm = Img.name(this, u)
+        Thread {
+            val f = newVersion()
+            var ok = false
+            var err = tr("ফাইল খোলা যায়নি")
+            try {
+                val z = zipEntries(u)
+                val sections = ArrayList<List<String>>()
+                val lower = nm.lowercase()
+                if (lower.endsWith(".docx")) {
+                    val d = z["word/document.xml"] ?: throw IllegalStateException()
+                    sections.add(xmlParas(d, "w:p", "w:t"))
+                } else if (lower.endsWith(".pptx")) {
+                    val names = z.keys.filter { it.startsWith("ppt/slides/slide") }.sortedBy { it.filter { c -> c.isDigit() }.toIntOrNull() ?: 0 }
+                    for (n in names) sections.add(xmlParas(z[n]!!, "a:p", "a:t"))
+                } else if (lower.endsWith(".xlsx")) {
+                    val names = z.keys.filter { it.startsWith("xl/worksheets/sheet") }.sortedBy { it.filter { c -> c.isDigit() }.toIntOrNull() ?: 0 }
+                    for (n in names) sections.add(xlsxRows(z["xl/sharedStrings.xml"], z[n]!!))
+                } else { err = tr("শুধু DOCX, XLSX ও PPTX খোলা যায়"); throw IllegalStateException() }
+                if (sections.all { sec -> sec.all { it.isBlank() } }) { err = tr("ফাইলে কোনো লেখা পাওয়া যায়নি"); throw IllegalStateException() }
+                ok = writeTextPdf(sections, f, lower.endsWith(".xlsx"))
+            } catch (e: Throwable) { }
+            runOnUiThread { started(ok, f, nm.substringBeforeLast('.'), err) }
+        }.start()
+    }
+
+    /** Lays the text out on A4 pages (a new page for every section), so Bangla and other scripts also work. */
+    private fun writeTextPdf(sections: List<List<String>>, out: File, small: Boolean): Boolean {
+        val pw = 595
+        val ph = 842
+        val m = 48
+        val tp = android.text.TextPaint(Paint.ANTI_ALIAS_FLAG)
+        tp.color = Color.BLACK
+        tp.textSize = if (small) 9f else 12f
+        val doc = PdfDocument()
+        var n = 0
+        var page: PdfDocument.Page? = null
+        var y = m.toFloat()
+        fun newPage() {
+            page?.let { doc.finishPage(it) }
+            n++
+            page = doc.startPage(PdfDocument.PageInfo.Builder(pw, ph, n).create())
+            page!!.canvas.drawColor(Color.WHITE)
+            y = m.toFloat()
+        }
+        for (sec in sections) {
+            newPage()
+            for (para in sec) {
+                val text = if (para.isEmpty()) " " else para
+                val lay = android.text.StaticLayout.Builder.obtain(text, 0, text.length, tp, pw - 2 * m).build()
+                for (li in 0 until lay.lineCount) {
+                    val top = lay.getLineTop(li)
+                    val bot = lay.getLineBottom(li)
+                    if (y + (bot - top) > ph - m) newPage()
+                    val c = page!!.canvas
+                    c.save()
+                    c.translate(m.toFloat(), y - top)
+                    c.clipRect(0f, top.toFloat(), (pw - 2 * m).toFloat(), bot.toFloat())
+                    lay.draw(c)
+                    c.restore()
+                    y += (bot - top)
+                }
+                y += tp.textSize * 0.4f
+            }
+        }
+        page?.let { doc.finishPage(it) }
+        if (n == 0) { doc.close(); return false }
+        out.outputStream().use { doc.writeTo(it) }
+        doc.close()
+        pageCount = n
+        return true
     }
 
     // ------------------------------------------------------------------ OCR
@@ -2741,6 +2978,7 @@ class PdfEditorActivity : GuardedActivity() {
     }
 
     private fun exportPage() {
+        exportKind = 0
         lateinit var build: (LinearLayout) -> Unit
         build = { body ->
             fun head(t: String) = body.addView(label(t, 12f, Ui.MUTED), lp(t = 14, b = 4))
@@ -2760,19 +2998,21 @@ class PdfEditorActivity : GuardedActivity() {
                 body.addView(v, lp(height = dp(1)))
             }
             head(tr("ডকুমেন্ট"))
-            row("Microsoft Word", ".docx", false, true) {}
+            row("Microsoft Word", ".docx", exportKind == 1, false) { exportKind = 1; subBuild = build; render() }
             row("Microsoft Excel", ".xlsx", false, true) {}
             row("Microsoft PowerPoint", ".pptx", false, true) {}
-            row("Rich Text Format", ".rtf", false, true) {}
+            row("Rich Text Format", ".rtf", exportKind == 2, false) { exportKind = 2; subBuild = build; render() }
             head(tr("ছবি"))
-            row("Joint Photographic", ".jpeg", exportFmt == 1, false) { exportFmt = 1; subBuild = build; render() }
-            row("Portable Network Graphics", ".png", exportFmt == 0, false) { exportFmt = 0; subBuild = build; render() }
+            row("Joint Photographic", ".jpeg", exportKind == 0 && exportFmt == 1, false) { exportKind = 0; exportFmt = 1; subBuild = build; render() }
+            row("Portable Network Graphics", ".png", exportKind == 0 && exportFmt == 0, false) { exportKind = 0; exportFmt = 0; subBuild = build; render() }
             row("Graphics Interchange", ".gif", false, true) {}
             row("Tagged Image File", ".tiff", false, true) {}
         }
         openSub(tr("এক্সপোর্ট করুন…"), "\"" + baseName + "\" " + tr("এক্সপোর্ট করুন"), tr("এক্সপোর্ট"), build = build) {
-            treeOrAsk(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), 78)
+            if (exportKind == 0) treeOrAsk(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), 78)
+            else exportText(exportKind == 2)
         }
+        if (exportKind != 0) { /* keep the chosen kind while the page is open */ }
     }
 
     private fun renderBitmap(f: File, idx: Int, dpi: Int): Bitmap? {
@@ -3008,6 +3248,8 @@ class PdfEditorActivity : GuardedActivity() {
                 for (u in l) RecentPdf.add(this, u, Img.name(this, u), Img.size(this, u))
                 render()
             }
+            96 -> data.data?.let { writeRtf(it) }
+            98 -> data.data?.let { officeToPdf(it) }
             93 -> data.data?.let { writeText(it, false) }
             94 -> data.data?.let { writeText(it, true) }
             80 -> data.data?.let { retakeWith(it) }
