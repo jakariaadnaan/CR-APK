@@ -130,65 +130,6 @@ class PdfNupActivity : PdfBase() {
     }
 }
 
-/** পেজ সাইজ বদলান: refit every page onto A3 / A4 / A5 / Letter / Legal paper. */
-class PdfPageSizeActivity : PdfBase() {
-    private var size = 1
-    private lateinit var row: LinearLayout
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        val opt = card(14)
-        opt.addView(label(tr("নতুন কাগজের মাপ"), 12f, Ui.MUTED, true))
-        val hs = android.widget.HorizontalScrollView(this)
-        hs.isHorizontalScrollBarEnabled = false
-        row = LinearLayout(this)
-        hs.addView(row)
-        opt.addView(hs, lp(t = 8))
-        opt.addView(label(tr("পেজের অনুপাত ঠিক রেখে মাঝখানে বসবে, লেখা ঠিকই বাছা যাবে। আড়াআড়ি পেজ আড়াআড়িই থাকবে।"), 12f, Ui.MUTED), lp(t = 8))
-        val act = actionCard(tr("নতুন মাপে PDF বানান"), "") { go() }
-        screen(tr("পেজ সাইজ বদলান"), pickCard(), opt, act)
-        chips()
-    }
-
-    private fun chips() {
-        row.removeAllViews()
-        val names = listOf("A3", "A4", "A5", "Letter", "Legal")
-        for (i in names.indices) row.addView(chip(names[i], size == i) { size = i; chips() }, lp(width = android.view.ViewGroup.LayoutParams.WRAP_CONTENT, r = 8))
-    }
-
-    private fun go() {
-        if (!requireFile()) return
-        if (encrypted) { status.text = tr("আগে PDF আনলক করুন (PDF লক / আনলক টুল)"); return }
-        val target = listOf(PDRectangle.A3, PDRectangle.A4, PDRectangle.A5, PDRectangle.LETTER, PDRectangle.LEGAL)[size]
-        askCreate(baseOut() + "_resized.pdf") { out ->
-            val f = src!!
-            work(tr("তৈরি হচ্ছে…")) {
-                PDDocument.load(f).use { doc ->
-                    val nd = PDDocument()
-                    val lu = LayerUtility(nd)
-                    srcHolder[lu] = doc
-                    try {
-                        for (i in 0 until doc.numberOfPages) {
-                            val sp = doc.getPage(i)
-                            val land = sp.cropBox.width > sp.cropBox.height
-                            val w = if (land) target.height else target.width
-                            val h = if (land) target.width else target.height
-                            val page = PDPage(PDRectangle(w, h))
-                            nd.addPage(page)
-                            placeForm(nd, lu, sp, page, 0f, 0f, w, h)
-                        }
-                        saveDoc(nd, out)
-                    } finally {
-                        srcHolder.remove(lu)
-                        nd.close()
-                    }
-                }
-                tr("সংরক্ষিত হয়েছে")
-            }
-        }
-    }
-}
-
 /** ছবির কোলাজ: join up to 12 photos into one picture. */
 class CollageActivity : GuardedActivity() {
     private val uris = ArrayList<Uri>()

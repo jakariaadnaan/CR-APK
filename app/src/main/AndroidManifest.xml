@@ -118,10 +118,6 @@
         <activity android:name=".ColorPickerActivity" android:exported="false" />
         <activity android:name=".UpscaleActivity" android:exported="false" />
         <activity android:name=".TransparentActivity" android:exported="false" />
-        <activity android:name=".ImagesToPdfActivity" android:exported="false" />
-        <activity android:name=".PdfToImagesActivity" android:exported="false" />
-        <activity android:name=".PdfSplitActivity" android:exported="false" />
-        <activity android:name=".PdfLockActivity" android:exported="false" />
         <activity android:name=".PdfEditorActivity" android:exported="false" />
         <provider android:name=".ShareProvider" android:authorities="com.example.callrec.share" android:exported="false" android:grantUriPermissions="true" />
         <activity android:name=".AudioConvertActivity" android:exported="false" />
@@ -141,15 +137,10 @@
         <activity android:name=".HiddenToolsActivity" android:exported="false" />
         <activity android:name=".AppearanceActivity" android:exported="false" />
         <activity android:name=".LanguageActivity" android:exported="false" />
-        <activity android:name=".PdfGrayActivity" android:exported="false" />
-        <activity android:name=".PdfCropActivity" android:exported="false" />
-        <activity android:name=".PdfTextActivity" android:exported="false" />
         <activity android:name=".PdfImagesActivity" android:exported="false" />
         <activity android:name=".WebToPdfActivity" android:exported="false" />
-        <activity android:name=".CameraPdfActivity" android:exported="false" />
         <activity android:name=".InvoicePdfActivity" android:exported="false" />
         <activity android:name=".PdfNupActivity" android:exported="false" />
-        <activity android:name=".PdfPageSizeActivity" android:exported="false" />
         <activity android:name=".CollageActivity" android:exported="false" />
         <activity android:name=".InfoPageActivity" android:exported="false" />
         <activity android:name=".NotifSettingsActivity" android:exported="false" />
@@ -161,14 +152,7 @@
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
-        <activity android:name=".PdfMergeActivity" android:exported="false" />
-        <activity android:name=".PdfSignActivity" android:exported="false" />
         <activity android:name=".TextToPdfActivity" android:exported="false" />
-        <activity android:name=".PdfOrganizeActivity" android:exported="false" />
-        <activity android:name=".PdfCompressActivity" android:exported="false" />
-        <activity android:name=".PdfStampActivity" android:exported="false" />
-        <activity android:name=".PdfMergeActivity" android:exported="false" />
-        <activity android:name=".PdfOrganizeActivity" android:exported="false" />
         <activity android:name=".PrayerActivity" android:exported="false" />
         <activity android:name=".BudgetActivity" android:exported="false" />
         <activity android:name=".DashboardActivity" android:exported="false" />
