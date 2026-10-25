@@ -194,26 +194,50 @@ class PdfEditorActivity : GuardedActivity() {
         if (!loading) {
             col.addView(bigButton(tr("PDF বাছুন")) { pickPdf() }, lp(height = dp(52), t = 18))
             col.addView(outlineButton(tr("ছবি বাছুন")) { pickImages() }, lp(height = dp(52), t = 10))
-            col.addView(outlineButton(tr("ক্যামেরায় স্ক্যান করুন")) { scanStart(false) }, lp(height = dp(52), t = 10))
+            col.addView(label(tr("স্ক্যান করুন"), 14f, Ui.TEXT, true), lp(t = 20, b = 8))
+            val modes = listOf(
+                Triple(0, tr("ডকুমেন্ট"), tr("যেকোনো কাগজ")), Triple(1, tr("আইডি কার্ড"), tr("সামনে-পেছনে এক পেজে")),
+                Triple(2, tr("বিজনেস কার্ড"), tr("সামনে-পেছনে এক পেজে")), Triple(3, tr("বই"), tr("দুই পাতা আলাদা পেজে")),
+                Triple(4, tr("রসিদ / ইনভয়েস"), tr("লেখা পরিষ্কার হবে")), Triple(5, tr("নোট / হোয়াইটবোর্ড"), tr("ব্যাকগ্রাউন্ড সাদা হবে")),
+                Triple(6, tr("চুক্তিপত্র / সার্টিফিকেট"), tr("নাম ঠিক করে দেবে"))
+            )
+            var rowL: LinearLayout? = null
+            for ((k, m) in modes.withIndex()) {
+                if (k % 2 == 0) { rowL = LinearLayout(this); col.addView(rowL, lp(b = 8)) }
+                val t = LinearLayout(this)
+                t.orientation = LinearLayout.VERTICAL
+                t.background = bg(Ui.CARD, 14, Ui.LINE, 1)
+                t.setPadding(dp(12), dp(12), dp(12), dp(12))
+                t.addView(label(m.second, 14f, Ui.TEXT, true))
+                t.addView(label(m.third, 11f, Ui.MUTED), lp(t = 2))
+                t.setOnClickListener { scanStart(false, m.first) }
+                rowL!!.addView(t, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).also { it.setMargins(if (k % 2 == 1) dp(8) else 0, 0, 0, 0) })
+            }
             col.addView(outlineButton(tr("ডকুমেন্ট")) { stage = 4; render() }, lp(height = dp(52), t = 10))
         }
         root.addView(scroll, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
     }
 
     private var scanAppend = false
+    private var scanMode = 0
+    private var nextName: String? = null
+    private var postClean = false
 
-    /** Google's on-device scanner: edge detection, crop, perspective, clean-up, filters, many pages. */
-    private fun scanStart(append: Boolean) {
+    /** Google's on-device scanner: edge detection, crop, perspective, clean-up, filters, many pages.
+     *  [mode]: 0 document, 1 ID card, 2 business card, 3 book, 4 receipt, 5 note/whiteboard, 6 contract. */
+    private fun scanStart(append: Boolean, mode: Int = 0) {
         if (busy) return
         scanAppend = append
+        scanMode = if (append) 0 else mode
         try {
-            val o = com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.Builder()
+            val b = com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.Builder()
                 .setGalleryImportAllowed(true)
-                .setPageLimit(30)
-                .setResultFormats(com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_PDF)
                 .setScannerMode(com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.SCANNER_MODE_FULL)
-                .build()
-            com.google.mlkit.vision.documentscanner.GmsDocumentScanning.getClient(o).getStartScanIntent(this)
+            val pictures = scanMode == 1 || scanMode == 2 || scanMode == 3
+            b.setPageLimit(if (scanMode == 1 || scanMode == 2) 2 else 30)
+            b.setResultFormats(if (pictures) com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_JPEG else com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_PDF)
+            if (scanMode == 1) Toast.makeText(this, tr("আগে সামনের, তারপর পেছনের ছবি তুলুন"), Toast.LENGTH_LONG).show()
+            com.google.mlkit.vision.documentscanner.GmsDocumentScanning.getClient(b.build()).getStartScanIntent(this)
                 .addOnSuccessListener { sender ->
                     try { startIntentSenderForResult(sender, 92, null, 0, 0, 0) } catch (e: Throwable) { scanFallback() }
                 }
@@ -226,11 +250,104 @@ class PdfEditorActivity : GuardedActivity() {
         camStart()
     }
 
+    private fun stamp(): String = java.text.SimpleDateFormat("yyyyMMdd_HHmm", java.util.Locale.US).format(java.util.Date())
+
     private fun scanDone(data: Intent?) {
         val r = com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult.fromActivityResultIntent(data)
+        val mode = scanMode
+        if (mode == 1 || mode == 2 || mode == 3) {
+            val us = r?.pages?.map { it.imageUri } ?: emptyList()
+            if (us.isEmpty()) { Toast.makeText(this, tr("স্ক্যান করা যায়নি"), Toast.LENGTH_SHORT).show(); return }
+            if (mode == 3) composeBook(us, "Book_" + stamp()) else composeCards(us, if (mode == 1) 0.72f else 0.62f, (if (mode == 1) "ID_Card_" else "Business_Card_") + stamp())
+            return
+        }
         val u = r?.pdf?.uri
         if (u == null) { Toast.makeText(this, tr("স্ক্যান করা যায়নি"), Toast.LENGTH_SHORT).show(); return }
-        if (scanAppend && stage == 1) mergeIn(listOf(u)) else openPdf(u)
+        if (scanAppend && stage == 1) { mergeIn(listOf(u)); return }
+        nextName = when (mode) { 4 -> "Receipt_"; 5 -> "Note_"; 6 -> "Contract_"; else -> "Scan_" } + stamp()
+        postClean = mode == 4 || mode == 5
+        openPdf(u)
+    }
+
+    /** Front and back of a card, one under the other on a single A4 page. */
+    private fun composeCards(uris: List<Uri>, frac: Float, name: String) {
+        loading = true
+        render()
+        Thread {
+            val f = newVersion()
+            var ok = false
+            try {
+                val doc = PdfDocument()
+                val pw = 595
+                val ph = 842
+                val page = doc.startPage(PdfDocument.PageInfo.Builder(pw, ph, 1).create())
+                val c = page.canvas
+                c.drawColor(Color.WHITE)
+                val border = Paint()
+                border.style = Paint.Style.STROKE
+                border.color = Color.parseColor("#BBBBBB")
+                border.strokeWidth = 1f
+                val slot = ph / 2f
+                for ((i, u) in uris.take(2).withIndex()) {
+                    val b = Img.decode(this, u, 1800) ?: continue
+                    var cw = pw * frac
+                    var ch = cw * b.height / b.width
+                    if (ch > slot * 0.86f) { ch = slot * 0.86f; cw = ch * b.width / b.height }
+                    val l = (pw - cw) / 2f
+                    val t = i * slot + (slot - ch) / 2f
+                    val rc = RectF(l, t, l + cw, t + ch)
+                    c.drawBitmap(b, null, rc, Paint(Paint.FILTER_BITMAP_FLAG))
+                    c.drawRect(rc, border)
+                    b.recycle()
+                }
+                doc.finishPage(page)
+                f.outputStream().use { doc.writeTo(it) }
+                doc.close()
+                pageCount = 1
+                ok = true
+            } catch (e: Throwable) { }
+            runOnUiThread { nextName = null; started(ok, f, name, tr("স্ক্যান করা যায়নি")) }
+        }.start()
+    }
+
+    /** Each scanned picture of two facing book pages becomes two separate pages. */
+    private fun composeBook(uris: List<Uri>, name: String) {
+        loading = true
+        render()
+        Thread {
+            val f = newVersion()
+            var ok = false
+            try {
+                val doc = PdfDocument()
+                var n = 0
+                fun addPage(b: Bitmap) {
+                    val sc = 842f / Math.max(b.width, b.height)
+                    val pw = Math.max(1, (b.width * sc).toInt())
+                    val ph = Math.max(1, (b.height * sc).toInt())
+                    val page = doc.startPage(PdfDocument.PageInfo.Builder(pw, ph, n + 1).create())
+                    page.canvas.drawColor(Color.WHITE)
+                    page.canvas.drawBitmap(b, null, RectF(0f, 0f, pw.toFloat(), ph.toFloat()), Paint(Paint.FILTER_BITMAP_FLAG))
+                    doc.finishPage(page)
+                    n++
+                }
+                for (u in uris) {
+                    val b = Img.decode(this, u, 2400) ?: continue
+                    if (b.width > b.height * 1.1f) {
+                        val half = b.width / 2
+                        val l = Bitmap.createBitmap(b, 0, 0, half, b.height)
+                        val r = Bitmap.createBitmap(b, half, 0, b.width - half, b.height)
+                        addPage(l); addPage(r)
+                        l.recycle(); r.recycle()
+                    } else addPage(b)
+                    b.recycle()
+                }
+                if (n > 0) f.outputStream().use { doc.writeTo(it) }
+                doc.close()
+                pageCount = n
+                ok = n > 0
+            } catch (e: Throwable) { }
+            runOnUiThread { nextName = null; started(ok, f, name, tr("স্ক্যান করা যায়নি")) }
+        }.start()
     }
 
     private var camUri: Uri? = null
@@ -339,13 +456,20 @@ class PdfEditorActivity : GuardedActivity() {
             render()
             return
         }
-        baseName = name
+        baseName = nextName ?: name
+        nextName = null
         ocrDocText = ""
         history.clear()
         history.add(f)
         pageIdx = 0
         stage = 1
         render()
+        if (postClean) {
+            postClean = false
+            val src = f
+            val n = pageCount
+            apply { doc -> filterPages(doc, src, (0 until Math.min(n, doc.numberOfPages)).toList(), -1, 150, 0.85f, EnhParams(clean = true, contrast = 1.12f, bright = 4f)) }
+        }
     }
 
     // ------------------------------------------------------------------ step 2: editor

@@ -2,6 +2,20 @@ package com.example.callrec
 
 object Dict7 {
     fun pairs(): Array<Pair<String, String>> = arrayOf(
+        "স্ক্যান করুন" to "Scan",
+        "যেকোনো কাগজ" to "Any paper",
+        "আইডি কার্ড" to "ID Card",
+        "সামনে-পেছনে এক পেজে" to "Front and back on one page",
+        "বিজনেস কার্ড" to "Business Card",
+        "বই" to "Book",
+        "দুই পাতা আলাদা পেজে" to "Two pages split apart",
+        "রসিদ / ইনভয়েস" to "Receipt / Invoice",
+        "লেখা পরিষ্কার হবে" to "Text is cleaned up",
+        "নোট / হোয়াইটবোর্ড" to "Note / Whiteboard",
+        "ব্যাকগ্রাউন্ড সাদা হবে" to "Background turns white",
+        "চুক্তিপত্র / সার্টিফিকেট" to "Contract / Certificate",
+        "নাম ঠিক করে দেবে" to "Names the file for you",
+        "আগে সামনের, তারপর পেছনের ছবি তুলুন" to "Scan the front first, then the back",
         "নতুন আগে" to "Newest first",
         "নাম অনুযায়ী" to "By name",
         "বড় আগে" to "Largest first",
