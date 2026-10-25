@@ -11,8 +11,8 @@ android {
         applicationId = "com.example.callrec"
         minSdk = 26
         targetSdk = 34
-        versionCode = 115
-        versionName = "1.15"
+        versionCode = 116
+        versionName = "1.16"
     }
 
     // A fixed key is used for every build so a new APK installs over the old one and keeps the data.
