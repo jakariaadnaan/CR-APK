@@ -399,25 +399,52 @@ class PdfEditorActivity : GuardedActivity() {
 
     private fun newVersion(): File = File(cacheDir, "edit_v" + (versionNo++) + ".pdf")
 
-    private fun openPdf(u: Uri) {
+    private fun openPdf(u: Uri, pw: String = "") {
         loading = true
         render()
         Thread {
             var ok = false
             var err = ""
+            var needPw = false
             val f = newVersion()
             try {
                 contentResolver.openInputStream(u)?.use { ins -> f.outputStream().use { ins.copyTo(it) } }
-                PDDocument.load(f).use { pageCount = it.numberOfPages }
+                PDDocument.load(f, pw).use { doc ->
+                    if (doc.isEncrypted) {
+                        // keep an unlocked copy, so every edit works and the lock can be put back when saving
+                        val tmp = File(cacheDir, "unlocked_tmp.pdf")
+                        doc.isAllSecurityToBeRemoved = true
+                        doc.save(tmp)
+                        tmp.copyTo(f, true)
+                        tmp.delete()
+                    }
+                    pageCount = doc.numberOfPages
+                }
                 ok = pageCount > 0
             } catch (e: com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException) {
-                err = tr("এই PDF-এ পাসওয়ার্ড দেওয়া আছে, আগে আনলক করুন")
+                needPw = true
             } catch (e: Throwable) {
                 err = tr("PDF খোলা যায়নি")
             }
             val nm = Img.name(this, u)
-            runOnUiThread { started(ok, f, nm.removeSuffix(".pdf").removeSuffix(".PDF"), err) }
+            runOnUiThread {
+                if (needPw) { loading = false; render(); askOpenPassword(u, pw.isNotEmpty()) }
+                else started(ok, f, nm.removeSuffix(".pdf").removeSuffix(".PDF"), err)
+            }
         }.start()
+    }
+
+    private fun askOpenPassword(u: Uri, wrong: Boolean) {
+        val e = android.widget.EditText(this)
+        e.hint = tr("পাসওয়ার্ড")
+        e.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        android.app.AlertDialog.Builder(this)
+            .setTitle(tr("এই PDF-এ পাসওয়ার্ড দেওয়া আছে"))
+            .setMessage(if (wrong) tr("পাসওয়ার্ড ভুল হয়েছে, আবার লিখুন") else tr("খুলতে পাসওয়ার্ড লিখুন। খোলার পর সংরক্ষণ করলে লক ছাড়া ফাইল পাবেন।"))
+            .setView(e)
+            .setPositiveButton(tr("খুলুন")) { _, _ -> openPdf(u, e.text.toString()) }
+            .setNegativeButton(tr("বাতিল"), null)
+            .show()
     }
 
     private fun openImages(list: List<Uri>) {
@@ -796,6 +823,9 @@ class PdfEditorActivity : GuardedActivity() {
         row("✍", tr("ডিজিটাল সই যোগ করুন"), false) { signDialog() }
         row("✂", tr("PDF ভাগ করুন"), false) { splitDialog() }
         row("⊕", tr("PDF জোড়া দিন"), false) { mergePage() }
+        row("⇅", tr("পেজ সাজান"), false) { organizePage() }
+        row("#", tr("পেজ নম্বর বসান"), false) { numberPage() }
+        row("ⓘ", tr("ফাইলের তথ্য (শিরোনাম, লেখক)"), false) { infoDialog() }
         row("🔒", if (lockPass != null) tr("PDF লক (চালু আছে)") else tr("PDF লক করুন"), false) { protectPage() }
         row("⇲", tr("PDF ছোট করুন"), false) { compressPage() }
         line()
@@ -1269,10 +1299,11 @@ class PdfEditorActivity : GuardedActivity() {
                         val tb = a.bmp
                         if (tb != null && p.isNotEmpty()) {
                             val img = LosslessFactory.createFromImage(doc, tb)
-                            val th = dh * 0.035f
+                            val th = dh * 0.035f * a.scale
                             val tw = th * tb.width / tb.height
-                            val x0 = mx(p[0].x, p[0].y)
-                            val y0 = my(p[0].x, p[0].y)
+                            val uu = p[0].x - (tw / dw) * a.anchor / 2f
+                            val x0 = mx(uu, p[0].y)
+                            val y0 = my(uu, p[0].y)
                             if (rot != 0) cs.transform(rotAbout(Math.toRadians(rot.toDouble()), x0, y0))
                             cs.drawImage(img, x0, y0 - th, tw, th)
                         }
@@ -1283,10 +1314,157 @@ class PdfEditorActivity : GuardedActivity() {
         }
     }
 
+    // ------------------------------------------------------------------ organise pages, page numbers, document info
+
+    private class OrgPage(val idx: Int, var rot: Int = 0, var del: Boolean = false)
+    private val orgList = ArrayList<OrgPage>()
+    private val orgThumbs = HashMap<Int, Bitmap>()
+
+    private fun organizePage() {
+        if (busy) return
+        orgList.clear()
+        for (i in 0 until pageCount) orgList.add(OrgPage(i))
+        orgThumbs.clear()
+        val f = cur()
+        val n = pageCount
+        Thread {
+            for (i in 0 until n) {
+                val b = renderBitmap(f, i, 22) ?: continue
+                orgThumbs[i] = b
+                if (i % 3 == 2 || i == n - 1) runOnUiThread { if (stage == 3 && subTitle == tr("পেজ সাজান")) { subBuild?.let { render() } } }
+            }
+        }.start()
+        lateinit var build: (LinearLayout) -> Unit
+        build = { body ->
+            for ((pos, o) in orgList.withIndex()) {
+                val r = LinearLayout(this)
+                r.gravity = Gravity.CENTER_VERTICAL
+                r.background = bg(Ui.CARD, 14, Ui.LINE, 1)
+                r.setPadding(dp(10), dp(8), dp(8), dp(8))
+                r.alpha = if (o.del) 0.35f else 1f
+                val th = thumbView(40, 52)
+                orgThumbs[o.idx]?.let { th.setImageBitmap(it) }
+                th.rotation = o.rot.toFloat()
+                r.addView(th, lp(width = dp(40), height = dp(52), r = 12))
+                val c = LinearLayout(this)
+                c.orientation = LinearLayout.VERTICAL
+                c.addView(label(tr("পেজ ") + bn((o.idx + 1).toString()), 14f, Ui.TEXT, true))
+                c.addView(label(if (o.del) tr("মুছে যাবে") else (bn((pos + 1).toString()) + tr(" নম্বরে")), 11f, Ui.MUTED))
+                r.addView(c, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+                fun btn(g: String, click: () -> Unit) {
+                    val t = label(g, 18f, Ui.TEXT, true)
+                    t.gravity = Gravity.CENTER
+                    t.setOnClickListener { click(); subBuild = build; render() }
+                    r.addView(t, LinearLayout.LayoutParams(dp(38), dp(38)))
+                }
+                btn("▲") { if (pos > 0) { orgList.removeAt(pos); orgList.add(pos - 1, o) } }
+                btn("▼") { if (pos < orgList.size - 1) { orgList.removeAt(pos); orgList.add(pos + 1, o) } }
+                btn("↻") { o.rot = (o.rot + 90) % 360 }
+                btn(if (o.del) "↺" else "✕") { o.del = !o.del }
+                body.addView(r, lp(b = 8))
+            }
+        }
+        openSub(tr("পেজ সাজান"), tr("ওপর-নিচ করুন, ঘোরান বা মুছুন"), tr("ঠিক আছে"), build = build) {
+            val keep = orgList.filter { !it.del }
+            if (keep.isEmpty()) { Toast.makeText(this, tr("শেষ পেজটি মুছে ফেলা যাবে না"), Toast.LENGTH_SHORT).show(); return@openSub }
+            val order = keep.map { Triple(it.idx, it.rot, 0) }
+            val changed = order.size != pageCount || order.withIndex().any { (k, t) -> t.first != k || t.second != 0 }
+            stage = 1
+            pageIdx = 0
+            render()
+            if (changed) apply { doc ->
+                val total = doc.numberOfPages
+                val orig = (0 until total).map { doc.getPage(it) }
+                for (k in total - 1 downTo 0) doc.removePage(k)
+                for ((i, rot, _) in order) {
+                    val pg = orig[i]
+                    if (rot != 0) pg.rotation = (pg.rotation + rot) % 360
+                    doc.addPage(pg)
+                }
+            }
+        }
+    }
+
+    private var numPos = 0
+    private var numFmt = 0
+
+    private fun numberPage() {
+        if (busy) return
+        lateinit var build: (LinearLayout) -> Unit
+        build = { body ->
+            fun group(title: String, names: List<String>, cur: Int, set: (Int) -> Unit) {
+                body.addView(label(title, 14f, Ui.TEXT, true), lp(t = 6, b = 8))
+                for ((k, n) in names.withIndex()) {
+                    val on = cur == k
+                    val r = LinearLayout(this)
+                    r.gravity = Gravity.CENTER_VERTICAL
+                    r.background = bg(if (on) Ui.mix(Ui.PRIMARY, Ui.CARD, 0.9f) else Ui.CARD, 12, if (on) Ui.PRIMARY else Ui.LINE, if (on) 2 else 1)
+                    r.setPadding(dp(14), dp(13), dp(14), dp(13))
+                    r.addView(label(n, 14f, Ui.TEXT, on), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+                    if (on) r.addView(label("✓", 14f, Ui.PRIMARY, true))
+                    r.setOnClickListener { set(k); subBuild = build; render() }
+                    body.addView(r, lp(b = 6))
+                }
+            }
+            group(tr("কোথায় বসবে"), listOf(tr("নিচে মাঝখানে"), tr("নিচে ডানে"), tr("নিচে বামে"), tr("ওপরে ডানে")), numPos) { numPos = it }
+            group(tr("কেমন দেখাবে"), listOf("1, 2, 3", "1 / " + pageCount, tr("পেজ ") + "1"), numFmt) { numFmt = it }.also { }
+        }
+        openSub(tr("পেজ নম্বর বসান"), tr("সব পেজে নম্বর বসবে"), tr("বসান"), build = build) {
+            val pos = numPos
+            val fmt = numFmt
+            val total = pageCount
+            stage = 1
+            render()
+            apply { doc ->
+                for (k in 0 until doc.numberOfPages) {
+                    val txt = when (fmt) { 1 -> bn((k + 1).toString()) + " / " + bn(total.toString()); 2 -> tr("পেজ ") + bn((k + 1).toString()); else -> bn((k + 1).toString()) }
+                    val it2 = AnnotItem(2, Color.parseColor("#444444"))
+                    it2.scale = 0.5f
+                    it2.bmp = annotTextBitmap(txt, it2.color)
+                    when (pos) {
+                        0 -> { it2.anchor = 1; it2.pts.add(android.graphics.PointF(0.5f, 0.955f)) }
+                        1 -> { it2.anchor = 2; it2.pts.add(android.graphics.PointF(0.93f, 0.955f)) }
+                        2 -> { it2.anchor = 0; it2.pts.add(android.graphics.PointF(0.07f, 0.955f)) }
+                        else -> { it2.anchor = 2; it2.pts.add(android.graphics.PointF(0.93f, 0.03f)) }
+                    }
+                    bakeAnnots(doc, doc.getPage(k), listOf(it2))
+                }
+            }
+        }
+    }
+
+    private fun infoDialog() {
+        var t: android.widget.EditText? = null
+        var a: android.widget.EditText? = null
+        var sj: android.widget.EditText? = null
+        formSheet(tr("ফাইলের তথ্য"), tr("ঠিক আছে"), { body, _ ->
+            body.addView(label(tr("খালি রাখলে আগের মতোই থাকবে।"), 12f, Ui.MUTED))
+            val e1 = darkField(tr("শিরোনাম"), ""); t = e1; body.addView(e1, lp(t = 10))
+            val e2 = darkField(tr("লেখক"), ""); a = e2; body.addView(e2, lp(t = 8))
+            val e3 = darkField(tr("বিষয়"), ""); sj = e3; body.addView(e3, lp(t = 8))
+        }) {
+            val tt = t?.text?.toString()?.trim() ?: ""
+            val aa = a?.text?.toString()?.trim() ?: ""
+            val ss = sj?.text?.toString()?.trim() ?: ""
+            if (tt.isEmpty() && aa.isEmpty() && ss.isEmpty()) true
+            else {
+                apply { doc ->
+                    val inf = doc.documentInformation
+                    if (tt.isNotEmpty()) inf.title = tt
+                    if (aa.isNotEmpty()) inf.author = aa
+                    if (ss.isNotEmpty()) inf.subject = ss
+                    doc.documentInformation = inf
+                }
+                true
+            }
+        }
+    }
+
     // ------------------------------------------------------------------ simple conversions
 
     /** PDF -> Word or RTF with the plain text only (no layout, no pictures). */
-    private fun exportText(rtf: Boolean) {
+    private fun exportText(kind: Int) {
+        val rtf = kind == 2
         if (busy) return
         busy = true
         val f = cur()
@@ -1320,7 +1498,7 @@ class PdfEditorActivity : GuardedActivity() {
                         i.type = "application/rtf"
                         i.putExtra(Intent.EXTRA_TITLE, "$baseName.rtf")
                         saveOrAsk(i, 96)
-                    } else saveText(true)
+                    } else saveText(kind == 1)
                 }
             }
         }.start()
@@ -3002,6 +3180,7 @@ class PdfEditorActivity : GuardedActivity() {
             row("Microsoft Excel", ".xlsx", false, true) {}
             row("Microsoft PowerPoint", ".pptx", false, true) {}
             row("Rich Text Format", ".rtf", exportKind == 2, false) { exportKind = 2; subBuild = build; render() }
+            row("Plain Text", ".txt", exportKind == 3, false) { exportKind = 3; subBuild = build; render() }
             head(tr("ছবি"))
             row("Joint Photographic", ".jpeg", exportKind == 0 && exportFmt == 1, false) { exportKind = 0; exportFmt = 1; subBuild = build; render() }
             row("Portable Network Graphics", ".png", exportKind == 0 && exportFmt == 0, false) { exportKind = 0; exportFmt = 0; subBuild = build; render() }
@@ -3010,7 +3189,7 @@ class PdfEditorActivity : GuardedActivity() {
         }
         openSub(tr("এক্সপোর্ট করুন…"), "\"" + baseName + "\" " + tr("এক্সপোর্ট করুন"), tr("এক্সপোর্ট"), build = build) {
             if (exportKind == 0) treeOrAsk(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), 78)
-            else exportText(exportKind == 2)
+            else exportText(exportKind)
         }
         if (exportKind != 0) { /* keep the chosen kind while the page is open */ }
     }
@@ -3516,6 +3695,8 @@ private class AnnotItem(val mode: Int, val color: Int) {
     val pts = ArrayList<android.graphics.PointF>()
     var text = ""
     var bmp: Bitmap? = null
+    var scale = 1f
+    var anchor = 0 // 0 left, 1 centre, 2 right
 }
 
 /** Text as a transparent picture in the given colour (so Bangla works too). */
