@@ -36,53 +36,40 @@ object Registry {
 
     val tools = listOf(
         // খাতা ও হিসাব
-        Tool("ledger", "খরচের খাতা", "আয়-ব্যয় ও মাসিক হিসাব", "khata", LedgerActivity::class.java, keywords = "expense income খরচ আয় হিসাব"),
-        Tool("debt", "বাকির খাতা", "কে কত দেবে / পাবে", "khata", DebtActivity::class.java, keywords = "baki due বাকি ধার"),
-        Tool("calc", "ক্যালকুলেটর", "হিসাব ও ইউনিট রূপান্তর", "khata", CalcActivity::class.java, keywords = "calculator unit converter length weight"),
-        Tool("sci", "সায়েন্টিফিক ক্যালকুলেটর", "sin, cos, log, পাওয়ার", "khata", SciCalcActivity::class.java, false, "scientific calculator sin cos tan log"),
+        Tool("ledger", "খরচ ও বাকির খাতা", "আয়-ব্যয়, মাসিক হিসাব, কে কত দেবে / পাবে", "khata", LedgerActivity::class.java, keywords = "expense income খরচ আয় হিসাব debt বাকি দেনা পাওনা ledger"),
+        Tool("calc", "ক্যালকুলেটর", "সাধারণ ও সায়েন্টিফিক, ইউনিট রূপান্তর", "khata", CalcActivity::class.java, keywords = "calculator scientific sin cos log unit converter length weight ক্যালকুলেটর সায়েন্টিফিক"),
         Tool("land", "জমির মাপ", "শতাংশ, কাঠা, বিঘা", "khata", LandActivity::class.java, keywords = "land katha bigha decimal জমি"),
         Tool("words", "টাকা কথায়", "চেক ও রশিদের জন্য", "khata", WordsActivity::class.java, keywords = "taka in words cheque amount"),
         Tool("currency", "কারেন্সি কনভার্টার", "টাকা, ডলার ও অন্যান্য মুদ্রা", "khata", CurrencyActivity::class.java, true, "currency exchange dollar rate"),
         // সময় ও নোট
         Tool("prayer", "নামাজের সময়", "ঢাকা বা নিজের শহরের সময়", "time", PrayerActivity::class.java, keywords = "prayer namaz salat salah azan fajr zuhr asr maghrib isha নামাজ"),
-        Tool("todo", "করণীয়", "দিনের কাজের তালিকা", "time", TodoActivity::class.java, keywords = "todo task কাজ"),
-        Tool("notes", "দ্রুত নোট", "নোট, নম্বর, আইডিয়া", "time", NotesActivity::class.java, keywords = "note memo"),
+        Tool("todo", "করণীয় ও নোট", "দিনের কাজ, নোট, নম্বর, আইডিয়া", "time", TodoActivity::class.java, keywords = "todo task notes কাজ নোট করণীয়"),
         Tool("date", "তারিখ ও বয়স", "বাংলা, হিজরি, বয়স", "time", DateActivity::class.java, keywords = "date age calculator hijri bangla birthday"),
         Tool("timer", "টাইমার", "কাউন্টডাউন, স্টপওয়াচ, পমোডোরো", "time", TimerActivity::class.java, keywords = "timer stopwatch pomodoro countdown"),
         Tool("pass", "পাসওয়ার্ড জেনারেটর", "শক্তিশালী পাসওয়ার্ড", "time", PasswordActivity::class.java, keywords = "password generator"),
         // ছবি
-        Tool("imgfmt", "ফরম্যাট কনভার্টার", "PNG, JPG, WebP", "image", ImageFormatActivity::class.java, false, "image format converter png jpg webp"),
-        Tool("imgcomp", "ফাইল সাইজ কমানো", "ছবির আকার ছোট করুন", "image", ImageCompressActivity::class.java, false, "compress file size reduce"),
-        Tool("upscale", "ইমেজ আপস্কেলার", "ছবি বড় করুন", "image", UpscaleActivity::class.java, false, "image upscaler enlarge resize"),
+        Tool("imgfmt", "ছবি কনভার্টার", "ফরম্যাট বদল, সাইজ কমানো, ছবি বড় করা", "image", ImageFormatActivity::class.java, false, "image format converter png jpg webp compress reduce size upscale enlarge ফরম্যাট সাইজ কমানো বড়"),
         Tool("transp", "ট্রান্সপারেন্ট PNG মেকার", "ব্যাকগ্রাউন্ড মুছুন", "image", TransparentActivity::class.java, false, "transparent png background remove"),
         Tool("color", "কালার পিকার", "ছবি থেকে রঙের কোড", "image", ColorPickerActivity::class.java, false, "color picker hex rgb"),
         // PDF
         Tool("pdfedit", "PDF Edit", "স্ক্যান, এডিট, জোড়া, ভাগ, লক, OCR — সব এক জায়গায়", "pdf", PdfEditorActivity::class.java, keywords = "pdf edit editor scan ocr merge split compress lock unlock protect sign signature watermark page number organize rotate crop resize grayscale image to pdf pdf to image text extract word জোড়া ভাগ ছোট লক সই স্ক্যান পেজ"),
-        Tool("txt2pdf", "লেখা থেকে PDF", "বাংলা/ইংরেজি লেখা PDF করুন", "pdf", TextToPdfActivity::class.java, keywords = "text to pdf write document লেখা"),
+        Tool("txt2pdf", "PDF বানান", "লেখা, ওয়েবপেজ বা ইনভয়েস থেকে PDF", "pdf", TextToPdfActivity::class.java, keywords = "text to pdf write document webpage web invoice bill লেখা ওয়েবপেজ ইনভয়েস বিল"),
         Tool("pdfimgs", "PDF থেকে ছবি", "ভেতরের ছবিগুলো আলাদা করুন", "pdf", PdfImagesActivity::class.java, keywords = "extract images pdf pictures"),
-        Tool("web2pdf", "ওয়েবপেজ থেকে PDF", "ওয়েব ঠিকানা থেকে PDF সংরক্ষণ", "pdf", WebToPdfActivity::class.java, online = true, keywords = "webpage website html url to pdf print"),
-        Tool("invoice", "ইনভয়েস বানান", "পণ্যের তালিকা থেকে বিল PDF", "pdf", InvoicePdfActivity::class.java, keywords = "invoice bill receipt memo pdf"),
         Tool("pdfnup", "এক শিটে একাধিক পেজ", "২/৪/৬/৯ পেজ বা বুকলেট", "pdf", PdfNupActivity::class.java, keywords = "pages per sheet n-up booklet print pdf"),
         Tool("collage", "ছবির কোলাজ", "একাধিক ছবি এক ছবিতে", "pdf", CollageActivity::class.java, keywords = "photo collage grid combine images"),
         // অডিও ও ভিডিও
-        Tool("aconv", "অডিও কনভার্টার", "WAV, M4A (AAC)", "media", AudioConvertActivity::class.java, false, "audio converter mp3 wav"),
-        Tool("v2mp3", "ভিডিও → অডিও", "ভিডিও থেকে M4A বা WAV", "media", VideoToAudioActivity::class.java, false, "video to mp3 extract audio"),
+        Tool("aconv", "অডিও কনভার্টার", "অডিও বা ভিডিও থেকে WAV, M4A", "media", AudioConvertActivity::class.java, false, "audio converter mp3 wav video to audio extract ভিডিও অডিও"),
         Tool("gif", "GIF মেকার", "ছবি বা ভিডিও থেকে GIF", "media", GifMakerActivity::class.java, false, "gif maker"),
         Tool("vmeta", "ভিডিও মেটাডেটা", "ভিডিওর খুঁটিনাটি তথ্য", "media", VideoInfoActivity::class.java, false, "video metadata viewer info"),
         Tool("rec", "কল রেকর্ডিং", "টেস্ট স্ক্রিন", "media", MainActivity::class.java, keywords = "call recording record"),
         // টেক্সট ও ভাষা
-        Tool("textcase", "টেক্সট কেস কনভার্টার", "বড়-ছোট হাতের, camelCase, snake_case", "text", TextCaseActivity::class.java, keywords = "text case converter uppercase lowercase title"),
-        Tool("counter", "শব্দ ও অক্ষর গণনা", "শব্দ, অক্ষর, লাইন, পড়ার সময়", "text", CounterActivity::class.java, keywords = "word character counter count"),
-        Tool("unicode", "ইউনিকোড কনভার্টার", "টেক্সট ↔ কোড পয়েন্ট, UTF-8, HTML", "text", UnicodeActivity::class.java, keywords = "unicode utf-8 code point html entity"),
+        Tool("textcase", "টেক্সট টুলস", "কেস বদল, শব্দ গণনা, ইউনিকোড", "text", TextCaseActivity::class.java, keywords = "text case converter uppercase lowercase title word counter character count unicode utf-8 শব্দ অক্ষর গণনা"),
         Tool("dict", "অভিধান", "শব্দের অর্থ খুঁজুন", "text", DictionaryActivity::class.java, true, "dictionary meaning"),
         // QR ও বারকোড
-        Tool("qrgen", "QR কোড তৈরি", "লেখা বা লিংক থেকে QR", "qr", QrGenActivity::class.java, false, "qr code generator"),
-        Tool("barcode", "বারকোড তৈরি", "বিভিন্ন ধরনের বারকোড", "qr", BarcodeGenActivity::class.java, false, "barcode generator"),
-        Tool("scan", "স্ক্যানার", "ক্যামেরা দিয়ে QR ও বারকোড পড়ুন", "qr", ScannerActivity::class.java, false, "qr scanner barcode scanner"),
+        Tool("qrgen", "QR ও বারকোড", "তৈরি করুন ও ক্যামেরায় পড়ুন", "qr", QrGenActivity::class.java, false, "qr code generator barcode scanner scan read কিউআর বারকোড স্ক্যান"),
         // নেটওয়ার্ক ও ডিভাইস
         Tool("speed", "ইন্টারনেট স্পিড টেস্ট", "ডাউনলোড ও আপলোড গতি", "net", SpeedTestActivity::class.java, true, "internet speed test"),
-        Tool("ip", "আমার IP ও IP তথ্য", "পাবলিক IP ও অবস্থান", "net", IpActivity::class.java, true, "ip address checker public ip information"),
-        Tool("whois", "WHOIS লুকআপ", "ডোমেইনের মালিকানা তথ্য", "net", WhoisActivity::class.java, true, "whois domain lookup"),
+        Tool("ip", "IP ও WHOIS", "আমার IP, ডোমেইনের মালিকানা তথ্য", "net", IpActivity::class.java, true, "ip address checker public ip information whois domain lookup"),
         Tool("webcam", "ওয়েবক্যাম টেস্টার", "ক্যামেরা ঠিকমতো চলছে কি না", "net", WebcamActivity::class.java, false, "webcam camera tester")
     )
 

@@ -212,10 +212,14 @@ fun Activity.setScreen(title: String, content: View, fab: View? = null, back: Bo
         box.setOnClickListener { finish() }
         bar.addView(box, LinearLayout.LayoutParams(dp(44), dp(44)))
     }
-    val tv = label(title, if (back) 22f else 32f, Ui.TEXT, true)
+    val tv = label(Modes.title(this, title), if (back) 22f else 32f, Ui.TEXT, true)
     tv.maxLines = 1
     tv.ellipsize = android.text.TextUtils.TruncateAt.END
-    bar.addView(tv)
+    val modeChip = Modes.chip(this)
+    if (modeChip != null) {
+        bar.addView(tv, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        bar.addView(modeChip)
+    } else bar.addView(tv)
     col.addView(bar, lp())
 
     content.layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)

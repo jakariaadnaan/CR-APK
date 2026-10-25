@@ -35,7 +35,7 @@ fun Activity.pdfHeader(title: String, sub: String, onBack: (() -> Unit)?, right:
     }
     val col = LinearLayout(this)
     col.orientation = LinearLayout.VERTICAL
-    val t = label(title, 19f, Ui.TEXT, true)
+    val t = label(Modes.title(this, title), 19f, Ui.TEXT, true)
     t.maxLines = 1
     col.addView(t)
     if (sub.isNotEmpty()) {
@@ -44,7 +44,8 @@ fun Activity.pdfHeader(title: String, sub: String, onBack: (() -> Unit)?, right:
         col.addView(s)
     }
     bar.addView(col, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-    if (right != null) bar.addView(right)
+    val rightView = right ?: Modes.chip(this)
+    if (rightView != null) bar.addView(rightView)
     return bar
 }
 
