@@ -21,26 +21,21 @@ class WordsActivity : GuardedActivity() {
         val scroll = ScrollView(this)
         val box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
-        box.setPadding(dp(14), dp(14), dp(14), dp(24))
+        box.setPadding(dp(16), dp(10), dp(16), dp(20))
         scroll.addView(box)
 
-        val c = card(16)
-        c.addView(label(tr("টাকার অঙ্ক"), 13f, Ui.MUTED))
         val input = EditText(this)
         input.hint = tr("যেমন: 12500 বা 12500.50")
-        input.textSize = 24f
+        input.textSize = 18f
         input.inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
-        c.addView(input, lp())
-        val shown: TextView = label("", 15f, Ui.MUTED)
-        c.addView(shown, lp(t = 4))
-        box.addView(c, lp(b = 12))
+        box.addView(fieldBox(tr("টাকার অঙ্ক"), input), lp(b = 8))
+        val shown: TextView = label("", 13f, Ui.MUTED)
+        box.addView(shown, lp(l = 4, b = 8))
 
-        val out = card(16)
-        out.addView(label(tr("কথায়"), 13f, Ui.MUTED))
-        val result = label("", 20f, Ui.PRIMARY, true)
+        val out = resultBox(tr("কথায়"), "", "")
+        val result = out.getChildAt(1) as TextView
+        result.textSize = 20f
         result.setLineSpacing(0f, 1.2f)
-        out.addView(result, lp(t = 6, b = 12))
-        out.addView(pill(tr("কপি করুন")) { if (words.isNotEmpty()) copyText(words) }, lp())
         box.addView(out, lp(b = 12))
 
         val note = label(
@@ -74,6 +69,6 @@ class WordsActivity : GuardedActivity() {
             }
         }
 
-        setScreen(tr("টাকা কথায়"), scroll)
+        setScreen(tr("টাকা কথায়"), scroll, null, true, bottomBar(LinearLayout(this).also { it.addView(primaryButton(tr("কথাগুলো কপি করুন")) { if (words.isNotEmpty()) copyText(words) }, lp(height = dp(48))) }))
     }
 }

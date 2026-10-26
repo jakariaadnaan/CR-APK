@@ -11,8 +11,8 @@ android {
         applicationId = "com.example.callrec"
         minSdk = 26
         targetSdk = 34
-        versionCode = 121
-        versionName = "1.21"
+        versionCode = 122
+        versionName = "1.22"
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
 

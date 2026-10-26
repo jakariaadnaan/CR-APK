@@ -44,14 +44,26 @@ abstract class OnlineBase : GuardedActivity() {
 
     protected lateinit var box: LinearLayout
 
+    private var screenTitle = ""
+    private lateinit var scrollRef: ScrollView
+
     protected fun build(title: String): LinearLayout {
-        val scroll = ScrollView(this)
+        scrollRef = ScrollView(this)
         box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
-        box.setPadding(dp(14), dp(14), dp(14), dp(24))
-        scroll.addView(box)
-        setScreen(title, scroll)
+        box.setPadding(dp(16), dp(10), dp(16), dp(20))
+        scrollRef.addView(box)
+        screenTitle = title
+        setScreen(title, scrollRef)
         return box
+    }
+
+    /** Puts the mockup's wide bottom button under the content (call once, after [build]). */
+    protected fun addBottom(btn: View) {
+        (scrollRef.parent as? android.view.ViewGroup)?.removeView(scrollRef)
+        val w = LinearLayout(this)
+        w.addView(btn, lp(height = dp(48)))
+        setScreen(screenTitle, scrollRef, null, true, bottomBar(w))
     }
 
     protected fun field(hint: String, type: Int = InputType.TYPE_CLASS_TEXT): EditText {
@@ -108,34 +120,55 @@ class CurrencyActivity : OnlineBase() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         build(tr("কারেন্সি কনভার্টার"))
+        // "You pay" card
         val c = card(14)
-        c.addView(label(tr("পরিমাণ"), 12f, Ui.MUTED, true))
+        c.addView(captionLabel(tr("আপনি দিচ্ছেন")))
+        val top1 = LinearLayout(this)
+        top1.orientation = LinearLayout.HORIZONTAL
+        top1.gravity = Gravity.CENTER_VERTICAL
         amount = field(tr("যেমন: ১০০"), InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL)
         amount.setText("1")
+        amount.textSize = 26f
+        amount.setTypeface(null, android.graphics.Typeface.BOLD)
+        amount.background = null
+        amount.setPadding(0, dp(4), 0, dp(4))
         amount.onChange { calc() }
-        c.addView(amount, lp(b = 8))
-        val row = LinearLayout(this)
-        row.orientation = LinearLayout.HORIZONTAL
-        row.gravity = Gravity.CENTER_VERTICAL
         from = Spinner(this)
         to = Spinner(this)
-        row.addView(from, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        row.addView(pill("⇄", Ui.BG, Ui.PRIMARY) {
+        top1.addView(amount, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        top1.addView(from, LinearLayout.LayoutParams(dp(110), LinearLayout.LayoutParams.WRAP_CONTENT))
+        c.addView(top1)
+        box.addView(c, lp())
+
+        val swap = label("⇅", 20f, Ui.PRIMARY, true)
+        swap.gravity = Gravity.CENTER
+        swap.background = bg(Ui.KEY_OP, 20, Ui.mix(Ui.PRIMARY, Ui.CARD, 0.5f), 1)
+        swap.setOnClickListener {
             val a = from.selectedItemPosition
             from.setSelection(to.selectedItemPosition)
             to.setSelection(a)
-        }, lp(l = 6, r = 6))
-        row.addView(to, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        c.addView(row, lp())
-        box.addView(c, lp(b = 12))
+        }
+        box.addView(swap, lp(width = dp(40), height = dp(40), t = 6, b = 6).also { it.gravity = Gravity.CENTER_HORIZONTAL })
 
-        val r = card(14)
-        result = label(tr("রেট আনা হচ্ছে…"), 20f, Ui.PRIMARY, true)
-        r.addView(result)
+        // "You receive" card
+        val r = LinearLayout(this)
+        r.orientation = LinearLayout.VERTICAL
+        r.background = bg(Ui.mix(Ui.PRIMARY, Ui.CARD, 0.9f), Ui.cardR, Ui.mix(Ui.PRIMARY, Ui.CARD, 0.6f), 1)
+        r.setPadding(dp(16), dp(14), dp(16), dp(14))
+        r.addView(captionLabel(tr("আপনি পাচ্ছেন")).also { it.setTextColor(Ui.PRIMARY) })
+        val top2 = LinearLayout(this)
+        top2.orientation = LinearLayout.HORIZONTAL
+        top2.gravity = Gravity.CENTER_VERTICAL
+        result = label(tr("রেট আনা হচ্ছে…"), 26f, Ui.TEXT, true)
+        top2.addView(result, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        top2.addView(to, LinearLayout.LayoutParams(dp(110), LinearLayout.LayoutParams.WRAP_CONTENT))
+        r.addView(top2)
+        box.addView(r, lp(b = 12))
+
         note = label("", 12f, Ui.MUTED)
-        r.addView(note, lp(t = 6, b = 8))
-        r.addView(pill(tr("রেট নতুন করে আনুন"), Ui.BG, Ui.PRIMARY) { load() })
-        box.addView(r, lp())
+        box.addView(note, lp(l = 4, b = 8))
+        box.addView(label(tr("রেট ইন্টারনেট থেকে আসে; ডিভাইস অফলাইন থাকলে সর্বশেষ সংরক্ষিত রেট দেখায়।"), 12f, Ui.MUTED), lp(l = 4))
+        addBottom(primaryButton(tr("রেট নতুন করে আনুন")) { load() })
 
         val prefs = getSharedPreferences("currency", 0)
         val cached = prefs.getString("rates", null)
@@ -198,7 +231,7 @@ class CurrencyActivity : OnlineBase() {
         val t = to.selectedItem as String
         val v = a / rates.getDouble(f) * rates.getDouble(t)
         val one = rates.getDouble(t) / rates.getDouble(f)
-        result.text = bn(String.format(Locale.US, "%,.2f", v)) + " " + t
+        result.text = bn(String.format(Locale.US, "%,.2f", v))
         note.text = bn("1 " + f + " = " + String.format(Locale.US, "%.4f", one) + " " + t) + "\n" + note.text.toString().substringAfter("\n")
     }
 }

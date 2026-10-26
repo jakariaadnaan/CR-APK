@@ -142,28 +142,33 @@ class SciCalcActivity : GuardedActivity() {
 
     private lateinit var exprView: TextView
     private lateinit var resView: TextView
-    private lateinit var degBtn: TextView
+    private lateinit var degRow: LinearLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val col = LinearLayout(this)
         col.orientation = LinearLayout.VERTICAL
-        col.setPadding(dp(8), dp(8), dp(8), dp(10))
+        col.setPadding(dp(12), dp(8), dp(12), dp(10))
+
+        degRow = LinearLayout(this)
+        degRow.orientation = LinearLayout.HORIZONTAL
+        col.addView(degRow, lp(l = 4, b = 8))
 
         val disp = card(14)
         disp.gravity = Gravity.END
-        exprView = label("", 24f, Ui.TEXT, true)
+        exprView = label("", 15f, Ui.MUTED)
         exprView.gravity = Gravity.END
         exprView.maxLines = 3
-        resView = label("", 18f, Ui.MUTED)
+        resView = label("", 30f, Ui.TEXT, true)
         resView.gravity = Gravity.END
+        resView.maxLines = 1
         disp.addView(exprView, lp())
         disp.addView(resView, lp(t = 4))
         col.addView(disp, lp(l = 4, r = 4, b = 6))
 
         // key = (shown text, what it does)
         val rows = listOf(
-            listOf("DEG", "(", ")", "⌫", "C"),
+            listOf("(", ")", "%", "⌫", "C"),
             listOf("sin", "cos", "tan", "^", "√"),
             listOf("sin⁻¹", "cos⁻¹", "tan⁻¹", "ln", "log"),
             listOf("7", "8", "9", "÷", "π"),
@@ -179,23 +184,21 @@ class SciCalcActivity : GuardedActivity() {
             for (k in r) {
                 val isNum = k.length == 1 && (k[0].isDigit() || k == ".")
                 val isOp = k in listOf("÷", "×", "−", "+", "^")
+                val isFn = !isNum && !isOp && k != "=" && k != "(" && k != ")" && k != "⌫" && k != "C" && k != "%" && k != "Ans"
                 val fill = when {
                     k == "=" -> Ui.PRIMARY
-                    isOp -> Ui.KEY_OP
-                    isNum -> Ui.CARD
-                    else -> Ui.KEY_FN
+                    isOp || isFn -> Ui.KEY_OP
+                    else -> Ui.CARD
                 }
                 val fg = when {
                     k == "=" -> Color.WHITE
-                    isOp || k == "C" || k == "DEG" -> Ui.PRIMARY
+                    isOp || isFn -> Ui.PRIMARY
                     else -> Ui.TEXT
                 }
                 val b = label(if (isNum && k != ".") bn(k) else k, if (k.length > 2) 15f else 20f, fg, true)
                 b.gravity = Gravity.CENTER
-                b.background = bg(fill, 14)
-                b.elevation = dp(1).toFloat()
+                b.background = bg(fill, 12, if (fill == Ui.PRIMARY) fill else if (fill == Ui.KEY_OP) Ui.mix(Ui.PRIMARY, Ui.CARD, 0.75f) else Ui.LINE, 1)
                 b.setOnClickListener { press(k) }
-                if (k == "DEG") degBtn = b
                 val p = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f)
                 p.setMargins(dp(3), dp(3), dp(3), dp(3))
                 line.addView(b, p)
@@ -233,21 +236,22 @@ class SciCalcActivity : GuardedActivity() {
     private fun shown(e: String): String = bn(e.replace('*', '×').replace('/', '÷').replace('-', '−'))
 
     private fun refresh() {
-        degBtn.text = if (deg) "DEG" else "RAD"
-        exprView.text = if (expr.isEmpty()) bn("0") else shown(expr)
+        degRow.removeAllViews()
+        degRow.addView(choiceChip("DEG", deg) { deg = true; refresh() }, lp(r = 8))
+        degRow.addView(choiceChip("RAD", !deg) { deg = false; refresh() }, lp(r = 8))
+        exprView.text = shown(expr)
         val m = message
         if (m != null) {
             resView.text = m
         } else {
             val r = if (expr.isEmpty()) null else evaluate(expr)
-            resView.text = if (r == null || r == tr("ত্রুটি")) "" else "= " + bn(r)
+            resView.text = bn(if (r == null || r == tr("ত্রুটি")) expr.ifEmpty { "0" } else r)
         }
     }
 
     private fun press(k: String) {
         message = null
         when (k) {
-            "DEG" -> deg = !deg
             "C" -> expr = ""
             "⌫" -> expr = expr.replace(Regex("(sin|cos|tan|asin|acos|atan|ln|log|sqrt)\\($|Ans$|(?s).$"), "")
             "=" -> {

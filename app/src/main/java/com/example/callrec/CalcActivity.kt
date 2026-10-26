@@ -85,21 +85,7 @@ class CalcActivity : GuardedActivity() {
         tab = t
         tabRow.removeAllViews()
         val names = listOf(tr("ক্যালকুলেটর"), tr("রূপান্তর"))
-        for (i in names.indices) {
-            val on = tab == i
-            val chip = label(names[i], 14f, if (on) Color.WHITE else Ui.PRIMARY, true)
-            chip.gravity = Gravity.CENTER
-            chip.background = bg(if (on) Ui.PRIMARY else Ui.CARD, 20, Ui.PRIMARY, 1)
-            chip.setPadding(dp(18), dp(8), dp(18), dp(8))
-            chip.setOnClickListener { showTab(i) }
-            tabRow.addView(chip, lp(r = 8))
-        }
-        val sci = label(tr("সায়েন্টিফিক ↗"), 14f, Ui.PRIMARY, true)
-        sci.gravity = Gravity.CENTER
-        sci.background = bg(Ui.CARD, 20, Ui.PRIMARY, 1)
-        sci.setPadding(dp(18), dp(8), dp(18), dp(8))
-        sci.setOnClickListener { startActivity(android.content.Intent(this, SciCalcActivity::class.java)) }
-        tabRow.addView(sci, lp(r = 8))
+        for (i in names.indices) tabRow.addView(choiceChip(names[i], tab == i) { showTab(i) }, lp(r = 8))
         body.removeAllViews()
         if (tab == 0) buildCalc() else buildConverter()
     }
@@ -180,23 +166,33 @@ class CalcActivity : GuardedActivity() {
         col.orientation = LinearLayout.VERTICAL
         col.setPadding(dp(10), dp(4), dp(10), dp(12))
 
+        val hist = label(tr("ইতিহাস ↗"), 11f, Ui.MUTED, true)
+        hist.gravity = Gravity.END
+        hist.setPadding(dp(8), dp(4), dp(8), dp(8))
+        hist.setOnClickListener { showHistory() }
+        col.addView(hist, lp(l = 4, r = 4))
+
         val disp = card(16)
         disp.gravity = Gravity.END
-        exprView = label("", 28f, Ui.TEXT, true)
+        exprView = label("", 15f, Ui.MUTED)
         exprView.gravity = Gravity.END
         exprView.maxLines = 2
-        resView = label("", 18f, Ui.MUTED)
+        resView = label("", 38f, Ui.TEXT, true)
         resView.gravity = Gravity.END
+        resView.maxLines = 1
+        prevView = label("", 11f, Ui.MUTED)
+        prevView.gravity = Gravity.END
         disp.addView(exprView, lp())
-        disp.addView(resView, lp(t = 4))
+        disp.addView(resView, lp(t = 6))
+        disp.addView(prevView, lp(t = 4))
         col.addView(disp, lp(l = 4, r = 4, b = 8))
 
         val rows = listOf(
-            listOf("C", "⌫", "%", "/"),
+            listOf("C", "±", "%", "/"),
             listOf("7", "8", "9", "*"),
             listOf("4", "5", "6", "-"),
             listOf("1", "2", "3", "+"),
-            listOf("00", "0", ".", "=")
+            listOf("0", ".", "⌫", "=")
         )
         val grid = LinearLayout(this)
         grid.orientation = LinearLayout.VERTICAL
@@ -209,23 +205,23 @@ class CalcActivity : GuardedActivity() {
                     "/" -> "÷"
                     "*" -> "×"
                     "-" -> "−"
+                    "C" -> tr("AC")
                     else -> bn(k)
                 }
                 val fill = when {
                     k == "=" -> Ui.PRIMARY
                     isOp -> Ui.KEY_OP
-                    k == "C" || k == "⌫" || k == "%" -> Ui.KEY_FN
+                    k == "%" -> Ui.KEY_OP
                     else -> Ui.CARD
                 }
                 val fg = when {
                     k == "=" -> Color.WHITE
-                    isOp || k == "C" -> Ui.PRIMARY
+                    isOp || k == "%" -> Ui.PRIMARY
                     else -> Ui.TEXT
                 }
-                val b = label(shown, 24f, fg, true)
+                val b = label(shown, 22f, fg, true)
                 b.gravity = Gravity.CENTER
-                b.background = bg(fill, 16)
-                b.elevation = dp(1).toFloat()
+                b.background = bg(fill, 12, if (fill == Ui.PRIMARY) fill else if (fill == Ui.KEY_OP) Ui.mix(Ui.PRIMARY, Ui.CARD, 0.75f) else Ui.LINE, 1)
                 b.setOnClickListener { press(k) }
                 val p = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f)
                 p.setMargins(dp(4), dp(4), dp(4), dp(4))
@@ -238,15 +234,38 @@ class CalcActivity : GuardedActivity() {
         refreshCalc()
     }
 
+    private var prevResult = ""
+    private lateinit var prevView: TextView
+
     private fun refreshCalc() {
-        exprView.text = bn(expr.replace('*', '×').replace('/', '÷').replace('-', '−')).ifEmpty { bn("0") }
+        exprView.text = bn(expr.replace('*', '×').replace('/', '÷').replace('-', '−'))
         val m = message
         if (m != null) {
             resView.text = m
         } else {
             val r = if (expr.isEmpty()) null else evaluate(expr)
-            resView.text = if (r == null || r == tr("ত্রুটি")) "" else "= " + bn(r)
+            resView.text = bn(if (r == null || r == tr("ত্রুটি")) expr.ifEmpty { "0" } else r)
         }
+        prevView.text = if (prevResult.isEmpty()) "" else tr("পূর্ববর্তী ফলাফল ") + bn(prevResult)
+    }
+
+    private fun history(): List<String> =
+        getSharedPreferences("calc", MODE_PRIVATE).getString("hist", "")!!.split("\n").filter { it.isNotEmpty() }
+
+    private fun addHistory(line: String) {
+        val l = (listOf(line) + history()).take(30)
+        getSharedPreferences("calc", MODE_PRIVATE).edit().putString("hist", l.joinToString("\n")).apply()
+    }
+
+    private fun showHistory() {
+        val h = history()
+        val b = android.app.AlertDialog.Builder(this).setTitle(tr("ইতিহাস"))
+        if (h.isEmpty()) b.setMessage(tr("এখনো কোনো হিসাব নেই।")) else b.setItems(h.map { bn(it) }.toTypedArray(), null)
+        b.setPositiveButton(tr("বন্ধ"), null)
+        if (h.isNotEmpty()) b.setNeutralButton(tr("মুছুন")) { _, _ ->
+            getSharedPreferences("calc", MODE_PRIVATE).edit().remove("hist").apply()
+        }
+        b.show()
     }
 
     private fun press(k: String) {
@@ -256,11 +275,20 @@ class CalcActivity : GuardedActivity() {
         when (k) {
             "C" -> expr = ""
             "⌫" -> if (expr.isNotEmpty()) expr = expr.dropLast(1)
+            "±" -> if (cur.isNotEmpty()) {
+                val i = expr.length - cur.length
+                expr = if (i >= 1 && expr[i - 1] == '-' && (i == 1 || expr[i - 2] in "+-*/")) expr.removeRange(i - 1, i)
+                else expr.substring(0, i) + "-" + cur
+            }
             "=" -> {
                 if (expr.isNotEmpty()) {
                     val r = evaluate(expr)
                     if (r == tr("ত্রুটি")) message = tr("ত্রুটি (শূন্য দিয়ে ভাগ)")
-                    else if (r != null) expr = r
+                    else if (r != null) {
+                        addHistory(expr.replace('*', '×').replace('/', '÷') + " = " + r)
+                        prevResult = r
+                        expr = r
+                    }
                 }
             }
             "+", "-", "*", "/" -> {
@@ -305,16 +333,11 @@ class CalcActivity : GuardedActivity() {
         val chips = LinearLayout(this)
         chips.orientation = LinearLayout.HORIZONTAL
         for (i in categories.indices) {
-            val on = i == catIdx
-            val chip = label(categories[i].name, 14f, if (on) Color.WHITE else Ui.PRIMARY, true)
-            chip.background = bg(if (on) Ui.PRIMARY else Ui.CARD, 20, Ui.PRIMARY, 1)
-            chip.setPadding(dp(16), dp(8), dp(16), dp(8))
-            chip.setOnClickListener {
+            chips.addView(choiceChip(categories[i].name, i == catIdx) {
                 catIdx = i
                 body.removeAllViews()
                 buildConverter()
-            }
-            chips.addView(chip, lp(r = 8))
+            }, lp(r = 8))
         }
         chipScroll.addView(chips)
         col.addView(chipScroll, lp(b = 12))
@@ -345,10 +368,12 @@ class CalcActivity : GuardedActivity() {
         pick.addView(to, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         c.addView(pick, lp(t = 8))
 
-        val result = label("", 26f, Ui.PRIMARY, true)
-        result.gravity = Gravity.CENTER
-        c.addView(result, lp(t = 16, b = 4))
-        col.addView(c, lp())
+        col.addView(c, lp(b = 12))
+        val result = label("", 28f, Ui.TEXT, true)
+        val resBox = resultBox(tr("ফলাফল"), "", "")
+        resBox.removeViewAt(1)
+        resBox.addView(result, 1, lp(t = 6))
+        col.addView(resBox, lp())
 
         fun update() {
             val v = asciiDigits(input.text.toString()).replace(",", "").trim().toDoubleOrNull()
