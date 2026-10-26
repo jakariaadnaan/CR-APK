@@ -15,7 +15,7 @@ import java.util.Locale
 class ColorPickerActivity : ImageToolBase() {
 
     private val history = ArrayList<Int>()
-    private var current = Color.parseColor("#2D5BE3")
+    private var current = Color.parseColor("#287A70")
 
     private lateinit var swatch: View
     private lateinit var hexV: TextView
@@ -33,10 +33,10 @@ class ColorPickerActivity : ImageToolBase() {
         val scroll = ScrollView(this)
         val box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
-        box.setPadding(dp(14), dp(14), dp(14), dp(24))
+        box.setPadding(dp(16), dp(10), dp(16), dp(20))
         scroll.addView(box)
 
-        box.addView(pickCard(300), lp(b = 12))
+        box.addView(pickCard(240), lp(b = 12))
         preview.setOnTouchListener { v, e ->
             when (e.actionMasked) {
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
@@ -49,40 +49,66 @@ class ColorPickerActivity : ImageToolBase() {
             }
             bmp != null
         }
-        box.addView(label(tr("ছবির উপর আঙুল রাখুন বা টেনে নিন"), 12f, Ui.MUTED), lp(l = 4, b = 10))
+        box.addView(label(tr("ছবি বাছলে তার উপর আঙুল রাখুন বা টেনে রঙ নিন; অথবা সরাসরি HEX লিখুন"), 12f, Ui.MUTED), lp(l = 4, b = 10))
 
-        val c = card(14)
-        val top = LinearLayout(this)
-        top.orientation = LinearLayout.HORIZONTAL
-        swatch = View(this)
-        top.addView(swatch, lp(width = dp(72), height = dp(72), r = 14))
-        val col = LinearLayout(this)
-        col.orientation = LinearLayout.VERTICAL
-        hexV = label("", 20f, Ui.TEXT, true)
-        rgbV = label("", 14f, Ui.MUTED)
-        hslV = label("", 14f, Ui.MUTED)
-        col.addView(hexV)
-        col.addView(rgbV)
-        col.addView(hslV)
-        top.addView(col, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        c.addView(top, lp(b = 12))
-        val btns = LinearLayout(this)
-        btns.orientation = LinearLayout.HORIZONTAL
-        btns.addView(pill(tr("HEX কপি")) { copyText(hex(current)) }, lp(r = 8))
-        btns.addView(pill(tr("RGB কপি"), Ui.BG, Ui.PRIMARY) { copyText(rgbText(current)) }, lp(r = 8))
-        btns.addView(pill(tr("HSL কপি"), Ui.BG, Ui.PRIMARY) { copyText(hslText(current)) })
-        c.addView(btns, lp())
-        box.addView(c, lp(b = 12))
+        val sw = LinearLayout(this)
+        sw.orientation = LinearLayout.VERTICAL
+        sw.setPadding(dp(16), dp(14), dp(16), dp(16))
+        capV = label(tr("নির্বাচিত রঙ").uppercase(), 11f, Color.WHITE, true)
+        hexV = label("", 28f, Color.WHITE, true)
+        rgbV = label("", 12f, Color.WHITE)
+        sw.addView(capV)
+        sw.addView(hexV, lp(t = 22))
+        sw.addView(rgbV, lp(t = 2))
+        swatch = sw
+        box.addView(sw, lp(b = 12))
 
-        val h = card(14)
-        h.addView(label(tr("বাছা রঙ"), 12f, Ui.MUTED, true), lp(b = 8))
+        hexIn = EditText(this)
+        hexIn.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
+        hexIn.isSingleLine = true
+        hexIn.onChange {
+            if (settingHex) return@onChange
+            var t = hexIn.text.toString().trim().removePrefix("#")
+            if (t.length == 3) t = t.map { "$it$it" }.joinToString("")
+            if (t.length == 6) try {
+                current = Color.parseColor("#$t")
+                settingHex = true
+                show(current, false)
+                settingHex = false
+            } catch (e: Throwable) { }
+        }
+        box.addView(fieldBox(tr("HEX মান"), hexIn), lp(b = 12))
+
+        box.addView(sectionLabel(tr("রঙের ফরম্যাট"), 2))
+        val fm = card(8)
+        rgbF = label("", 14f, Ui.TEXT, true)
+        hslV = label("", 14f, Ui.TEXT, true)
+        cmykV = label("", 14f, Ui.TEXT, true)
+        for ((i, p) in listOf(Pair("RGB", rgbF), Pair("HSL", hslV), Pair("CMYK", cmykV)).withIndex()) {
+            val r = LinearLayout(this)
+            r.gravity = Gravity.CENTER_VERTICAL
+            r.setPadding(dp(4), dp(12), dp(4), dp(12))
+            r.addView(label(p.first, 13f, Ui.PRIMARY, true), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            r.addView(p.second)
+            r.setOnClickListener { copyText(p.second.text.toString()) }
+            fm.addView(r)
+            if (i < 2) fm.addView(View(this).also { it.setBackgroundColor(Ui.LINE) }, lp(height = 1))
+        }
+        box.addView(fm, lp(b = 12))
+
+        box.addView(sectionLabel(tr("সাম্প্রতিক প্যালেট"), 2))
         histBox = FlowLayout(this)
-        h.addView(histBox, lp())
-        box.addView(h, lp())
+        box.addView(histBox, lp())
 
-        setScreen(tr("কালার পিকার"), scroll)
+        screenWithBottom(tr("কালার পিকার"), scroll, primaryButton(tr("HEX কপি")) { copyText(hex(current)) })
         show(current)
     }
+
+    private lateinit var capV: TextView
+    private lateinit var hexIn: EditText
+    private lateinit var rgbF: TextView
+    private lateinit var cmykV: TextView
+    private var settingHex = false
 
     override fun onImageLoaded() {
         info.text = srcName + " · " + bn(bmp!!.width.toString()) + "×" + bn(bmp!!.height.toString())
@@ -127,11 +153,29 @@ class ColorPickerActivity : ImageToolBase() {
         }
     }
 
-    private fun show(c: Int) {
+    private fun show(c: Int, setField: Boolean = true) {
         swatch.background = bg(c, 14, Ui.LINE, 1)
+        val lum = (0.299 * Color.red(c) + 0.587 * Color.green(c) + 0.114 * Color.blue(c)) / 255.0
+        val fg = if (lum > 0.65) Color.parseColor("#16212B") else Color.WHITE
+        capV.setTextColor(fg); hexV.setTextColor(fg); rgbV.setTextColor(fg)
         hexV.text = hex(c)
-        rgbV.text = rgbText(c)
-        hslV.text = hslText(c)
+        rgbV.text = "RGB " + Color.red(c) + " · " + Color.green(c) + " · " + Color.blue(c)
+        rgbF.text = Color.red(c).toString() + ", " + Color.green(c) + ", " + Color.blue(c)
+        hslV.text = hslText(c).removePrefix("hsl(").removeSuffix(")")
+        cmykV.text = cmykText(c)
+        if (setField) { settingHex = true; hexIn.setText(hex(c)); settingHex = false }
+    }
+
+    private fun cmykText(c: Int): String {
+        val r = Color.red(c) / 255f
+        val g = Color.green(c) / 255f
+        val b = Color.blue(c) / 255f
+        val k = 1f - Math.max(r, Math.max(g, b))
+        if (k >= 1f) return "0, 0, 0, 100"
+        val cy = (1f - r - k) / (1f - k)
+        val m = (1f - g - k) / (1f - k)
+        val y = (1f - b - k) / (1f - k)
+        return Math.round(cy * 100).toString() + ", " + Math.round(m * 100) + ", " + Math.round(y * 100) + ", " + Math.round(k * 100)
     }
 
     private fun hex(c: Int) = String.format(Locale.US, "#%02X%02X%02X", Color.red(c), Color.green(c), Color.blue(c))

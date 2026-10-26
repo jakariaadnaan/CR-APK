@@ -39,7 +39,7 @@ class TransparentActivity : ImageToolBase() {
         val scroll = ScrollView(this)
         val box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
-        box.setPadding(dp(14), dp(14), dp(14), dp(24))
+        box.setPadding(dp(16), dp(10), dp(16), dp(20))
         scroll.addView(box)
 
         box.addView(pickCard(280), lp(b = 6))
@@ -70,13 +70,15 @@ class TransparentActivity : ImageToolBase() {
         top.orientation = LinearLayout.HORIZONTAL
         top.gravity = android.view.Gravity.CENTER_VERTICAL
         swatch = View(this)
-        swatch.setBackgroundColor(key)
+        swatch.background = bg(key, 8, Ui.LINE, 1)
         top.addView(swatch, lp(width = dp(36), height = dp(36), r = 12))
         top.addView(label(tr("মুছে ফেলার রঙ"), 14f, Ui.TEXT, true))
         opt.addView(top, lp(b = 10))
-        tolLabel = label("", 13f, Ui.MUTED, true)
+        tolLabel = label("", 12f, Ui.MUTED, true)
         opt.addView(tolLabel)
         val bar = SeekBar(this)
+        bar.progressTintList = android.content.res.ColorStateList.valueOf(Ui.PRIMARY)
+        bar.thumbTintList = android.content.res.ColorStateList.valueOf(Ui.PRIMARY)
         bar.max = 200
         bar.progress = tol
         bar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -91,14 +93,11 @@ class TransparentActivity : ImageToolBase() {
         tolLabel.text = tr("সহনশীলতা: ") + bn(tol.toString()) + tr(" (বেশি হলে কাছাকাছি রঙও মুছবে)")
         box.addView(opt, lp(b = 12))
 
-        val res = card(14)
-        result = label(tr("আগে একটি ছবি বাছুন"), 15f, Ui.TEXT)
-        res.addView(result, lp(b = 10))
-        res.addView(pill(tr("PNG সংরক্ষণ")) { save() })
-        res.addView(label(tr("একরঙা ব্যাকগ্রাউন্ডে ভালো কাজ করে; জটিল ছবিতে নিখুঁত হবে না।"), 12f, Ui.MUTED), lp(t = 8))
-        box.addView(res, lp())
+        result = label(tr("আগে একটি ছবি বাছুন"), 13f, Ui.MUTED)
+        box.addView(result, lp(l = 4, b = 6))
+        box.addView(label(tr("একরঙা ব্যাকগ্রাউন্ডে ভালো কাজ করে; জটিল ছবিতে নিখুঁত হবে না। মূল ছবি অক্ষত থাকে।"), 12f, Ui.MUTED), lp(l = 4))
 
-        setScreen(tr("ট্রান্সপারেন্ট PNG মেকার"), scroll)
+        screenWithBottom(tr("ট্রান্সপারেন্ট PNG মেকার"), scroll, primaryButton(tr("PNG সংরক্ষণ")) { save() })
     }
 
     private fun checker(): BitmapDrawable {

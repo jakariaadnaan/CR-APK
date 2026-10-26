@@ -10,6 +10,8 @@ import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
 import android.view.Gravity
+import android.view.View
+import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -134,50 +136,112 @@ class PdfNupActivity : PdfBase() {
 class CollageActivity : GuardedActivity() {
     private val uris = ArrayList<Uri>()
     private var cols = 2
+    private var spacing = 8
+    private val thumbs = ArrayList<Bitmap>()
     private lateinit var info: TextView
     private lateinit var colRow: LinearLayout
     private lateinit var status: TextView
+    private lateinit var canvasBox: LinearLayout
+    private lateinit var spLabel: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val scroll = ScrollView(this)
         val box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
-        box.setPadding(dp(14), dp(14), dp(14), dp(24))
+        box.setPadding(dp(16), dp(10), dp(16), dp(20))
         scroll.addView(box)
-        val c = card(14)
-        c.addView(pill(tr("ছবি বাছুন")) {
-            val i = Intent(Intent.ACTION_OPEN_DOCUMENT)
-            i.addCategory(Intent.CATEGORY_OPENABLE)
-            i.type = "image/*"
-            i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-            startActivityForResult(i, 99)
-        })
-        info = label(tr("কোনো ছবি বাছা হয়নি"), 13f, Ui.MUTED)
-        c.addView(info, lp(t = 8))
+
+        val hdr = LinearLayout(this)
+        hdr.gravity = Gravity.CENTER_VERTICAL
+        hdr.addView(sectionLabel(tr("কোলাজ ক্যানভাস"), 0).also { it.layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).also { q -> q.bottomMargin = dp(8) } })
+        info = label(tr("কোনো ছবি বাছা হয়নি"), 12f, Ui.MUTED)
+        hdr.addView(info)
+        box.addView(hdr)
+
+        val c = card(10)
+        canvasBox = LinearLayout(this)
+        canvasBox.orientation = LinearLayout.VERTICAL
+        c.addView(canvasBox)
+        val pickZone = LinearLayout(this)
+        pickZone.orientation = LinearLayout.VERTICAL
+        pickZone.gravity = Gravity.CENTER
+        pickZone.setPadding(dp(8), dp(22), dp(8), dp(22))
+        pickZone.addView(iconBox(R.drawable.ic_image, Ui.KEY_OP, Ui.PRIMARY, 44, 22, 22))
+        pickZone.addView(label(tr("ছবি বাছুন"), 14f, Ui.TEXT, true), lp(t = 10))
+        pickZone.addView(label(tr("একসাথে সর্বোচ্চ ১২টি"), 11f, Ui.MUTED), lp(t = 2))
+        pickZone.setOnClickListener { pickImages() }
+        c.addView(pickZone)
+        pickRef = pickZone
         box.addView(c, lp(b = 12))
-        val o = card(14)
-        o.addView(label(tr("প্রতি সারিতে কয়টি ছবি"), 12f, Ui.MUTED, true))
+
+        box.addView(sectionLabel(tr("প্রতি সারিতে কয়টি ছবি"), 2))
         colRow = LinearLayout(this)
-        o.addView(colRow, lp(t = 8))
-        box.addView(o, lp(b = 12))
+        box.addView(colRow, lp(b = 10))
+
+        val sp = card(14)
+        val sh = LinearLayout(this)
+        sh.gravity = Gravity.CENTER_VERTICAL
+        sh.addView(label(tr("ফাঁক"), 13f, Ui.TEXT, true), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        spLabel = label(bn(spacing.toString()) + " px", 12f, Ui.MUTED)
+        sh.addView(spLabel)
+        sp.addView(sh)
+        val bar = android.widget.SeekBar(this)
+        bar.max = 40
+        bar.progress = spacing
+        bar.progressTintList = android.content.res.ColorStateList.valueOf(Ui.PRIMARY)
+        bar.thumbTintList = android.content.res.ColorStateList.valueOf(Ui.PRIMARY)
+        bar.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(s: android.widget.SeekBar?, p: Int, fromUser: Boolean) {
+                spacing = p
+                spLabel.text = bn(p.toString()) + " px"
+                renderCanvas()
+            }
+            override fun onStartTrackingTouch(s: android.widget.SeekBar?) {}
+            override fun onStopTrackingTouch(s: android.widget.SeekBar?) {}
+        })
+        sp.addView(bar)
+        box.addView(sp, lp(b = 12))
+
         status = label("", 14f, Ui.TEXT)
         box.addView(statusCard(status))
-        setPdfScreen(tr("ছবির কোলাজ"), scroll, tr("কোলাজ বানান")) { go() }
+        setPdfScreen(tr("ছবির কোলাজ"), scroll, tr("কোলাজ সংরক্ষণ")) { go() }
         chips()
+    }
+
+    private var pickRef: View? = null
+
+    private fun pickImages() {
+        val i = Intent(Intent.ACTION_OPEN_DOCUMENT)
+        i.addCategory(Intent.CATEGORY_OPENABLE)
+        i.type = "image/*"
+        i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        startActivityForResult(i, 99)
+    }
+
+    private fun renderCanvas() {
+        canvasBox.removeAllViews()
+        if (thumbs.isEmpty()) return
+        val cc = Math.min(cols, thumbs.size)
+        val g = dp(Math.max(2, spacing / 2))
+        for (row in thumbs.chunked(cc)) {
+            val r = LinearLayout(this)
+            r.orientation = LinearLayout.HORIZONTAL
+            for ((i, b) in row.withIndex()) {
+                val iv = android.widget.ImageView(this)
+                iv.setImageBitmap(b)
+                iv.scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
+                iv.background = bg(Ui.PREVIEW, 8)
+                r.addView(iv, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f).also { it.setMargins(if (i > 0) g else 0, 0, 0, 0) })
+            }
+            for (k in row.size until cc) r.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f).also { it.leftMargin = g })
+            canvasBox.addView(r, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (resources.displayMetrics.widthPixels - dp(60)) / cc).also { it.bottomMargin = g })
+        }
     }
 
     private fun chips() {
         colRow.removeAllViews()
-        for (n in listOf(1, 2, 3, 4)) {
-            val on = cols == n
-            val t = label(bn(n.toString()), 14f, if (on) Color.WHITE else Ui.PRIMARY, true)
-            t.gravity = Gravity.CENTER
-            t.background = bg(if (on) Ui.PRIMARY else Ui.CARD, 20, Ui.PRIMARY, 1)
-            t.setPadding(dp(18), dp(8), dp(18), dp(8))
-            t.setOnClickListener { cols = n; chips() }
-            colRow.addView(t, lp(width = android.view.ViewGroup.LayoutParams.WRAP_CONTENT, r = 8))
-        }
+        for (n in listOf(1, 2, 3, 4)) colRow.addView(choiceChip(bn(n.toString()) + tr(" টি"), cols == n) { cols = n; chips(); renderCanvas() }, lp(r = 8))
     }
 
     private fun go() {
@@ -197,7 +261,14 @@ class CollageActivity : GuardedActivity() {
             val cd = data.clipData
             if (cd != null) for (k in 0 until Math.min(12, cd.itemCount)) uris.add(cd.getItemAt(k).uri)
             else data.data?.let { uris.add(it) }
-            info.text = bn(uris.size.toString()) + tr("টি ছবি বাছা হয়েছে (সর্বোচ্চ ১২)")
+            info.text = bn(uris.size.toString()) + tr(" টি ছবি")
+            pickRef?.visibility = View.GONE
+            thumbs.clear()
+            val list0 = uris.toList()
+            Thread {
+                val ts = list0.mapNotNull { Img.decode(this, it, 360) }
+                runOnUiThread { thumbs.addAll(ts); renderCanvas() }
+            }.start()
         } else if (requestCode == 100) {
             val out = data.data ?: return
             val list = uris.toList()
@@ -206,7 +277,7 @@ class CollageActivity : GuardedActivity() {
             Thread {
                 val msg = try {
                     val cell = 700
-                    val gap = 12
+                    val gap = Math.max(2, spacing * 2)
                     val n = list.size
                     val cc = Math.min(c, n)
                     val rr = (n + cc - 1) / cc

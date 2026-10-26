@@ -29,46 +29,48 @@ class UpscaleActivity : ImageToolBase() {
         val scroll = ScrollView(this)
         val box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
-        box.setPadding(dp(14), dp(14), dp(14), dp(24))
+        box.setPadding(dp(16), dp(10), dp(16), dp(20))
         scroll.addView(box)
 
         box.addView(pickCard(), lp(b = 12))
 
-        val opt = card(14)
-        opt.addView(label(tr("কত গুণ বড় করবেন"), 12f, Ui.MUTED, true))
+        val ba = LinearLayout(this)
+        ba.orientation = LinearLayout.HORIZONTAL
+        fun showBa(up: Boolean) {
+            ba.removeAllViews()
+            ba.addView(choiceChip(tr("আসল"), !up) { showBa(false); bmp?.let { preview.setImageBitmap(it) } }, lp(r = 8))
+            ba.addView(choiceChip(tr("বড় করা"), up) { showBa(true); (out ?: bmp)?.let { preview.setImageBitmap(it) } })
+        }
+        showBa(true)
+        box.addView(ba, lp(b = 10))
+
+        val dim = resultBox(tr("আউটপুট মাপ"), "—", "", 20f)
+        dimView = dim.getChildAt(1) as TextView
+        box.addView(dim, lp(b = 6))
+
+        box.addView(sectionLabel(tr("কত গুণ বড় করবেন")))
         factorRow = LinearLayout(this)
         factorRow.orientation = LinearLayout.HORIZONTAL
-        opt.addView(factorRow, lp(t = 6, b = 10))
-        opt.addView(label(tr("ধার বাড়ানো (Sharpen)"), 12f, Ui.MUTED, true))
+        box.addView(factorRow, lp(b = 6))
+        box.addView(sectionLabel(tr("ধার বাড়ানো (Sharpen)")))
         sharpRow = LinearLayout(this)
         sharpRow.orientation = LinearLayout.HORIZONTAL
-        opt.addView(sharpRow, lp(t = 6, b = 6))
-        opt.addView(label(tr("এটি এআই নয়; ছবি মসৃণভাবে বড় হয়, নতুন ডিটেইল তৈরি হয় না।"), 12f, Ui.MUTED))
-        box.addView(opt, lp(b = 12))
+        box.addView(sharpRow, lp(b = 8))
+        box.addView(label(tr("এটি এআই নয়; ছবি মসৃণভাবে বড় হয়, নতুন ডিটেইল তৈরি হয় না।"), 12f, Ui.MUTED), lp(l = 4, b = 8))
+        result = label(tr("আগে একটি ছবি বাছুন"), 13f, Ui.MUTED)
+        box.addView(result, lp(l = 4))
 
-        val res = card(14)
-        res.addView(label(tr("ফলাফল"), 12f, Ui.MUTED, true))
-        result = label(tr("আগে একটি ছবি বাছুন"), 15f, Ui.TEXT)
-        res.addView(result, lp(t = 4, b = 10))
-        val row = LinearLayout(this)
-        row.orientation = LinearLayout.HORIZONTAL
-        row.addView(pill(tr("PNG সংরক্ষণ")) { save(0) }, lp(r = 8))
-        row.addView(pill(tr("JPG সংরক্ষণ"), Ui.BG, Ui.PRIMARY) { save(1) })
-        res.addView(row, lp())
-        box.addView(res, lp())
-
-        setScreen(tr("ইমেজ আপস্কেলার"), scroll)
+        screenWithBottom(
+            tr("ইমেজ আপস্কেলার"), scroll,
+            primaryButton(tr("PNG সংরক্ষণ")) { save(0) },
+            outlineButton(tr("JPG সংরক্ষণ")) { save(1) }
+        )
         chips()
     }
 
-    private fun chip(text: String, on: Boolean, click: () -> Unit): TextView {
-        val c = label(text, 14f, if (on) Color.WHITE else Ui.PRIMARY, true)
-        c.gravity = android.view.Gravity.CENTER
-        c.background = bg(if (on) Ui.PRIMARY else Ui.CARD, 20, Ui.PRIMARY, 1)
-        c.setPadding(dp(16), dp(8), dp(16), dp(8))
-        c.setOnClickListener { click() }
-        return c
-    }
+    private lateinit var dimView: TextView
+
+    private fun chip(text: String, on: Boolean, click: () -> Unit): TextView = choiceChip(text, on, click)
 
     private fun chips() {
         factorRow.removeAllViews()
@@ -114,7 +116,8 @@ class UpscaleActivity : ImageToolBase() {
                     result.text = tr("ছবিটি বড় করা যায়নি (মেমরি কম)")
                 } else {
                     preview.setImageBitmap(res)
-                    result.text = tr("নতুন মাপ: ") + bn(res.width.toString()) + "×" + bn(res.height.toString()) + note
+                    dimView.text = bn(res.width.toString()) + " × " + bn(res.height.toString()) + " px"
+                    result.text = note.trim()
                 }
             }
         }.start()

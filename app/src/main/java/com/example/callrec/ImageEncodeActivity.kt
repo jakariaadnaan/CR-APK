@@ -29,22 +29,24 @@ abstract class ImageEncodeActivity(private val compress: Boolean) : ImageToolBas
         val scroll = ScrollView(this)
         val box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
-        box.setPadding(dp(14), dp(14), dp(14), dp(24))
+        box.setPadding(dp(16), dp(10), dp(16), dp(20))
         scroll.addView(box)
 
         box.addView(pickCard(), lp(b = 12))
 
-        val opt = card(14)
-        opt.addView(label(tr("আউটপুট ফরম্যাট"), 12f, Ui.MUTED, true))
+        box.addView(sectionLabel(if (compress) tr("সংকোচনের ধরন") else tr("আউটপুট অপশন")))
         fmtRow = LinearLayout(this)
         fmtRow.orientation = LinearLayout.HORIZONTAL
-        opt.addView(fmtRow, lp(t = 6, b = 10))
+        box.addView(fmtRow, lp(b = 10))
 
-        qLabel = label("", 13f, Ui.MUTED, true)
+        val opt = card(14)
+        qLabel = label("", 12f, Ui.MUTED, true)
         opt.addView(qLabel)
         qBar = SeekBar(this)
         qBar.max = 95 - 10
         qBar.progress = quality - 10
+        qBar.progressTintList = android.content.res.ColorStateList.valueOf(Ui.PRIMARY)
+        qBar.thumbTintList = android.content.res.ColorStateList.valueOf(Ui.PRIMARY)
         qBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(s: SeekBar?, p: Int, fromUser: Boolean) {
                 quality = p + 10
@@ -63,14 +65,14 @@ abstract class ImageEncodeActivity(private val compress: Boolean) : ImageToolBas
         }
         box.addView(opt, lp(b = 12))
 
-        val res = card(14)
-        res.addView(label(tr("ফলাফল"), 12f, Ui.MUTED, true))
-        result = label(tr("আগে একটি ছবি বাছুন"), 15f, Ui.TEXT)
-        res.addView(result, lp(t = 4, b = 10))
-        res.addView(pill(tr("সংরক্ষণ করুন")) { save() })
+        val res = resultBox(if (compress) tr("আনুমানিক সাইজ") else tr("আউটপুট"), tr("আগে একটি ছবি বাছুন"), "", 16f)
+        result = res.getChildAt(1) as TextView
         box.addView(res, lp())
 
-        setScreen(if (compress) tr("ফাইল সাইজ কমানো") else tr("ফরম্যাট কনভার্টার"), scroll)
+        screenWithBottom(
+            if (compress) tr("ফাইল সাইজ কমানো") else tr("ফরম্যাট কনভার্টার"), scroll,
+            primaryButton(if (compress) tr("সাইজ কমিয়ে সংরক্ষণ") else tr("রূপান্তর করে সংরক্ষণ")) { save() }
+        )
         buildChips()
         updateLabels()
     }
@@ -79,14 +81,7 @@ abstract class ImageEncodeActivity(private val compress: Boolean) : ImageToolBas
     private fun ext(i: Int) = when (i) { 0 -> ".png"; 1 -> ".jpg"; else -> ".webp" }
     private fun mime(i: Int) = when (i) { 0 -> "image/png"; 1 -> "image/jpeg"; else -> "image/webp" }
 
-    private fun chip(text: String, on: Boolean, click: () -> Unit): TextView {
-        val c = label(text, 14f, if (on) Color.WHITE else Ui.PRIMARY, true)
-        c.gravity = android.view.Gravity.CENTER
-        c.background = bg(if (on) Ui.PRIMARY else Ui.CARD, 20, Ui.PRIMARY, 1)
-        c.setPadding(dp(16), dp(8), dp(16), dp(8))
-        c.setOnClickListener { click() }
-        return c
-    }
+    private fun chip(text: String, on: Boolean, click: () -> Unit): TextView = choiceChip(text, on, click)
 
     private fun buildChips() {
         fmtRow.removeAllViews()

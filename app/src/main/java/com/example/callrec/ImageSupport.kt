@@ -15,6 +15,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.view.Gravity
+import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -143,18 +144,45 @@ abstract class ImageToolBase : GuardedActivity() {
     /** The card with the pick button, a short info line and a preview. */
     protected fun pickCard(previewDp: Int = 240): LinearLayout {
         val c = card(14)
+        val zone = LinearLayout(this)
+        zone.orientation = LinearLayout.VERTICAL
+        zone.gravity = Gravity.CENTER
+        zone.setPadding(dp(8), dp(22), dp(8), dp(22))
+        zone.addView(iconBox(R.drawable.ic_image, Ui.KEY_OP, Ui.PRIMARY, 44, 22, 22))
+        zone.addView(label(tr("ছবি বাছুন"), 14f, Ui.TEXT, true), lp(t = 10))
+        zone.addView(label(tr("অথবা ডিভাইস থেকে বাছুন"), 11f, Ui.MUTED), lp(t = 2))
+        zone.setOnClickListener { pick() }
+        c.addView(zone)
         val row = LinearLayout(this)
         row.orientation = LinearLayout.HORIZONTAL
         row.gravity = Gravity.CENTER_VERTICAL
-        row.addView(pill(tr("ছবি বাছুন")) { pick() }, lp(r = 12))
         info = label(tr("কোনো ছবি বাছা হয়নি"), 13f, Ui.MUTED)
         row.addView(info, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        val change = label(tr("বদলান"), 13f, Ui.PRIMARY, true)
+        change.setPadding(dp(10), dp(6), dp(2), dp(6))
+        change.setOnClickListener { pick() }
+        row.addView(change)
+        row.visibility = View.GONE
         c.addView(row, lp(b = 10))
         preview = ImageView(this)
         preview.scaleType = ImageView.ScaleType.FIT_CENTER
         preview.setBackgroundColor(Ui.PREVIEW)
+        preview.visibility = View.GONE
         c.addView(preview, lp(height = previewDp))
+        pickZone = zone
+        pickInfoRow = row
         return c
+    }
+
+    private var pickZone: View? = null
+    private var pickInfoRow: View? = null
+
+    /** The wide bottom button the mockups use; [btn] goes into a bar under the content. */
+    protected fun screenWithBottom(title: String, content: View, vararg btns: View) {
+        val w = LinearLayout(this)
+        w.orientation = LinearLayout.HORIZONTAL
+        for ((i, b) in btns.withIndex()) w.addView(b, lp(width = 0, height = dp(48), l = if (i > 0) 4 else 0, r = if (i < btns.size - 1) 4 else 0).also { it.weight = 1f })
+        setScreen(title, content, null, true, bottomBar(w))
     }
 
     private fun pick() {
@@ -192,6 +220,9 @@ abstract class ImageToolBase : GuardedActivity() {
                         srcName = n
                         srcSize = s
                         preview.setImageBitmap(b)
+                        pickZone?.visibility = View.GONE
+                        pickInfoRow?.visibility = View.VISIBLE
+                        preview.visibility = View.VISIBLE
                         onImageLoaded()
                     }
                 }
