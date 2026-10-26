@@ -20,16 +20,16 @@ import java.util.Calendar
 class DebtActivity : GuardedActivity() {
 
     private lateinit var box: LinearLayout
-    private var filter = 0 // 0 = all, 1 = I will receive, 2 = I have to pay
+    private var filter = 0 // 0 = I will receive, 1 = I have to pay
 
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
         val scroll = ScrollView(this)
         box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
-        box.setPadding(dp(14), dp(14), dp(14), dp(96))
+        box.setPadding(dp(16), dp(10), dp(16), dp(20))
         scroll.addView(box)
-        setScreen(tr("বাকির খাতা"), scroll, pill(tr("+ নতুন বাকি")) { showEditor(null) })
+        setScreen(tr("বাকির খাতা"), scroll, null, true, bottomBar(LinearLayout(this).also { it.addView(primaryButton(tr("বাকি যোগ করুন")) { showEditor(null) }, lp(height = dp(48))) }))
         render()
     }
 
@@ -43,70 +43,51 @@ class DebtActivity : GuardedActivity() {
         val pay = all.filter { it.owe }.sumOf { it.amount }
         val net = get - pay
 
-        val sum = card()
-        val row = LinearLayout(this)
-        row.orientation = LinearLayout.HORIZONTAL
-        row.addView(stat(tr("আমি পাবো"), taka(get), Ui.GREEN), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        row.addView(stat(tr("আমি দেবো"), taka(pay), Ui.RED), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        row.addView(
-            stat(tr("নিট"), taka(net), if (net >= 0) Ui.GREEN else Ui.RED),
-            LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-        )
-        sum.addView(row)
-        box.addView(sum, lp(b = 12))
-
-        // Filter chips
-        val chips = LinearLayout(this)
-        chips.orientation = LinearLayout.HORIZONTAL
-        val names = listOf(tr("সব"), tr("পাবো"), tr("দেবো"))
-        for (i in names.indices) {
-            val on = filter == i
-            val chip = label(names[i], 14f, if (on) Color.WHITE else Ui.PRIMARY, true)
-            chip.gravity = Gravity.CENTER
-            chip.background = bg(if (on) Ui.PRIMARY else Ui.CARD, 20, Ui.PRIMARY, 1)
-            chip.setPadding(dp(18), dp(8), dp(18), dp(8))
-            chip.setOnClickListener {
-                filter = i
-                render()
-            }
-            chips.addView(chip, lp(r = 8))
-        }
-        box.addView(chips, lp(b = 12))
-
         val items = all
-            .filter { filter == 0 || (filter == 1 && !it.owe) || (filter == 2 && it.owe) }
+            .filter { (filter == 0 && !it.owe) || (filter == 1 && it.owe) }
             .sortedWith(compareByDescending<Debt> { it.date }.thenByDescending { it.id })
 
+        box.addView(chipRow(listOf(tr("আমি পাবো"), tr("আমি দেবো")), filter) { filter = it; render() }, lp(b = 12))
+        val shown = if (filter == 0) get else pay
+        box.addView(
+            resultBox(tr("মোট বকেয়া"), taka(shown), bn(items.size.toString()) + tr(" টি সক্রিয় রেকর্ড"), 30f),
+            lp(b = 10)
+        )
+        val pair = LinearLayout(this)
+        pair.orientation = LinearLayout.HORIZONTAL
+        pair.addView(statTile(tr("আমি পাবো"), taka(get), Ui.PRIMARY), lp(width = 0, r = 5).also { it.weight = 1f })
+        pair.addView(statTile(tr("আমি দেবো"), taka(pay)), lp(width = 0, l = 5).also { it.weight = 1f })
+        box.addView(pair, lp(b = 6))
+        box.addView(sectionLabel(tr("সাম্প্রতিক রেকর্ড"), 16))
+
         if (items.isEmpty()) {
-            val empty = label(tr("কোনো বাকি নেই।\nনিচের “+ নতুন বাকি” চেপে যোগ করুন।"), 14f, Ui.MUTED)
+            val empty = label(tr("কোনো বাকি নেই।\nনিচের বাটন চেপে যোগ করুন।"), 14f, Ui.MUTED)
             empty.gravity = Gravity.CENTER
             empty.setPadding(0, dp(30), 0, dp(30))
             box.addView(empty, lp())
         }
 
-        for (d in items) {
-            val c = card(14)
+        val list = card(4)
+        for ((i, d) in items.withIndex()) {
+            val c = LinearLayout(this)
             c.orientation = LinearLayout.HORIZONTAL
             c.gravity = Gravity.CENTER_VERTICAL
+            c.setPadding(dp(10), dp(12), dp(10), dp(12))
+            c.addView(iconBox(R.drawable.ic_user, Ui.KEY_OP, Ui.PRIMARY, 36, 18, 10, 12))
             val left = LinearLayout(this)
             left.orientation = LinearLayout.VERTICAL
-            left.addView(label(d.name, 16f, Ui.TEXT, true))
-            if (d.note.isNotBlank()) left.addView(label(d.note, 13f, Ui.MUTED))
-            left.addView(label(dateText(d.date), 12f, Ui.MUTED))
-            if (d.pays.isNotEmpty()) left.addView(label(tr("পরিশোধ হয়েছে: ") + taka(d.pays.sumOf { it.second }), 12f, Ui.GREEN))
-            if (d.due != 0L) left.addView(label(tr("রিমাইন্ডার: ") + dateText(d.due), 12f, if (d.due < todayStart()) Ui.RED else Ui.PRIMARY))
+            left.addView(label(d.name, 15f, Ui.TEXT, true))
+            val sub = (if (d.note.isNotBlank()) d.note + " · " else "") + dateText(d.date)
+            left.addView(label(sub, 12f, Ui.MUTED))
+            if (d.pays.isNotEmpty()) left.addView(label(tr("পরিশোধ হয়েছে: ") + taka(d.pays.sumOf { it.second }), 12f, Ui.PRIMARY))
+            if (d.due != 0L) left.addView(label(tr("রিমাইন্ডার: ") + dateText(d.due), 12f, if (d.due < todayStart()) Ui.RED else Ui.MUTED))
             c.addView(left, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-
-            val right = LinearLayout(this)
-            right.orientation = LinearLayout.VERTICAL
-            right.gravity = Gravity.END
-            right.addView(label(taka(d.amount), 16f, if (d.owe) Ui.RED else Ui.GREEN, true))
-            right.addView(label(if (d.owe) tr("আমি দেবো") else tr("আমি পাবো"), 12f, Ui.MUTED))
-            c.addView(right)
-
+            c.addView(label(taka(d.amount), 15f, if (d.owe) Ui.TEXT else Ui.PRIMARY, true))
             c.setOnClickListener { showActions(d) }
-            box.addView(c, lp(b = 8))
+            list.addView(c)
+            if (i < items.size - 1) list.addView(View(this).also { it.setBackgroundColor(Ui.LINE) }, lp(height = 1, l = 10, r = 10))
         }
+        if (items.isNotEmpty()) box.addView(list)
     }
 
     private fun stat(title: String, value: String, color: Int): LinearLayout {
@@ -204,7 +185,7 @@ class DebtActivity : GuardedActivity() {
         form.setPadding(dp(20), dp(10), dp(20), 0)
 
         form.addView(
-            dialogTabs(tr("আমি পাবো"), tr("আমি দেবো"), Ui.GREEN, Ui.RED, owe) { owe = it },
+            dialogTabs(tr("আমি পাবো"), tr("আমি দেবো"), Ui.PRIMARY, Ui.PRIMARY, owe) { owe = it },
             lp(b = 12)
         )
 

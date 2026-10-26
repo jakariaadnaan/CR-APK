@@ -33,11 +33,11 @@ class LedgerActivity : GuardedActivity() {
         val scroll = ScrollView(this)
         box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
-        box.setPadding(dp(14), dp(14), dp(14), dp(96))
+        box.setPadding(dp(16), dp(10), dp(16), dp(20))
         scroll.addView(box)
 
-        val add = pill(tr("+ নতুন লেনদেন")) { showEditor(null) }
-        setScreen(tr("খরচের খাতা"), scroll, add)
+        val add = primaryButton(tr("লেনদেন যোগ করুন")) { showEditor(null) }
+        setScreen(tr("খরচের খাতা"), scroll, null, true, bottomBar(LinearLayout(this).also { it.addView(add, lp(height = dp(48))) }))
         render()
     }
 
@@ -77,17 +77,12 @@ class LedgerActivity : GuardedActivity() {
         val exp = items.filter { !it.income }.sumOf { it.amount }
         val bal = inc - exp
 
-        val sum = card()
-        val row = LinearLayout(this)
-        row.orientation = LinearLayout.HORIZONTAL
-        row.addView(statCol(tr("আয়"), taka(inc), Ui.GREEN), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        row.addView(statCol(tr("ব্যয়"), taka(exp), Ui.RED), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        row.addView(
-            statCol(tr("ব্যালেন্স"), taka(bal), if (bal >= 0) Ui.GREEN else Ui.RED),
-            LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-        )
-        sum.addView(row)
-        box.addView(sum, lp(b = 12))
+        box.addView(resultBox(tr("মাসিক ব্যালেন্স"), taka(bal), BN_MONTHS[month] + " " + bn(year.toString()), 30f), lp(b = 10))
+        val pair = LinearLayout(this)
+        pair.orientation = LinearLayout.HORIZONTAL
+        pair.addView(statTile(tr("আয়"), taka(inc), Ui.PRIMARY), lp(width = 0, r = 5).also { it.weight = 1f })
+        pair.addView(statTile(tr("ব্যয়"), taka(exp)), lp(width = 0, l = 5).also { it.weight = 1f })
+        box.addView(pair, lp(b = 6))
 
         // Category summary (expenses only)
         val byCat = items.filter { !it.income }
@@ -95,16 +90,17 @@ class LedgerActivity : GuardedActivity() {
             .map { Pair(it.key, it.value.sumOf { e -> e.amount }) }
             .sortedByDescending { it.second }
         if (byCat.isNotEmpty() && exp > 0) {
+            box.addView(sectionLabel(tr("ক্যাটাগরি অনুযায়ী ব্যয়")))
             val cc = card()
-            cc.addView(label(tr("ক্যাটাগরি অনুযায়ী ব্যয়"), 15f, Ui.TEXT, true), lp(b = 8))
-            for ((name, amt) in byCat) {
+            for ((i, c2) in byCat.withIndex()) {
+                val name = c2.first
+                val amt = c2.second
                 val pct = (amt / exp * 100)
                 val line = LinearLayout(this)
                 line.orientation = LinearLayout.HORIZONTAL
                 line.addView(label(tr(name), 14f), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
                 line.addView(label(taka(amt) + "  (" + bn(Math.round(pct).toString()) + "%)", 13f, Ui.MUTED))
-                cc.addView(line, lp(t = 6))
-
+                cc.addView(line, lp(t = if (i == 0) 0 else 10))
                 val bar = LinearLayout(this)
                 bar.orientation = LinearLayout.HORIZONTAL
                 bar.weightSum = 100f
@@ -114,33 +110,41 @@ class LedgerActivity : GuardedActivity() {
                 bar.addView(fill, LinearLayout.LayoutParams(0, dp(6), pct.toFloat().coerceIn(1f, 100f)))
                 cc.addView(bar, lp(height = 6, t = 4))
             }
-            box.addView(cc, lp(b = 12))
+            box.addView(cc)
         }
 
         // Entries
-        box.addView(label(tr("লেনদেন (") + bn(items.size.toString()) + ")", 15f, Ui.MUTED, true), lp(l = 4, b = 6))
+        box.addView(sectionLabel(tr("সাম্প্রতিক লেনদেন (") + bn(items.size.toString()) + ")", 16))
         if (items.isEmpty()) {
             val empty = label(tr("এই মাসে কোনো লেনদেন নেই।\nনিচের “+ নতুন লেনদেন” চেপে শুরু করুন।"), 14f, Ui.MUTED)
             empty.gravity = Gravity.CENTER
             empty.setPadding(0, dp(30), 0, dp(30))
             box.addView(empty, lp())
         }
-        for (e in items) {
-            val c = card(14)
+        val list = card(4)
+        for ((i, e) in items.withIndex()) {
+            val c = LinearLayout(this)
             c.orientation = LinearLayout.HORIZONTAL
             c.gravity = Gravity.CENTER_VERTICAL
+            c.setPadding(dp(10), dp(12), dp(10), dp(12))
+            if (e.income) {
+                val plus = label("+", 20f, Ui.PRIMARY, true)
+                plus.gravity = Gravity.CENTER
+                plus.background = bg(Ui.KEY_OP, 10)
+                c.addView(plus, lp(width = dp(36), height = dp(36), r = 12))
+            } else c.addView(iconBox(R.drawable.ic_wallet, Ui.KEY_OP, Ui.PRIMARY, 36, 18, 10, 12))
             val left = LinearLayout(this)
             left.orientation = LinearLayout.VERTICAL
             left.addView(label(tr(e.category), 15f, Ui.TEXT, true))
-            if (e.note.isNotBlank()) left.addView(label(e.note, 13f, Ui.MUTED))
-            left.addView(label(dateText(e.date), 12f, Ui.MUTED))
+            val sub = (if (e.note.isNotBlank()) e.note + " · " else "") + dateText(e.date)
+            left.addView(label(sub, 12f, Ui.MUTED))
             c.addView(left, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-            c.addView(
-                label((if (e.income) "+" else "−") + taka(e.amount), 16f, if (e.income) Ui.GREEN else Ui.RED, true)
-            )
+            c.addView(label((if (e.income) "+" else "−") + taka(e.amount), 15f, if (e.income) Ui.PRIMARY else Ui.TEXT, true))
             c.setOnClickListener { showEditor(e) }
-            box.addView(c, lp(b = 8))
+            list.addView(c)
+            if (i < items.size - 1) list.addView(View(this).also { it.setBackgroundColor(Ui.LINE) }, lp(height = 1, l = 10, r = 10))
         }
+        if (items.isNotEmpty()) box.addView(list)
     }
 
     private fun statCol(title: String, value: String, color: Int): View {
@@ -216,8 +220,8 @@ class LedgerActivity : GuardedActivity() {
         }
 
         fun styleTabs() {
-            tOut.background = bg(if (!income) Ui.RED else Ui.GREY, 10)
-            tIn.background = bg(if (income) Ui.GREEN else Ui.GREY, 10)
+            tOut.background = bg(if (!income) Ui.PRIMARY else Ui.GREY, 10)
+            tIn.background = bg(if (income) Ui.PRIMARY else Ui.GREY, 10)
         }
 
         styleTabs()
