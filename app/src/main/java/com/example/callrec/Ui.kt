@@ -33,6 +33,10 @@ object Ui {
     var PREVIEW: Int = Color.parseColor("#ECEEF1"); private set
     var dark = false; private set
     var bangla = true; private set
+    /** True while a tool screen is showing: it uses the calm teal look from the design mockups. */
+    var tool = false; private set
+    /** Corner size of cards: tool screens use the tighter mockup corners. */
+    val cardR: Int get() = if (tool) 14 else 20
 
     /** Bumped when the look changes, so screens already open rebuild themselves. */
     var stamp = 0
@@ -63,6 +67,30 @@ object Ui {
             try { Color.parseColor(p.getString("accentHex", "#2D5BE3")) } catch (e: Throwable) { Color.parseColor("#2D5BE3") }
         } else Color.parseColor(if (dark) ACCENTS[ai].dark else ACCENTS[ai].light)
         KEY_OP = if (dark) mix(PRIMARY, CARD, 0.75f) else mix(PRIMARY, Color.WHITE, 0.87f)
+    }
+
+    /** Switches every colour to the tool-screen look (white cards, slate text, one teal accent) when [on]. */
+    fun applyFor(ctx: Context, on: Boolean) {
+        apply(ctx)
+        tool = on
+        if (!on) return
+        val p = ctx.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        val custom = p.getInt("accent", 0) != 0
+        if (dark) {
+            BG = Color.parseColor("#0E1417"); CARD = Color.parseColor("#161E22"); TEXT = Color.parseColor("#E8EEF0")
+            MUTED = Color.parseColor("#8C99A1"); LINE = Color.parseColor("#26323A"); ICON = Color.parseColor("#C5D0D5")
+            NAV = Color.parseColor("#121A1E"); GREY = Color.parseColor("#33424B"); CHEV = Color.parseColor("#55656F")
+            PREVIEW = Color.parseColor("#1D282D"); GREEN = Color.parseColor("#3BA597"); RED = Color.parseColor("#E5624F")
+            if (!custom) PRIMARY = Color.parseColor("#3BA597")
+            KEY_OP = mix(PRIMARY, CARD, 0.8f); KEY_FN = Color.parseColor("#1D282D")
+        } else {
+            BG = Color.parseColor("#F4F6F7"); CARD = Color.WHITE; TEXT = Color.parseColor("#16212B")
+            MUTED = Color.parseColor("#77838D"); LINE = Color.parseColor("#E3E8EB"); ICON = Color.parseColor("#34414C")
+            NAV = Color.WHITE; GREY = Color.parseColor("#C9D1D6"); CHEV = Color.parseColor("#A9B4BB")
+            PREVIEW = Color.parseColor("#E8EEF0"); GREEN = Color.parseColor("#287A70"); RED = Color.parseColor("#B5473A")
+            if (!custom) PRIMARY = Color.parseColor("#287A70")
+            KEY_OP = if (!custom) Color.parseColor("#E7F3F0") else mix(PRIMARY, Color.WHITE, 0.9f); KEY_FN = Color.parseColor("#F4F6F7")
+        }
     }
 
     class Accent(val name: String, val light: String, val dark: String)
@@ -107,7 +135,7 @@ fun Context.label(text: String, sp: Float = 15f, color: Int = Ui.TEXT, bold: Boo
 fun Context.card(pad: Int = 16): LinearLayout {
     val c = LinearLayout(this)
     c.orientation = LinearLayout.VERTICAL
-    c.background = bg(Ui.CARD, 20, Ui.LINE, 1)
+    c.background = bg(Ui.CARD, Ui.cardR, Ui.LINE, 1)
     c.setPadding(dp(pad), dp(pad), dp(pad), dp(pad))
     return c
 }
@@ -176,7 +204,7 @@ fun View.tapFx() {
 fun Context.pill(text: String, color: Int = Ui.PRIMARY, fg: Int = Color.WHITE, onClick: () -> Unit): TextView {
     val t = label(text, 15f, fg, true)
     t.gravity = Gravity.CENTER
-    t.background = bg(color, 16)
+    t.background = bg(color, if (Ui.tool) 10 else 16)
     t.setPadding(dp(18), dp(11), dp(18), dp(11))
     t.setOnClickListener { t.tapFx(); onClick() }
     return t
@@ -521,7 +549,7 @@ fun Context.listRow(
 fun Context.groupCard(rows: List<View>): LinearLayout {
     val c = LinearLayout(this)
     c.orientation = LinearLayout.VERTICAL
-    c.background = bg(Ui.CARD, 20, Ui.LINE, 1)
+    c.background = bg(Ui.CARD, Ui.cardR, Ui.LINE, 1)
     for ((i, v) in rows.withIndex()) {
         if (i > 0) {
             val d = View(this)

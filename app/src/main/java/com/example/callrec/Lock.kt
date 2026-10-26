@@ -130,7 +130,7 @@ open class GuardedActivity : Activity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        Ui.apply(this)
+        Ui.applyFor(this, ToolLook.isTool(this))
         Registry.loadHidden(this)
         stamp = Ui.stamp
         setTheme(if (Ui.dark) android.R.style.Theme_Material_NoActionBar else android.R.style.Theme_Material_Light_NoActionBar)
@@ -169,6 +169,7 @@ open class GuardedActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        Ui.applyFor(this, ToolLook.isTool(this))
         if (stamp != Ui.stamp) {
             recreate()
             return

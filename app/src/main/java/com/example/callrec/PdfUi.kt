@@ -53,7 +53,7 @@ fun Activity.pdfHeader(title: String, sub: String, onBack: (() -> Unit)?, right:
 fun Activity.bigButton(text: String, enabled: Boolean = true, onClick: () -> Unit): TextView {
     val b = label(text, 16f, Color.WHITE, true)
     b.gravity = Gravity.CENTER
-    b.background = bg(Ui.PRIMARY, 14)
+    b.background = bg(Ui.PRIMARY, if (Ui.tool) 10 else 14)
     b.alpha = if (enabled) 1f else 0.4f
     b.setOnClickListener { if (enabled) { it.tapFx(); onClick() } }
     return b
@@ -63,7 +63,7 @@ fun Activity.bigButton(text: String, enabled: Boolean = true, onClick: () -> Uni
 fun Activity.outlineButton(text: String, onClick: () -> Unit): TextView {
     val b = label(text, 15f, Ui.PRIMARY, true)
     b.gravity = Gravity.CENTER
-    b.background = bg(Ui.CARD, 14, Ui.PRIMARY, 1)
+    b.background = bg(Ui.CARD, if (Ui.tool) 10 else 14, if (Ui.tool) Ui.LINE else Ui.PRIMARY, 1)
     b.setOnClickListener { it.tapFx(); onClick() }
     return b
 }
@@ -151,7 +151,7 @@ class PercentRing(ctx: Context) : View(ctx) {
 fun Activity.statusCard(status: TextView): View {
     val res = LinearLayout(this)
     res.orientation = LinearLayout.VERTICAL
-    res.background = bg(Ui.mix(Ui.PRIMARY, Ui.CARD, 0.93f), 16, Ui.LINE, 1)
+    res.background = bg(Ui.mix(Ui.PRIMARY, Ui.CARD, if (Ui.tool) 0.9f else 0.93f), Ui.cardR - 4, if (Ui.tool) Ui.mix(Ui.PRIMARY, Ui.CARD, 0.6f) else Ui.LINE, 1)
     res.setPadding(dp(14), dp(12), dp(14), dp(12))
     status.setTextColor(Ui.TEXT)
     res.addView(status)
@@ -171,7 +171,7 @@ fun Activity.styleInput(e: android.widget.EditText) {
     e.setTextColor(Ui.TEXT)
     e.setHintTextColor(Ui.MUTED)
     e.textSize = 15f
-    e.background = bg(Ui.BG, 12, Ui.LINE, 1)
+    e.background = bg(if (Ui.tool) Ui.CARD else Ui.BG, if (Ui.tool) 10 else 12, Ui.LINE, 1)
     e.setPadding(dp(14), dp(12), dp(14), dp(12))
 }
 
