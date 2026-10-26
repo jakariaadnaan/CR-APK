@@ -7,6 +7,7 @@ import android.content.DialogInterface
 import android.graphics.Paint
 import android.text.InputType
 import android.view.Gravity
+import android.view.View
 import android.view.WindowManager
 import android.widget.CheckBox
 import android.widget.EditText
@@ -25,9 +26,9 @@ class TodoActivity : GuardedActivity() {
         val scroll = ScrollView(this)
         box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
-        box.setPadding(dp(14), dp(14), dp(14), dp(96))
+        box.setPadding(dp(16), dp(10), dp(16), dp(24))
         scroll.addView(box)
-        setScreen(tr("করণীয়"), scroll, pill(tr("+ নতুন কাজ")) { showEditor(null) })
+        setScreen(tr("করণীয়"), scroll)
         render()
     }
 
@@ -35,18 +36,27 @@ class TodoActivity : GuardedActivity() {
         box.removeAllViews()
         val today = todayStart()
         val all = TodoStore.all(this)
-        val pending = all.count { !it.done }
         val done = all.count { it.done }
 
-        val head = LinearLayout(this)
-        head.orientation = LinearLayout.HORIZONTAL
-        head.gravity = Gravity.CENTER_VERTICAL
-        head.addView(
-            label(tr("বাকি ") + bn(pending.toString()) + tr(" টি · সম্পন্ন ") + bn(done.toString()) + tr(" টি"), 14f, Ui.MUTED, true),
-            LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-        )
+        val total = all.size
+        val prog = resultBox(tr("আজকের অগ্রগতি"), bn(done.toString()) + tr(" / ") + bn(total.toString()) + tr(" সম্পন্ন"), "", 22f)
+        val bar = LinearLayout(this)
+        bar.weightSum = 100f
+        bar.background = bg(Ui.mix(Ui.PRIMARY, Ui.CARD, 0.75f), 4)
+        val fill = View(this)
+        fill.background = bg(Ui.PRIMARY, 4)
+        bar.addView(fill, LinearLayout.LayoutParams(0, dp(6), if (total == 0) 0f else done * 100f / total))
+        bar.addView(View(this), LinearLayout.LayoutParams(0, dp(6), if (total == 0) 100f else (total - done) * 100f / total))
+        prog.addView(bar, lp(t = 10, height = dp(6)))
+        box.addView(prog, lp(b = 6))
+
+        val hdr = LinearLayout(this)
+        hdr.gravity = Gravity.CENTER_VERTICAL
+        hdr.addView(sectionLabel(tr("করণীয় কাজ"), 10).also { it.layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).also { q -> q.topMargin = dp(10); q.bottomMargin = dp(8) } })
         if (done > 0) {
-            head.addView(pill(tr("সম্পন্নগুলো মুছুন"), Ui.BG, Ui.RED) {
+            val clr = label(tr("সম্পন্নগুলো মুছুন"), 12f, Ui.MUTED, true)
+            clr.setPadding(dp(8), dp(8), dp(2), dp(8))
+            clr.setOnClickListener {
                 AlertDialog.Builder(this)
                     .setMessage(tr("সব সম্পন্ন কাজ তালিকা থেকে মুছে ফেলবেন?"))
                     .setPositiveButton(tr("মুছুন")) { _, _ ->
@@ -55,9 +65,10 @@ class TodoActivity : GuardedActivity() {
                     }
                     .setNegativeButton(tr("না"), null)
                     .show()
-            })
+            }
+            hdr.addView(clr)
         }
-        box.addView(head, lp(b = 10))
+        box.addView(hdr)
 
         val items = all.sortedWith(
             compareBy<Todo> { it.done }
@@ -66,36 +77,31 @@ class TodoActivity : GuardedActivity() {
                 .thenByDescending { it.id }
         )
 
-        if (items.isEmpty()) {
-            val empty = label(tr("কোনো কাজ নেই।\nনিচের “+ নতুন কাজ” চেপে লিখে রাখুন।"), 14f, Ui.MUTED)
-            empty.gravity = Gravity.CENTER
-            empty.setPadding(0, dp(30), 0, dp(30))
-            box.addView(empty, lp())
-        }
-
-        for (t in items) {
-            val c = card(12)
+        val list = card(4)
+        for ((i, t) in items.withIndex()) {
+            val c = LinearLayout(this)
             c.orientation = LinearLayout.HORIZONTAL
             c.gravity = Gravity.CENTER_VERTICAL
+            c.setPadding(dp(10), dp(12), dp(10), dp(12))
 
-            val tick = label(if (t.done) "✔" else "○", 24f, if (t.done) Ui.GREEN else Ui.MUTED, true)
+            val tick = label(if (t.done) "✓" else "", 14f, Ui.PRIMARY, true)
             tick.gravity = Gravity.CENTER
-            tick.setPadding(dp(6), dp(4), dp(14), dp(4))
+            tick.background = if (t.done) bg(Ui.KEY_OP, 6, Ui.PRIMARY, 1) else bg(Ui.CARD, 6, Ui.GREY, 1)
             tick.setOnClickListener {
                 if (!t.done) Usage.add(this, "todo", "")
                 TodoStore.upsert(this, t.copy(done = !t.done))
                 render()
             }
-            c.addView(tick)
+            c.addView(tick, lp(width = dp(24), height = dp(24), r = 12))
 
             val mid = LinearLayout(this)
             mid.orientation = LinearLayout.VERTICAL
-            val title = label(t.title, 16f, if (t.done) Ui.MUTED else Ui.TEXT, !t.done)
+            val title = label(t.title, 15f, if (t.done) Ui.MUTED else Ui.TEXT, !t.done)
             if (t.done) title.paintFlags = title.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
             mid.addView(title)
             if (t.due != 0L) {
                 val late = !t.done && t.due < today
-                val dueTxt = tr("শেষ তারিখ: ") + dateText(t.due) + if (late) tr(" (দেরি হয়েছে)") else if (t.due == today) tr(" (আজ)") else ""
+                val dueTxt = dateText(t.due) + if (late) tr(" (দেরি হয়েছে)") else if (t.due == today) tr(" (আজ)") else ""
                 mid.addView(label(dueTxt, 12f, if (late) Ui.RED else Ui.MUTED))
             }
             if (t.remind != 0L && !t.done) {
@@ -104,15 +110,24 @@ class TodoActivity : GuardedActivity() {
             c.addView(mid, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
 
             if (t.urgent && !t.done) {
-                val u = label(tr("জরুরি"), 12f, android.graphics.Color.WHITE, true)
-                u.background = bg(Ui.RED, 10)
-                u.setPadding(dp(10), dp(3), dp(10), dp(3))
-                c.addView(u)
+                val u = View(this)
+                u.background = bg(Ui.PRIMARY, 4)
+                c.addView(u, lp(width = dp(8), height = dp(8)))
             }
 
             c.setOnClickListener { showEditor(t) }
-            box.addView(c, lp(b = 8))
+            list.addView(c)
+            list.addView(View(this).also { it.setBackgroundColor(Ui.LINE) }, lp(height = 1, l = 10, r = 10))
         }
+        val add = LinearLayout(this)
+        add.gravity = Gravity.CENTER_VERTICAL
+        add.setPadding(dp(14), dp(14), dp(14), dp(14))
+        add.background = bg(Ui.CARD, 10, Ui.LINE, 1)
+        add.addView(label("+", 22f, Ui.PRIMARY, true), lp(width = dp(30), r = 6))
+        add.addView(label(tr("কাজ যোগ করুন…"), 14f, Ui.MUTED))
+        add.setOnClickListener { showEditor(null) }
+        if (items.isNotEmpty()) box.addView(list, lp(b = 10))
+        box.addView(add)
     }
 
     private fun remindText(ms: Long): String {

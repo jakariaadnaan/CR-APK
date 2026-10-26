@@ -25,7 +25,7 @@ class PasswordActivity : GuardedActivity() {
 
     private lateinit var out: TextView
     private lateinit var strength: TextView
-    private lateinit var bar: View
+    private lateinit var bars: LinearLayout
     private lateinit var lenLabel: TextView
     private lateinit var upper: CheckBox
     private lateinit var lower: CheckBox
@@ -38,36 +38,49 @@ class PasswordActivity : GuardedActivity() {
         val scroll = ScrollView(this)
         val box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
-        box.setPadding(dp(14), dp(14), dp(14), dp(24))
+        box.setPadding(dp(16), dp(10), dp(16), dp(20))
         scroll.addView(box)
 
+        box.addView(captionLabel(tr("আপনার পাসওয়ার্ড")))
         val top = card(16)
-        out = label("", 22f, Ui.TEXT, true)
-        out.typeface = Typeface.MONOSPACE
-        out.gravity = Gravity.CENTER
+        val pr = LinearLayout(this)
+        pr.gravity = Gravity.CENTER_VERTICAL
+        out = label("", 20f, Ui.TEXT, true)
         out.setTextIsSelectable(true)
-        out.setPadding(0, dp(10), 0, dp(10))
-        top.addView(out, lp())
+        out.setPadding(0, dp(8), 0, dp(8))
+        pr.addView(out, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        val cp = label("⧉", 18f, Ui.PRIMARY, true)
+        cp.gravity = Gravity.CENTER
+        cp.background = bg(Ui.KEY_OP, 20, Ui.mix(Ui.PRIMARY, Ui.CARD, 0.5f), 1)
+        cp.setOnClickListener { copySecret() }
+        pr.addView(cp, lp(width = dp(40), height = dp(40), l = 8))
+        top.addView(pr, lp())
+        top.addView(label(tr("কপি করা পাসওয়ার্ড সংরক্ষিত হয় না"), 11f, Ui.MUTED), lp(t = 4))
+        box.addView(top, lp(b = 14))
 
-        bar = View(this)
-        top.addView(bar, lp(height = 6, t = 6))
-        strength = label("", 13f, Ui.MUTED)
-        strength.gravity = Gravity.CENTER
-        top.addView(strength, lp(t = 6, b = 12))
-
-        val btns = LinearLayout(this)
-        btns.orientation = LinearLayout.HORIZONTAL
-        btns.addView(pill(tr("নতুন তৈরি করুন")) { generate() }, lp(width = 0, r = 6).also { it.weight = 1f })
-        btns.addView(pill(tr("কপি"), Ui.BG, Ui.PRIMARY) { copySecret() }, lp(width = 0, l = 6).also { it.weight = 1f })
-        top.addView(btns, lp())
-        box.addView(top, lp(b = 12))
+        val sh = LinearLayout(this)
+        sh.gravity = Gravity.CENTER_VERTICAL
+        sh.addView(captionLabel(tr("পাসওয়ার্ডের শক্তি")).also { it.layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f) })
+        strength = label("", 12f, Ui.PRIMARY, true)
+        sh.addView(strength)
+        box.addView(sh)
+        bars = LinearLayout(this)
+        for (i in 0..3) bars.addView(View(this), LinearLayout.LayoutParams(0, dp(6), 1f).also { it.rightMargin = if (i < 3) dp(6) else 0 })
+        box.addView(bars, lp(t = 6, b = 14))
 
         val opts = card(16)
-        lenLabel = label("", 14f, Ui.TEXT, true)
-        opts.addView(lenLabel)
+        val lh = LinearLayout(this)
+        lh.gravity = Gravity.CENTER_VERTICAL
+        lh.addView(label(tr("দৈর্ঘ্য"), 14f, Ui.TEXT, true), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        lenLabel = label("", 12f, Ui.MUTED)
+        lh.addView(lenLabel)
+        opts.addView(lh)
         val seek = SeekBar(this)
         seek.max = 58 // 6..64
         seek.progress = length - 6
+        seek.progressTintList = android.content.res.ColorStateList.valueOf(Ui.PRIMARY)
+        seek.thumbTintList = android.content.res.ColorStateList.valueOf(Ui.PRIMARY)
+        seek.progressBackgroundTintList = android.content.res.ColorStateList.valueOf(Ui.LINE)
         seek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(s: SeekBar?, p: Int, fromUser: Boolean) {
                 length = p + 6
@@ -78,6 +91,7 @@ class PasswordActivity : GuardedActivity() {
             override fun onStopTrackingTouch(s: SeekBar?) {}
         })
         opts.addView(seek, lp(t = 4, b = 8))
+        opts.addView(label(tr("অক্ষরের ধরন"), 14f, Ui.TEXT, true), lp(t = 6, b = 2))
 
         upper = check(tr("বড় হাতের অক্ষর (A-Z)"), true)
         lower = check(tr("ছোট হাতের অক্ষর (a-z)"), true)
@@ -93,12 +107,15 @@ class PasswordActivity : GuardedActivity() {
         )
         box.addView(note, lp(l = 4))
 
-        setScreen(tr("পাসওয়ার্ড জেনারেটর"), scroll)
+        setScreen(tr("পাসওয়ার্ড জেনারেটর"), scroll, null, true, bottomBar(LinearLayout(this).also { it.addView(primaryButton(tr("পাসওয়ার্ড তৈরি করুন")) { generate() }, lp(height = dp(48))) }))
         generate()
     }
 
     private fun check(text: String, on: Boolean): CheckBox {
         val c = CheckBox(this)
+        c.buttonTintList = android.content.res.ColorStateList.valueOf(Ui.PRIMARY)
+        c.setTextColor(Ui.TEXT)
+        c.textSize = 14f
         c.text = text
         c.isChecked = on
         c.setOnCheckedChangeListener { _, _ -> generate() }
@@ -106,7 +123,7 @@ class PasswordActivity : GuardedActivity() {
     }
 
     private fun updateLenLabel() {
-        lenLabel.text = tr("দৈর্ঘ্য: ") + bn(length.toString()) + tr(" অক্ষর")
+        lenLabel.text = bn(length.toString()) + tr(" অক্ষর")
     }
 
     private fun generate() {
@@ -144,29 +161,16 @@ class PasswordActivity : GuardedActivity() {
         val bits = length * (Math.log(pool.length.toDouble()) / Math.log(2.0))
         val lbl: String
         val color: Int
-        val frac: Float
+        val n: Int
         when {
-            bits < 45 -> {
-                lbl = tr("দুর্বল"); color = Ui.RED; frac = 0.25f
-            }
-            bits < 70 -> {
-                lbl = tr("মোটামুটি"); color = android.graphics.Color.parseColor("#E08E0B"); frac = 0.5f
-            }
-            bits < 100 -> {
-                lbl = tr("শক্তিশালী"); color = Ui.GREEN; frac = 0.78f
-            }
-            else -> {
-                lbl = tr("অনেক শক্তিশালী"); color = Ui.PRIMARY; frac = 1f
-            }
+            bits < 45 -> { lbl = tr("দুর্বল"); color = Ui.RED; n = 1 }
+            bits < 70 -> { lbl = tr("মোটামুটি"); color = Ui.PRIMARY; n = 2 }
+            bits < 100 -> { lbl = tr("শক্তিশালী"); color = Ui.PRIMARY; n = 3 }
+            else -> { lbl = tr("অনেক শক্তিশালী"); color = Ui.PRIMARY; n = 4 }
         }
-        strength.text = lbl + tr(" (প্রায় ") + bn(bits.toInt().toString()) + tr(" বিট)")
+        strength.text = lbl
         strength.setTextColor(color)
-        bar.background = bg(color, 3)
-        val p = bar.layoutParams as LinearLayout.LayoutParams
-        // the bar is as wide as the strength fraction of its parent card content
-        val parentWidth = (bar.parent as View).width - (bar.parent as View).paddingLeft - (bar.parent as View).paddingRight
-        p.width = if (parentWidth > 0) (parentWidth * frac).toInt() else (resources.displayMetrics.widthPixels * 0.7f * frac).toInt()
-        bar.layoutParams = p
+        for (i in 0..3) bars.getChildAt(i).background = bg(if (i < n) color else Ui.LINE, 3)
     }
 
     private fun copySecret() {

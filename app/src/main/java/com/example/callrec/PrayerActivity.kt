@@ -5,6 +5,7 @@ import android.os.Handler
 import android.os.Looper
 import android.text.InputType
 import android.view.Gravity
+import android.view.View
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -29,9 +30,10 @@ class PrayerActivity : GuardedActivity() {
         val scroll = ScrollView(this)
         box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
-        box.setPadding(dp(14), dp(8), dp(14), dp(24))
+        box.setPadding(dp(16), dp(8), dp(16), dp(20))
         scroll.addView(box)
-        setScreen(tr("নামাজের সময়"), scroll)
+        setScreen(tr("নামাজের সময়"), scroll, null, true,
+            bottomBar(LinearLayout(this).also { it.addView(primaryButton(tr("মাসের সময়সূচি")) { showMonth() }, lp(height = dp(48))) }))
         render()
     }
 
@@ -77,33 +79,43 @@ class PrayerActivity : GuardedActivity() {
             for (i in listOf(0, 2, 3, 4, 5)) {
                 if (PrayerCalc.toMillis(day, times.at(i)) > now) { nextIdx = i; break }
             }
-            val c = card(18)
             if (nextIdx >= 0) {
                 val ms = PrayerCalc.toMillis(day, times.at(nextIdx)) - now
                 val mins = (ms / 60000).toInt()
-                c.addView(label(tr("পরবর্তী নামাজ"), 13f, Ui.MUTED, true))
-                c.addView(label(pname(nextIdx) + "  " + PrayerCalc.format(times.at(nextIdx)), 28f, Ui.PRIMARY, true), lp(t = 4))
-                val left = (if (mins >= 60) bn((mins / 60).toString()) + tr(" ঘণ্টা ") else "") + bn((mins % 60).toString()) + tr(" মিনিট বাকি")
-                c.addView(label(left, 14f, Ui.MUTED), lp(t = 4))
+                val left = tr("বাকি সময় ") + (if (mins >= 60) bn((mins / 60).toString()) + tr(" ঘণ্টা ") else "") + bn((mins % 60).toString()) + tr(" মিনিট")
+                box.addView(resultBox(tr("পরবর্তী নামাজ"), pname(nextIdx) + " · " + PrayerCalc.format(times.at(nextIdx)), left, 28f), lp(b = 12))
             } else {
-                c.addView(label(tr("আজকের সব নামাজের সময় শেষ"), 15f, Ui.TEXT, true))
-                c.addView(label(tr("আগামীকালের সময় দেখতে › চাপুন"), 13f, Ui.MUTED), lp(t = 4))
+                box.addView(resultBox(tr("পরবর্তী নামাজ"), tr("আজকের সব নামাজের সময় শেষ"), tr("আগামীকালের সময় দেখতে › চাপুন"), 18f), lp(b = 12))
             }
-            box.addView(c, lp(b = 12))
         }
 
-        // list
-        val rows = ArrayList<android.view.View>()
+        // location row
+        val locRow = LinearLayout(this)
+        locRow.gravity = Gravity.CENTER_VERTICAL
+        locRow.addView(label(tr(loc.first), 14f, Ui.TEXT, true), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        val chg = label(tr("বদলান"), 13f, Ui.PRIMARY, true)
+        chg.setPadding(dp(10), dp(6), dp(2), dp(6))
+        chg.setOnClickListener { pickCity() }
+        locRow.addView(chg)
+        box.addView(locRow, lp(l = 4, b = 4))
+
+        // schedule
+        box.addView(sectionLabel(tr("আজকের সময়সূচি"), 6))
+        val list = card(4)
         for (i in 0..5) {
             val r = LinearLayout(this)
             r.gravity = Gravity.CENTER_VERTICAL
-            r.setPadding(dp(18), dp(15), dp(14), dp(15))
+            r.setPadding(dp(12), dp(12), dp(8), dp(12))
             val hi = i == nextIdx
-            r.addView(label(pname(i), 16f, if (hi) Ui.PRIMARY else Ui.TEXT, hi), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-            r.addView(label(PrayerCalc.format(times.at(i)), 16f, if (hi) Ui.PRIMARY else Ui.TEXT, true))
+            if (hi) r.background = bg(Ui.KEY_OP, 10, Ui.mix(Ui.PRIMARY, Ui.CARD, 0.5f), 1)
+            val dot = View(this)
+            dot.background = bg(if (hi) Ui.PRIMARY else Ui.GREY, 4)
+            r.addView(dot, lp(width = dp(8), height = dp(8), r = 12))
+            r.addView(label(pname(i), 15f, if (hi) Ui.PRIMARY else Ui.TEXT, hi), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            r.addView(label(PrayerCalc.format(times.at(i)), 15f, if (hi) Ui.PRIMARY else Ui.TEXT, true))
             if (i != 1) {
                 val on = PrayerCalc.notify(this, i)
-                val bell = label(if (on) "🔔" else "🔕", 18f, if (on) Ui.PRIMARY else Ui.MUTED)
+                val bell = label(if (on) "🔔" else "🔕", 16f, if (on) Ui.PRIMARY else Ui.MUTED)
                 bell.gravity = Gravity.CENTER
                 bell.setOnClickListener {
                     PrayerCalc.setNotify(this, i, !on)
@@ -113,13 +125,13 @@ class PrayerActivity : GuardedActivity() {
                     PrayerReminder.scheduleAll(this)
                     render()
                 }
-                r.addView(bell, LinearLayout.LayoutParams(dp(44), dp(32)).also { it.leftMargin = dp(8) })
+                r.addView(bell, LinearLayout.LayoutParams(dp(44), dp(32)).also { it.leftMargin = dp(4) })
             } else {
-                r.addView(android.view.View(this), LinearLayout.LayoutParams(dp(44), dp(32)).also { it.leftMargin = dp(8) })
+                r.addView(View(this), LinearLayout.LayoutParams(dp(44), dp(32)).also { it.leftMargin = dp(4) })
             }
-            rows.add(r)
+            list.addView(r)
         }
-        box.addView(groupCard(rows), lp(b = 14))
+        box.addView(list, lp(b = 14))
 
         // settings
         val city = tr(loc.first)
@@ -131,6 +143,19 @@ class PrayerActivity : GuardedActivity() {
         set.add(setRow(tr("সময় সমন্বয়"), tr("মসজিদের সময়ের সঙ্গে মেলান")) { pickAdjust() })
         box.addView(groupCard(set), lp(b = 10))
         box.addView(label(tr("হিসাব ফোনেই হয়, ইন্টারনেট লাগে না। মসজিদের সময়ের সঙ্গে ১-২ মিনিট তফাত হতে পারে, দরকারে সময় সমন্বয় করুন। 🔔 চাপলে সেই নামাজের সময়ে নোটিফিকেশন আসবে।"), 12f, Ui.MUTED), lp(l = 4))
+    }
+
+    private fun showMonth() {
+        val day = Calendar.getInstance()
+        val n = day.getActualMaximum(Calendar.DAY_OF_MONTH)
+        val lines = ArrayList<String>()
+        for (d in 1..n) {
+            day.set(Calendar.DAY_OF_MONTH, d)
+            val t = PrayerCalc.forDay(this, day)
+            lines.add(bn(d.toString()) + "  " + listOf(0, 2, 3, 4, 5).joinToString(" · ") { pname(it) + " " + PrayerCalc.format(t.at(it)) })
+        }
+        AlertDialog.Builder(this).setTitle(BN_MONTHS[Calendar.getInstance().get(Calendar.MONTH)])
+            .setItems(lines.toTypedArray(), null).setPositiveButton(tr("বন্ধ"), null).show()
     }
 
     private fun setRow(name: String, value: String, onClick: () -> Unit): LinearLayout {

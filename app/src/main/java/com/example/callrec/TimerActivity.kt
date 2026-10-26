@@ -53,7 +53,7 @@ class TimerActivity : GuardedActivity() {
         root.orientation = LinearLayout.VERTICAL
         tabRow = LinearLayout(this)
         tabRow.orientation = LinearLayout.HORIZONTAL
-        root.addView(tabRow, lp(l = 14, t = 12, r = 14, b = 6))
+        root.addView(tabRow, lp(l = 16, t = 10, r = 16, b = 6))
         body = FrameLayout(this)
         root.addView(body, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
         setScreen(tr("টাইমার"), root)
@@ -121,10 +121,42 @@ class TimerActivity : GuardedActivity() {
         ringtone = null
     }
 
+    private class Ring(c: android.content.Context) : android.view.View(c) {
+        var frac = 1f
+            set(v) { val n = v.coerceIn(0f, 1f); if (n != field) { field = n; invalidate() } }
+        private val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+        override fun onDraw(cv: android.graphics.Canvas) {
+            val d = resources.displayMetrics.density
+            val sw = 9f * d
+            val box = android.graphics.RectF(sw, sw, width - sw, height - sw)
+            p.style = android.graphics.Paint.Style.STROKE
+            p.strokeWidth = sw
+            p.strokeCap = android.graphics.Paint.Cap.ROUND
+            p.color = Ui.LINE
+            cv.drawArc(box, 0f, 360f, false, p)
+            p.color = Ui.PRIMARY
+            if (frac > 0f) cv.drawArc(box, -90f, 360f * frac, false, p)
+        }
+    }
+
+    /** A round progress ring with the time and a small caption in the middle, as in the mockup. */
+    private fun ringBox(time: TextView, caption: TextView): Pair<FrameLayout, Ring> {
+        val f = FrameLayout(this)
+        val r = Ring(this)
+        f.addView(r, FrameLayout.LayoutParams(dp(250), dp(250), Gravity.CENTER))
+        val mid = LinearLayout(this)
+        mid.orientation = LinearLayout.VERTICAL
+        mid.gravity = Gravity.CENTER
+        time.setPadding(0, 0, 0, 0)
+        mid.addView(time)
+        mid.addView(caption, lp(t = 4))
+        f.addView(mid, FrameLayout.LayoutParams(dp(250), dp(250), Gravity.CENTER))
+        return Pair(f, r)
+    }
+
     private fun bigTime(): TextView {
-        val t = label("", 56f, Ui.TEXT, true)
+        val t = label("", 46f, Ui.TEXT, true)
         t.gravity = Gravity.CENTER
-        t.typeface = Typeface.MONOSPACE
         t.setPadding(0, dp(18), 0, dp(18))
         return t
     }
@@ -134,20 +166,12 @@ class TimerActivity : GuardedActivity() {
         ticker = null
         tabRow.removeAllViews()
         val names = listOf(tr("কাউন্টডাউন"), tr("স্টপওয়াচ"), tr("পমোডোরো"))
-        for (i in names.indices) {
-            val on = tab == i
-            val chip = label(names[i], 14f, if (on) Color.WHITE else Ui.PRIMARY, true)
-            chip.gravity = Gravity.CENTER
-            chip.background = bg(if (on) Ui.PRIMARY else Ui.CARD, 20, Ui.PRIMARY, 1)
-            chip.setPadding(dp(14), dp(8), dp(14), dp(8))
-            chip.setOnClickListener { showTab(i) }
-            tabRow.addView(chip, lp(r = 8))
-        }
+        for (i in names.indices) tabRow.addView(choiceChip(names[i], tab == i) { showTab(i) }, lp(r = 8))
         body.removeAllViews()
         val scroll = ScrollView(this)
         val col = LinearLayout(this)
         col.orientation = LinearLayout.VERTICAL
-        col.setPadding(dp(14), dp(6), dp(14), dp(24))
+        col.setPadding(dp(16), dp(6), dp(16), dp(20))
         scroll.addView(col)
         body.addView(scroll, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
         when (tab) {
@@ -176,24 +200,25 @@ class TimerActivity : GuardedActivity() {
     // ------------------------------------------------------------------ countdown
 
     private fun buildCountdown(col: LinearLayout) {
-        val c = card(16)
         val time = bigTime()
-        c.addView(time, lp())
-        col.addView(c, lp(b = 12))
+        val cap = label(tr("শুরুর জন্য প্রস্তুত"), 12f, Ui.MUTED)
+        cap.gravity = Gravity.CENTER
+        val rb = ringBox(time, cap)
+        col.addView(rb.first, lp(t = 6, b = 12))
+        col.addView(label(tr("ফোকাস সেশন"), 11f, Ui.MUTED).also { it.gravity = Gravity.CENTER }, lp(b = 4))
+        col.addView(sectionLabel(tr("দ্রুত প্রিসেট"), 4))
 
         val chipScroll = HorizontalScrollView(this)
         chipScroll.isHorizontalScrollBarEnabled = false
         val chips = LinearLayout(this)
         chips.orientation = LinearLayout.HORIZONTAL
         for (m in listOf(1, 3, 5, 10, 15, 30, 60)) {
-            val chip = label(bn(m.toString()) + tr(" মি"), 14f, Ui.PRIMARY, true)
-            chip.background = bg(Ui.CARD, 20, Ui.PRIMARY, 1)
-            chip.setPadding(dp(16), dp(8), dp(16), dp(8))
-            chip.setOnClickListener {
+            val chip = choiceChip(bn(m.toString()) + tr(" মি"), cd.durationMs == m * 60_000L) {
                 if (cd.running) {
                     Toast.makeText(this, tr("আগে থামান বা রিসেট করুন"), Toast.LENGTH_SHORT).show()
                 } else {
                     cd.reset(m * 60_000L)
+                    showTab(0)
                 }
             }
             chips.addView(chip, lp(r = 8))
@@ -202,7 +227,7 @@ class TimerActivity : GuardedActivity() {
         col.addView(chipScroll, lp(b = 12))
 
         val custom = card(14)
-        custom.addView(label(tr("নিজের সময় দিন"), 13f, Ui.MUTED))
+        custom.addView(captionLabel(tr("নিজের সময় দিন")))
         val row = LinearLayout(this)
         row.orientation = LinearLayout.HORIZONTAL
         row.gravity = Gravity.CENTER_VERTICAL
@@ -231,7 +256,7 @@ class TimerActivity : GuardedActivity() {
 
         val controls = LinearLayout(this)
         controls.orientation = LinearLayout.HORIZONTAL
-        val startBtn = pill(tr("শুরু")) {
+        val startBtn = pill(tr("টাইমার শুরু")) {
             if (cd.running) {
                 cd.pause()
                 Alarms.cancel(this, Alarms.CODE_COUNTDOWN)
@@ -240,7 +265,7 @@ class TimerActivity : GuardedActivity() {
                 Alarms.schedule(this, Alarms.CODE_COUNTDOWN, cd.endAt, tr("টাইমার"), tr("সময় শেষ হয়েছে"))
             }
         }
-        val resetBtn = pill(tr("রিসেট"), Ui.BG, Ui.RED) {
+        val resetBtn = pill(tr("রিসেট"), Ui.CARD, Ui.MUTED) {
             cd.reset()
             Alarms.cancel(this, Alarms.CODE_COUNTDOWN)
         }
@@ -251,10 +276,12 @@ class TimerActivity : GuardedActivity() {
         var lastRunning: Boolean? = null
         ticker = {
             time.text = hms(cd.remaining())
+            rb.second.frac = if (cd.durationMs > 0) cd.remaining().toFloat() / cd.durationMs else 0f
             if (lastRunning != cd.running) {
                 lastRunning = cd.running
-                startBtn.text = if (cd.running) tr("থামান") else tr("শুরু")
-                startBtn.background = bg(if (cd.running) Ui.RED else Ui.PRIMARY, 22)
+                cap.text = if (cd.running) tr("চলছে") else tr("শুরুর জন্য প্রস্তুত")
+                startBtn.text = if (cd.running) tr("থামান") else tr("টাইমার শুরু")
+                startBtn.background = bg(if (cd.running) Ui.TEXT else Ui.PRIMARY, 10)
             }
         }
     }
@@ -321,7 +348,7 @@ class TimerActivity : GuardedActivity() {
                 sp.edit().putLong("sw.start", System.currentTimeMillis()).apply()
             }
         }
-        val lapBtn = pill(tr("ল্যাপ"), Ui.BG, Ui.PRIMARY) {
+        val lapBtn = pill(tr("ল্যাপ"), Ui.KEY_OP, Ui.PRIMARY) {
             if (sp.getLong("sw.start", 0L) > 0L) {
                 val laps = swLaps().toMutableList()
                 laps.add(swElapsed())
@@ -329,7 +356,7 @@ class TimerActivity : GuardedActivity() {
                 renderLaps()
             }
         }
-        val resetBtn = pill(tr("রিসেট"), Ui.BG, Ui.RED) {
+        val resetBtn = pill(tr("রিসেট"), Ui.CARD, Ui.MUTED) {
             sp.edit().putLong("sw.acc", 0L).putLong("sw.start", 0L).putString("sw.laps", "").apply()
             renderLaps()
         }
@@ -347,7 +374,7 @@ class TimerActivity : GuardedActivity() {
             if (lastRunning != running) {
                 lastRunning = running
                 startBtn.text = if (running) tr("থামান") else tr("শুরু")
-                startBtn.background = bg(if (running) Ui.RED else Ui.PRIMARY, 22)
+                startBtn.background = bg(if (running) Ui.TEXT else Ui.PRIMARY, 10)
             }
         }
     }
@@ -389,16 +416,32 @@ class TimerActivity : GuardedActivity() {
     }
 
     private fun buildPomodoro(col: LinearLayout) {
-        val c = card(16)
-        val phaseLbl = label("", 18f, Ui.PRIMARY, true)
+        val phaseLbl = label("", 12f, Ui.PRIMARY, true)
         phaseLbl.gravity = Gravity.CENTER
-        c.addView(phaseLbl, lp())
         val time = bigTime()
-        c.addView(time, lp())
-        val countLbl = label("", 13f, Ui.MUTED)
+        val countLbl = label("", 12f, Ui.MUTED)
         countLbl.gravity = Gravity.CENTER
-        c.addView(countLbl, lp())
-        col.addView(c, lp(b = 12))
+        val pr = LinearLayout(this)
+        pr.orientation = LinearLayout.VERTICAL
+        pr.gravity = Gravity.CENTER
+        pr.addView(phaseLbl)
+        pr.addView(time)
+        pr.addView(countLbl)
+        val prb = ringBox(time, countLbl)
+        prb.first.removeAllViews()
+        val ring = Ring(this)
+        prb.first.addView(ring, FrameLayout.LayoutParams(dp(250), dp(250), Gravity.CENTER))
+        val inner = LinearLayout(this)
+        inner.orientation = LinearLayout.VERTICAL
+        inner.gravity = Gravity.CENTER
+        (time.parent as? android.view.ViewGroup)?.removeView(time)
+        (countLbl.parent as? android.view.ViewGroup)?.removeView(countLbl)
+        (phaseLbl.parent as? android.view.ViewGroup)?.removeView(phaseLbl)
+        inner.addView(phaseLbl)
+        inner.addView(time)
+        inner.addView(countLbl)
+        prb.first.addView(inner, FrameLayout.LayoutParams(dp(250), dp(250), Gravity.CENTER))
+        col.addView(prb.first, lp(t = 6, b = 12))
 
         val controls = LinearLayout(this)
         controls.orientation = LinearLayout.HORIZONTAL
@@ -414,11 +457,11 @@ class TimerActivity : GuardedActivity() {
                 Alarms.schedule(this, Alarms.CODE_POMODORO, pomo.endAt, m.first, m.second)
             }
         }
-        val skipBtn = pill(tr("পরের ধাপ"), Ui.BG, Ui.PRIMARY) {
+        val skipBtn = pill(tr("পরের ধাপ"), Ui.KEY_OP, Ui.PRIMARY) {
             Alarms.cancel(this, Alarms.CODE_POMODORO)
             advancePomo()
         }
-        val resetBtn = pill(tr("রিসেট"), Ui.BG, Ui.RED) {
+        val resetBtn = pill(tr("রিসেট"), Ui.CARD, Ui.MUTED) {
             Alarms.cancel(this, Alarms.CODE_POMODORO)
             sp.edit().putInt("pomo.phase", 0).putInt("pomo.count", 0).apply()
             pomo.reset(phaseMinutes(0) * 60_000L)
@@ -427,18 +470,19 @@ class TimerActivity : GuardedActivity() {
         controls.addView(skipBtn, lp(width = 0, l = 6, r = 6).also { it.weight = 1f })
         controls.addView(resetBtn, lp(width = 0, l = 6).also { it.weight = 1f })
         col.addView(controls, lp(b = 12))
-        col.addView(pill(tr("সময় সেটিংস"), Ui.BG, Ui.PRIMARY) { showPomoSettings() }, lp())
+        col.addView(pill(tr("সময় সেটিংস"), Ui.KEY_OP, Ui.PRIMARY) { showPomoSettings() }, lp())
 
         var lastRunning: Boolean? = null
         ticker = {
             val phase = sp.getInt("pomo.phase", 0)
             phaseLbl.text = phaseName(phase)
             time.text = hms(pomo.remaining())
-            countLbl.text = tr("সম্পন্ন পমোডোরো: ") + bn(sp.getInt("pomo.count", 0).toString()) + tr(" টি")
+            countLbl.text = tr("সম্পন্ন: ") + bn(sp.getInt("pomo.count", 0).toString()) + tr(" টি")
+            ring.frac = if (pomo.durationMs > 0) pomo.remaining().toFloat() / pomo.durationMs else 0f
             if (lastRunning != pomo.running) {
                 lastRunning = pomo.running
                 startBtn.text = if (pomo.running) tr("থামান") else tr("শুরু")
-                startBtn.background = bg(if (pomo.running) Ui.RED else Ui.PRIMARY, 22)
+                startBtn.background = bg(if (pomo.running) Ui.TEXT else Ui.PRIMARY, 10)
             }
         }
     }

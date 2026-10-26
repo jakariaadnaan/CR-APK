@@ -45,7 +45,7 @@ class DateActivity : GuardedActivity() {
         root.orientation = LinearLayout.VERTICAL
         tabRow = LinearLayout(this)
         tabRow.orientation = LinearLayout.HORIZONTAL
-        root.addView(tabRow, lp(l = 14, t = 12, r = 14, b = 6))
+        root.addView(tabRow, lp(l = 16, t = 10, r = 16, b = 6))
         body = FrameLayout(this)
         root.addView(body, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
         setScreen(tr("তারিখ ও বয়স"), root)
@@ -56,23 +56,22 @@ class DateActivity : GuardedActivity() {
         tab = t
         tabRow.removeAllViews()
         val names = listOf(tr("তারিখ রূপান্তর"), tr("বয়স"))
-        for (i in names.indices) {
-            val on = tab == i
-            val chip = label(names[i], 14f, if (on) Color.WHITE else Ui.PRIMARY, true)
-            chip.gravity = Gravity.CENTER
-            chip.background = bg(if (on) Ui.PRIMARY else Ui.CARD, 20, Ui.PRIMARY, 1)
-            chip.setPadding(dp(18), dp(8), dp(18), dp(8))
-            chip.setOnClickListener { showTab(i) }
-            tabRow.addView(chip, lp(r = 8))
-        }
+        for (i in names.indices) tabRow.addView(choiceChip(names[i], tab == i) { showTab(i) }, lp(r = 8))
         body.removeAllViews()
         val scroll = ScrollView(this)
         val col = LinearLayout(this)
         col.orientation = LinearLayout.VERTICAL
-        col.setPadding(dp(14), dp(6), dp(14), dp(24))
+        col.setPadding(dp(16), dp(6), dp(16), dp(20))
         scroll.addView(col)
         body.addView(scroll, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
         if (tab == 0) buildConverter(col) else buildAge(col)
+    }
+
+    private fun dateBox(text: String): TextView {
+        val t = label(text, 15f, Ui.TEXT)
+        t.background = bg(Ui.CARD, 10, Ui.LINE, 1)
+        t.setPadding(dp(14), dp(13), dp(14), dp(13))
+        return t
     }
 
     private fun ldText(d: LocalDate): String =
@@ -107,11 +106,11 @@ class DateActivity : GuardedActivity() {
         // ---- Gregorian -> Bangla / Hijri
         val c = card(16)
         c.addView(label(tr("ইংরেজি তারিখ"), 13f, Ui.MUTED))
-        val dateBtn = pill(ldText(gDate), Ui.BG, Ui.PRIMARY) {}
+        val dateBtn = dateBox(ldText(gDate))
         c.addView(dateBtn, lp(t = 6, b = 12))
 
-        val bnLine: TextView = label("", 17f, Ui.PRIMARY, true)
-        val hjLine: TextView = label("", 17f, Ui.PRIMARY, true)
+        val bnLine: TextView = label("", 17f, Ui.TEXT, true)
+        val hjLine: TextView = label("", 17f, Ui.TEXT, true)
         c.addView(label(tr("বাংলা"), 12f, Ui.MUTED))
         c.addView(bnLine, lp(b = 8))
         c.addView(label(tr("হিজরি"), 12f, Ui.MUTED))
@@ -121,8 +120,8 @@ class DateActivity : GuardedActivity() {
         adjRow.orientation = LinearLayout.HORIZONTAL
         adjRow.gravity = Gravity.CENTER_VERTICAL
         val adjLabel = label("", 13f, Ui.MUTED)
-        val minus = pill("−", Ui.BG, Ui.PRIMARY) {}
-        val plus = pill("+", Ui.BG, Ui.PRIMARY) {}
+        val minus = pill("−", Ui.KEY_OP, Ui.PRIMARY) {}
+        val plus = pill("+", Ui.KEY_OP, Ui.PRIMARY) {}
         adjRow.addView(label(tr("হিজরি সমন্বয়"), 13f, Ui.MUTED), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         adjRow.addView(minus)
         adjRow.addView(adjLabel, lp(l = 12, r = 12))
@@ -184,7 +183,7 @@ class DateActivity : GuardedActivity() {
         row.addView(year, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         r.addView(row, lp())
 
-        val out = label("", 17f, Ui.PRIMARY, true)
+        val out = label("", 17f, Ui.TEXT, true)
         r.addView(out, lp(t = 10))
         col.addView(r, lp())
 
@@ -213,31 +212,28 @@ class DateActivity : GuardedActivity() {
     // ------------------------------------------------------------------ age
 
     private fun buildAge(col: LinearLayout) {
-        val c = card(16)
-        c.addView(label(tr("জন্মতারিখ"), 13f, Ui.MUTED))
-        val birthBtn = pill(birth?.let { ldText(it) } ?: tr("জন্মতারিখ বেছে নিন"), Ui.BG, Ui.PRIMARY) {}
-        c.addView(birthBtn, lp(t = 6, b = 12))
-        c.addView(label(tr("যে তারিখ পর্যন্ত (ডিফল্ট আজ)"), 13f, Ui.MUTED))
-        val asOfBtn = pill(ldText(asOf), Ui.BG, Ui.PRIMARY) {}
-        c.addView(asOfBtn, lp(t = 6))
-        col.addView(c, lp(b = 12))
+        col.addView(captionLabel(tr("জন্মতারিখ")))
+        val birthBtn = dateBox(birth?.let { ldText(it) } ?: tr("জন্মতারিখ বেছে নিন"))
+        col.addView(birthBtn, lp(b = 10))
+        col.addView(captionLabel(tr("গণনার তারিখ (ডিফল্ট আজ)")))
+        val asOfBtn = dateBox(ldText(asOf))
+        col.addView(asOfBtn, lp(b = 12))
 
-        val res = card(16)
-        val out = label("", 16f, Ui.TEXT)
-        out.setLineSpacing(0f, 1.25f)
-        res.addView(out)
-        col.addView(res, lp())
+        val res = LinearLayout(this)
+        res.orientation = LinearLayout.VERTICAL
+        col.addView(res)
 
         fun refresh() {
             val b = birth
             birthBtn.text = if (b == null) tr("জন্মতারিখ বেছে নিন") else ldText(b)
             asOfBtn.text = ldText(asOf)
+            res.removeAllViews()
             if (b == null) {
-                out.text = tr("জন্মতারিখ বেছে নিলে বয়স দেখাবে।")
+                res.addView(label(tr("জন্মতারিখ বেছে নিলে বয়স দেখাবে।"), 14f, Ui.MUTED))
                 return
             }
             if (b.isAfter(asOf)) {
-                out.text = tr("জন্মতারিখ নির্ধারিত তারিখের পরে হতে পারে না।")
+                res.addView(label(tr("জন্মতারিখ নির্ধারিত তারিখের পরে হতে পারে না।"), 14f, Ui.RED))
                 return
             }
             val p = Period.between(b, asOf)
@@ -246,19 +242,24 @@ class DateActivity : GuardedActivity() {
             var next = b.withYear(asOf.year)
             if (next.isBefore(asOf)) next = b.withYear(asOf.year + 1)
             val left = ChronoUnit.DAYS.between(asOf, next)
-            val sb = StringBuilder()
-            sb.append(tr("বয়স: ")).append(bn(p.years.toString())).append(tr(" বছর "))
-                .append(bn(p.months.toString())).append(tr(" মাস "))
-                .append(bn(p.days.toString())).append(tr(" দিন\n"))
-            sb.append(tr("মোট: ")).append(bn(months.toString())).append(tr(" মাস, "))
-                .append(bn((days / 7).toString())).append(tr(" সপ্তাহ, "))
-                .append(bn(days.toString())).append(tr(" দিন\n"))
-            if (left == 0L) {
-                sb.append(tr("🎂 আজই জন্মদিন!"))
-            } else {
-                sb.append(tr("পরবর্তী জন্মদিন: ")).append(ldText(next)).append(" (").append(bn(left.toString())).append(tr(" দিন বাকি)"))
-            }
-            out.text = sb.toString()
+            res.addView(
+                resultBox(tr("আপনার বয়স"), bn(p.years.toString()) + tr(" বছর ") + bn(p.months.toString()) + tr(" মাস"), bn(p.days.toString()) + tr(" দিন সহ"), 24f),
+                lp(b = 12)
+            )
+            res.addView(sectionLabel(tr("বয়সের বিস্তারিত"), 2))
+            val kv = card(8)
+            kv.addView(kvRow(tr("মোট মাস"), bn(months.toString())))
+            kv.addView(kvRow(tr("মোট সপ্তাহ"), bn((days / 7).toString())))
+            kv.addView(kvRow(tr("মোট দিন"), bn(days.toString())))
+            kv.addView(kvRow(tr("জন্মদিনের বাকি দিন"), bn(left.toString()), true))
+            res.addView(kv, lp(b = 10))
+            val nb = LinearLayout(this)
+            nb.gravity = Gravity.CENTER_VERTICAL
+            nb.background = bg(Ui.CARD, 10, Ui.LINE, 1)
+            nb.setPadding(dp(14), dp(13), dp(14), dp(13))
+            nb.addView(iconView(R.drawable.ic_clock, 20, Ui.PRIMARY), lp(width = dp(20), height = dp(20), r = 10))
+            nb.addView(label(if (left == 0L) tr("🎂 আজই জন্মদিন!") else tr("পরবর্তী জন্মদিন: ") + ldText(next), 13f, Ui.TEXT))
+            res.addView(nb)
         }
         birthBtn.setOnClickListener {
             pickDate(birth ?: LocalDate.of(2000, 1, 1)) {

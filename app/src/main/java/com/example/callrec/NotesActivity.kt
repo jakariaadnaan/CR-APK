@@ -8,6 +8,7 @@ import android.text.InputType
 import android.text.TextUtils
 import android.text.TextWatcher
 import android.view.Gravity
+import android.view.View
 import android.view.WindowManager
 import android.widget.CheckBox
 import android.widget.EditText
@@ -33,8 +34,10 @@ class NotesActivity : GuardedActivity() {
         search.hint = tr("🔍  নোট খুঁজুন")
         search.inputType = InputType.TYPE_CLASS_TEXT
         search.isSingleLine = true
-        search.background = bg(Ui.CARD, 12)
-        search.setPadding(dp(14), dp(10), dp(14), dp(10))
+        search.background = bg(Ui.CARD, 10, Ui.LINE, 1)
+        search.setTextColor(Ui.TEXT)
+        search.setHintTextColor(Ui.MUTED)
+        search.setPadding(dp(14), dp(12), dp(14), dp(12))
         search.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
@@ -42,23 +45,23 @@ class NotesActivity : GuardedActivity() {
                 render()
             }
         })
-        content.addView(search, lp(l = 14, t = 12, r = 14, b = 4))
+        content.addView(search, lp(l = 16, t = 10, r = 16, b = 4))
 
         val tagScroll = android.widget.HorizontalScrollView(this)
         tagScroll.isHorizontalScrollBarEnabled = false
         tagBar = LinearLayout(this)
-        tagBar.setPadding(dp(14), dp(4), dp(14), dp(4))
+        tagBar.setPadding(dp(16), dp(6), dp(16), dp(6))
         tagScroll.addView(tagBar)
         content.addView(tagScroll, lp())
 
         val scroll = ScrollView(this)
         listBox = LinearLayout(this)
         listBox.orientation = LinearLayout.VERTICAL
-        listBox.setPadding(dp(14), dp(8), dp(14), dp(96))
+        listBox.setPadding(dp(16), dp(8), dp(16), dp(20))
         scroll.addView(listBox)
         content.addView(scroll, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
 
-        setScreen(tr("দ্রুত নোট"), content, pill(tr("+ নতুন নোট")) { showEditor(null) })
+        setScreen(tr("দ্রুত নোট"), content, null, true, bottomBar(LinearLayout(this).also { it.addView(primaryButton(tr("নোট যোগ করুন")) { showEditor(null) }, lp(height = dp(48))) }))
         render()
     }
 
@@ -72,10 +75,7 @@ class NotesActivity : GuardedActivity() {
         tagBar.visibility = android.view.View.VISIBLE
         for (name in listOf<String?>(null) + tags) {
             val sel = name == tagFilter
-            val chip = label(if (name == null) tr("সব") else "#$name", 13f, if (sel) Color.WHITE else Ui.MUTED, sel)
-            chip.background = if (sel) bg(Ui.PRIMARY, 16) else bg(Ui.CARD, 16, Ui.LINE, 1)
-            chip.setPadding(dp(14), dp(7), dp(14), dp(7))
-            chip.setOnClickListener { tagFilter = name; render() }
+            val chip = choiceChip(if (name == null) tr("সব") else "#$name", sel) { tagFilter = name; render() }
             tagBar.addView(chip, lp(width = android.view.ViewGroup.LayoutParams.WRAP_CONTENT, r = 8))
         }
     }
@@ -98,11 +98,12 @@ class NotesActivity : GuardedActivity() {
             listBox.addView(empty, lp())
         }
 
+        val cards = ArrayList<LinearLayout>()
         for (n in items) {
-            val c = card(14)
-            if (n.color > 0) c.background = bg(tint(n), 20, Color.parseColor(NOTE_COLORS[n.color - 1]), 1)
+            val c = card(12)
+            if (n.color > 0) c.background = bg(tint(n), Ui.cardR, Color.parseColor(NOTE_COLORS[n.color - 1]), 1)
             val head = if (n.title.isNotBlank()) n.title else n.body.lineSequence().firstOrNull() ?: n.checks.firstOrNull()?.first ?: ""
-            c.addView(label((if (n.pinned) "📌 " else "") + head, 16f, Ui.TEXT, true))
+            c.addView(label((if (n.pinned) "📌 " else "") + head, 15f, Ui.TEXT, true))
             if (n.title.isNotBlank() && n.body.isNotBlank()) {
                 val prev = label(n.body, 13f, Ui.MUTED)
                 prev.maxLines = 2
@@ -129,7 +130,15 @@ class NotesActivity : GuardedActivity() {
             if (n.tags.isNotEmpty()) c.addView(label(n.tags.joinToString("  ") { "#$it" }, 12f, Ui.PRIMARY), lp(t = 6))
             c.addView(label(dateText(n.updated), 11f, Ui.MUTED), lp(t = 4))
             c.setOnClickListener { showEditor(n) }
-            listBox.addView(c, lp(b = 8))
+            cards.add(c)
+        }
+        if (cards.isNotEmpty()) listBox.addView(sectionLabel(tr("সাম্প্রতিক নোট"), 6))
+        for (pair in cards.chunked(2)) {
+            val row = LinearLayout(this)
+            row.orientation = LinearLayout.HORIZONTAL
+            for ((i, c) in pair.withIndex()) row.addView(c, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f).also { it.setMargins(if (i == 1) dp(5) else 0, 0, if (i == 0) dp(5) else 0, 0) })
+            if (pair.size == 1) row.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f).also { it.leftMargin = dp(5) })
+            listBox.addView(row, lp(b = 10))
         }
     }
 
