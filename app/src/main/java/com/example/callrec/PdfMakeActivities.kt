@@ -38,28 +38,28 @@ class WebToPdfActivity : GuardedActivity() {
         val scroll = ScrollView(this)
         val box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
-        box.setPadding(dp(14), dp(14), dp(14), dp(24))
+        box.setPadding(dp(16), dp(10), dp(16), dp(20))
         scroll.addView(box)
-        val c = card(14)
         url = EditText(this)
         url.hint = "https://example.com"
-        styleInput(url)
         url.setSingleLine(true)
         url.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
         url.imeOptions = EditorInfo.IME_ACTION_GO
         url.setOnEditorActionListener { _, _, _ -> load(); true }
-        c.addView(url, lp())
-        c.addView(pill(tr("পেজ খুলুন")) { load() }, lp(t = 8))
-        box.addView(c, lp(b = 12))
+        box.addView(fieldBox(tr("ওয়েব ঠিকানা"), url), lp(b = 8))
+        box.addView(outlineButton(tr("পেজ খুলুন")) { load() }, lp(height = dp(44), b = 12))
         web = WebView(this)
         web.settings.javaScriptEnabled = true
         web.webViewClient = WebViewClient()
+        box.addView(captionLabel(tr("পেজ প্রিভিউ")))
         val wc = card(6)
         wc.addView(web, lp(height = dp(380)))
         box.addView(wc, lp(b = 12))
         status = label(tr("পেজ খুলে নিচের বোতাম চাপুন। খোলা পর্দায় \"PDF হিসেবে সংরক্ষণ\" বাছুন।"), 13f, Ui.MUTED)
         box.addView(statusCard(status))
-        setPdfScreen(tr("ওয়েবপেজ থেকে PDF"), scroll, tr("PDF করুন")) { print() }
+        val bar = LinearLayout(this)
+        bar.addView(primaryButton(tr("PDF করুন")) { print() }, lp(height = dp(48)))
+        setScreen(tr("ওয়েবপেজ থেকে PDF"), scroll, null, true, bottomBar(bar))
     }
 
     private fun load() {
@@ -114,8 +114,8 @@ class InvoicePdfActivity : GuardedActivity() {
     private fun edit(hint: String, type: Int = InputType.TYPE_CLASS_TEXT): EditText {
         val e = EditText(this)
         e.hint = hint
-        e.setTextColor(Ui.TEXT)
         e.inputType = type
+        styleInput(e)
         return e
     }
 
@@ -124,33 +124,31 @@ class InvoicePdfActivity : GuardedActivity() {
         val scroll = ScrollView(this)
         val box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
-        box.setPadding(dp(14), dp(14), dp(14), dp(24))
+        box.setPadding(dp(16), dp(10), dp(16), dp(20))
         scroll.addView(box)
-        val head = card(14)
         from = edit(tr("আপনার নাম / দোকানের নাম"))
         to = edit(tr("ক্রেতার নাম"))
         no = edit(tr("ইনভয়েস নম্বর (ঐচ্ছিক)"))
-        head.addView(from); head.addView(to); head.addView(no)
-        box.addView(head, lp(b = 12))
-        val items = card(14)
-        items.addView(label(tr("পণ্য / সেবা"), 12f, Ui.MUTED, true))
+        box.addView(captionLabel(tr("ইনভয়েসের তথ্য")))
+        box.addView(from, lp(b = 8)); box.addView(to, lp(b = 8)); box.addView(no, lp(b = 12))
+        box.addView(captionLabel(tr("পণ্য / সেবা")))
         rowBox = LinearLayout(this)
         rowBox.orientation = LinearLayout.VERTICAL
-        items.addView(rowBox, lp(t = 4))
+        box.addView(rowBox, lp())
         val btns = LinearLayout(this)
-        btns.addView(pill(tr("+ সারি যোগ")) { addRow() }, lp(width = android.view.ViewGroup.LayoutParams.WRAP_CONTENT, r = 8))
-        btns.addView(pill(tr("শেষ সারি বাদ"), Ui.GREY, Ui.TEXT) {
+        btns.addView(choiceChip(tr("+ সারি যোগ"), false) { addRow() }, lp(r = 8))
+        btns.addView(choiceChip(tr("শেষ সারি বাদ"), false) {
             if (rows.size > 1) { val r = rows.removeAt(rows.size - 1); rowBox.removeView(r.name.parent as android.view.View) }
-        }, lp(width = android.view.ViewGroup.LayoutParams.WRAP_CONTENT))
-        items.addView(btns, lp(t = 8))
-        box.addView(items, lp(b = 12))
-        val nt = card(14)
+        })
+        box.addView(btns, lp(t = 4, b = 12))
         note = edit(tr("মন্তব্য (ঐচ্ছিক)"))
-        nt.addView(note)
-        box.addView(nt, lp(b = 12))
+        box.addView(captionLabel(tr("মন্তব্য")))
+        box.addView(note, lp(b = 12))
         status = label("", 14f, Ui.TEXT)
         box.addView(statusCard(status))
-        setPdfScreen(tr("ইনভয়েস বানান"), scroll, tr("ইনভয়েস PDF বানান")) { go() }
+        val bar = LinearLayout(this)
+        bar.addView(primaryButton(tr("ইনভয়েস PDF বানান")) { go() }, lp(height = dp(48)))
+        setScreen(tr("ইনভয়েস বানান"), scroll, null, true, bottomBar(bar))
         addRow(); addRow()
     }
 
@@ -161,10 +159,10 @@ class InvoicePdfActivity : GuardedActivity() {
         val q = edit(tr("পরিমাণ"), InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL)
         val p = edit(tr("দাম"), InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL)
         q.setText("1")
-        line.addView(n, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 2.2f))
-        line.addView(q, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        line.addView(n, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 2.2f).also { it.rightMargin = dp(6) })
+        line.addView(q, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).also { it.rightMargin = dp(6) })
         line.addView(p, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.3f))
-        rowBox.addView(line)
+        rowBox.addView(line, lp(b = 8))
         rows.add(Row(n, q, p))
     }
 
