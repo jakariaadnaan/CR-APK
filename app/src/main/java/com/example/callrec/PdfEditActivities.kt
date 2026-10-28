@@ -55,7 +55,7 @@ abstract class PdfBase : GuardedActivity() {
         val c = LinearLayout(this)
         c.orientation = LinearLayout.HORIZONTAL
         c.gravity = android.view.Gravity.CENTER_VERTICAL
-        c.background = bg(Ui.CARD, 14, Ui.LINE, 1)
+        c.background = bg(Ui.CARD, Ui.cardR, Ui.LINE, 1)
         c.setPadding(dp(12), dp(10), dp(12), dp(10))
         val tv = thumbView(44, 58)
         pickThumb = tv
@@ -76,12 +76,7 @@ abstract class PdfBase : GuardedActivity() {
     }
 
     protected fun chip(text: String, on: Boolean, click: () -> Unit): TextView {
-        val c = label(text, 14f, if (on) Color.WHITE else Ui.PRIMARY, true)
-        c.gravity = android.view.Gravity.CENTER
-        c.background = bg(if (on) Ui.PRIMARY else Ui.BG, 12, if (on) Ui.PRIMARY else Ui.LINE, 1)
-        c.setPadding(dp(16), dp(9), dp(16), dp(9))
-        c.setOnClickListener { click() }
-        return c
+        return choiceChip(text, on, click)
     }
 
     protected fun field(hint: String, type: Int): EditText {
@@ -91,7 +86,7 @@ abstract class PdfBase : GuardedActivity() {
         e.setTextColor(Ui.TEXT)
         e.setHintTextColor(Ui.MUTED)
         e.textSize = 15f
-        e.background = bg(Ui.BG, 12, Ui.LINE, 1)
+        e.background = bg(Ui.CARD, 10, Ui.LINE, 1)
         e.setPadding(dp(14), dp(12), dp(14), dp(12))
         return e
     }
@@ -234,7 +229,7 @@ abstract class PdfBase : GuardedActivity() {
         status = label("", 14f, Ui.TEXT, true)
         val res = LinearLayout(this)
         res.orientation = LinearLayout.VERTICAL
-        res.background = bg(Ui.mix(Ui.PRIMARY, Ui.CARD, 0.93f), 16, Ui.LINE, 1)
+        res.background = bg(Ui.mix(Ui.PRIMARY, Ui.CARD, 0.9f), Ui.cardR, Ui.mix(Ui.PRIMARY, Ui.CARD, 0.6f), 1)
         res.setPadding(dp(14), dp(12), dp(14), dp(12))
         res.addView(status)
         res.visibility = android.view.View.GONE

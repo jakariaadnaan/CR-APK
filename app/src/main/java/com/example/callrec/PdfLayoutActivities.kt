@@ -57,12 +57,57 @@ class PdfNupActivity : PdfBase() {
         hs.addView(row)
         opt.addView(hs, lp(t = 8))
         opt.addView(label(tr("বুকলেটে A4 কাগজের দুই পাশে ছাপিয়ে মাঝখানে ভাঁজ করলে বইয়ের মতো ক্রমে পেজ আসবে।"), 12f, Ui.MUTED), lp(t = 8))
-        val act = actionCard(tr("নতুন PDF বানান"), "") { go() }
-        screen(tr("এক শিটে একাধিক পেজ"), pickCard(), opt, act)
+        val act = actionCard(tr("লেআউট প্রয়োগ করুন"), "") { go() }
+        val pv = card(10)
+        pv.addView(captionLabel(tr("আউটপুট প্রিভিউ")))
+        preview = SheetPreview(this)
+        pv.addView(preview, lp(height = dp(190)))
+        screen(tr("এক শিটে একাধিক পেজ"), pickCard(), opt, pv, act)
         chips()
     }
 
+    private lateinit var preview: SheetPreview
+
+    /** Draws one output sheet with small page boxes in the chosen arrangement. */
+    private class SheetPreview(c: android.content.Context) : View(c) {
+        var mode = 1
+        private val p = Paint(Paint.ANTI_ALIAS_FLAG)
+        override fun onDraw(cv: Canvas) {
+            val d = resources.displayMetrics.density
+            val landscape = mode == 0 || mode == 2 || mode == 4
+            val ph = height * 0.88f
+            val pw = if (landscape) Math.min(ph * 1.414f, width * 0.9f) else ph / 1.414f
+            val h = if (landscape) pw / 1.414f else ph
+            val l = (width - pw) / 2f
+            val t = (height - h) / 2f
+            p.style = Paint.Style.FILL
+            p.color = Ui.CARD
+            cv.drawRect(l, t, l + pw, t + h, p)
+            p.style = Paint.Style.STROKE
+            p.color = Ui.LINE
+            p.strokeWidth = d
+            cv.drawRect(l, t, l + pw, t + h, p)
+            val cols = intArrayOf(2, 2, 3, 3, 2)[mode]
+            val rows = intArrayOf(1, 2, 2, 3, 1)[mode]
+            val cw = pw / cols
+            val ch = h / rows
+            for (r in 0 until rows) for (c in 0 until cols) {
+                val x = l + c * cw + 5 * d
+                val y = t + r * ch + 5 * d
+                val w = cw - 10 * d
+                val hh = ch - 10 * d
+                p.style = Paint.Style.FILL
+                p.color = Ui.PREVIEW
+                cv.drawRoundRect(x, y, x + w, y + hh, 3 * d, 3 * d, p)
+                p.color = Ui.GREY
+                val lines = Math.max(2, (hh / (7 * d)).toInt() - 1)
+                for (k in 0 until lines) cv.drawRect(x + 5 * d, y + 6 * d + k * 6 * d, x + w - (if (k % 3 == 2) 18 * d else 5 * d), y + 7.5f * d + k * 6 * d, p)
+            }
+        }
+    }
+
     private fun chips() {
+        if (::preview.isInitialized) { preview.mode = mode; preview.invalidate() }
         row.removeAllViews()
         val names = listOf(tr("২ পেজ"), tr("৪ পেজ"), tr("৬ পেজ"), tr("৯ পেজ"), tr("বুকলেট"))
         for (i in names.indices) row.addView(chip(names[i], mode == i) { mode = i; chips() }, lp(width = android.view.ViewGroup.LayoutParams.WRAP_CONTENT, r = 8))
