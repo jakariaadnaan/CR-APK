@@ -3,6 +3,8 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+base.archivesName.set("Memoredia")
+
 android {
     namespace = "com.example.callrec"
     compileSdk = 34
@@ -11,8 +13,8 @@ android {
         applicationId = "com.example.callrec"
         minSdk = 26
         targetSdk = 34
-        versionCode = 130
-        versionName = "1.30"
+        versionCode = 131
+        versionName = "1.31"
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
 

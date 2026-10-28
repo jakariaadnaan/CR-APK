@@ -16,5 +16,5 @@ dependencyResolutionManagement {
         }
     }
 }
-rootProject.name = "CallRecorder"
+rootProject.name = "Memoredia"
 include(":app")
