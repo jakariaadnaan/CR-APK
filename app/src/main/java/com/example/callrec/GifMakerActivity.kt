@@ -46,52 +46,88 @@ class GifMakerActivity : GuardedActivity() {
         val scroll = ScrollView(this)
         val box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
-        box.setPadding(dp(14), dp(14), dp(14), dp(24))
+        box.setPadding(dp(16), dp(10), dp(16), dp(20))
         scroll.addView(box)
 
-        val m = card(14)
         modeRow = LinearLayout(this)
         modeRow.orientation = LinearLayout.HORIZONTAL
-        m.addView(modeRow)
-        box.addView(m, lp(b = 12))
+        box.addView(modeRow, lp(b = 12))
 
-        val b = card(14)
         body = LinearLayout(this)
         body.orientation = LinearLayout.VERTICAL
-        b.addView(body)
-        box.addView(b, lp(b = 12))
+        box.addView(body, lp(b = 4))
 
-        val s = card(14)
-        s.addView(label(tr("GIF-এর চওড়া (পিক্সেল)"), 12f, Ui.MUTED, true))
+        box.addView(sectionLabel(tr("GIF-এর চওড়া (পিক্সেল)"), 8))
         sizeRow = LinearLayout(this)
         sizeRow.orientation = LinearLayout.HORIZONTAL
-        s.addView(sizeRow, lp(t = 6))
-        s.addView(label(tr("ছোট মাপ হলে ফাইল ছোট হয়। রঙ সীমিত (২৫২টি), তাই ছবির মান কিছুটা কমে।"), 12f, Ui.MUTED), lp(t = 8))
-        box.addView(s, lp(b = 12))
+        box.addView(sizeRow, lp(b = 8))
+        val szCard = card(14)
+        szCard.addView(label(tr("আউটপুটের মাপ"), 12f, Ui.TEXT, true))
+        estV = label("", 12f, Ui.MUTED)
+        szCard.addView(estV, lp(t = 2))
+        szCard.addView(label(tr("ছোট মাপ হলে ফাইল ছোট হয়। রঙ সীমিত (২৫২টি), তাই ছবির মান কিছুটা কমে।"), 11f, Ui.MUTED), lp(t = 6))
+        box.addView(szCard, lp(b = 12))
 
-        val r = card(14)
         status = label("", 14f, Ui.TEXT)
-        r.addView(status, lp(b = 10))
-        r.addView(pill(tr("GIF বানান")) { go() })
-        box.addView(r, lp())
+        box.addView(statusCard(status))
 
-        setScreen(tr("GIF মেকার"), scroll)
+        val w = LinearLayout(this)
+        w.addView(primaryButton(tr("GIF বানান")) { go() }, lp(height = dp(48)))
+        setScreen(tr("GIF মেকার"), scroll, null, true, bottomBar(w))
         render()
     }
 
-    private fun chip(text: String, on: Boolean, click: () -> Unit): TextView {
-        val c = label(text, 14f, if (on) Color.WHITE else Ui.PRIMARY, true)
-        c.gravity = android.view.Gravity.CENTER
-        c.background = bg(if (on) Ui.PRIMARY else Ui.CARD, 20, Ui.PRIMARY, 1)
-        c.setPadding(dp(14), dp(8), dp(14), dp(8))
-        c.setOnClickListener { click() }
-        return c
+    private lateinit var estV: TextView
+    private var vidDur = 0L
+    private var vidW = 0
+    private var vidH = 0
+    private var vidThumb: Bitmap? = null
+
+    /** The track with the picked slice highlighted, like the trim timeline in the mockup. */
+    private inner class Timeline : android.view.View(this@GifMakerActivity) {
+        override fun onDraw(c: Canvas) {
+            val d = resources.displayMetrics.density
+            val p = Paint(Paint.ANTI_ALIAS_FLAG)
+            p.color = Ui.PREVIEW
+            c.drawRoundRect(0f, 0f, width.toFloat(), height.toFloat(), 8 * d, 8 * d, p)
+            if (vidDur <= 0) return
+            val st = (asciiDigits(if (::startF.isInitialized) startF.text.toString() else "0").toIntOrNull() ?: 0) * 1000L
+            val l = width * (st.coerceAtMost(vidDur).toFloat() / vidDur)
+            val r = width * ((st + seconds * 1000L).coerceAtMost(vidDur).toFloat() / vidDur)
+            p.color = Ui.KEY_OP
+            c.drawRoundRect(l, 0f, Math.max(r, l + 6 * d), height.toFloat(), 6 * d, 6 * d, p)
+            p.color = Ui.PRIMARY
+            c.drawRect(l, 0f, l + 2.5f * d, height.toFloat(), p)
+            c.drawRect(Math.max(r, l + 6 * d) - 2.5f * d, 0f, Math.max(r, l + 6 * d), height.toFloat(), p)
+        }
     }
+
+    private fun clock(ms: Long): String {
+        val s = ms / 1000
+        return bn(String.format("%02d:%02d", s / 60, s % 60))
+    }
+
+    private fun estimate() {
+        val frames: Int
+        val h: Int
+        if (fromVideo) {
+            if (vidW <= 0) { estV.text = tr("আগে ভিডিও বাছুন"); return }
+            frames = seconds * fps
+            h = Math.round(vidH * width / vidW.toFloat())
+        } else {
+            if (uris.size < 2) { estV.text = tr("কমপক্ষে ২টি ছবি লাগবে"); return }
+            frames = uris.size
+            h = Math.round(width * 0.75f)
+        }
+        estV.text = bn(width.toString()) + tr(" px চওড়া · আনুমানিক সাইজ ") + "~" + Img.human((frames.toLong() * width * h * 0.3).toLong())
+    }
+
+    private fun chip(text: String, on: Boolean, click: () -> Unit): TextView = choiceChip(text, on, click)
 
     private fun chipRow(title: String, opts: List<Pair<String, Int>>, cur: Int, set: (Int) -> Unit): LinearLayout {
         val col = LinearLayout(this)
         col.orientation = LinearLayout.VERTICAL
-        col.addView(label(title, 12f, Ui.MUTED, true), lp(t = 8, b = 6))
+        col.addView(sectionLabel(title, 10))
         val row = LinearLayout(this)
         row.orientation = LinearLayout.HORIZONTAL
         for (o in opts) row.addView(chip(o.first, o.second == cur) { set(o.second); render() }, lp(r = 8))
@@ -109,7 +145,7 @@ class GifMakerActivity : GuardedActivity() {
 
         body.removeAllViews()
         if (!fromVideo) {
-            body.addView(pill(tr("ছবি যোগ করুন")) {
+            body.addView(pill(tr("ছবি যোগ করুন"), Ui.KEY_OP, Ui.PRIMARY) {
                 val i = Intent(Intent.ACTION_OPEN_DOCUMENT)
                 i.addCategory(Intent.CATEGORY_OPENABLE)
                 i.type = "image/*"
@@ -125,30 +161,54 @@ class GifMakerActivity : GuardedActivity() {
                 t.maxLines = 1
                 t.ellipsize = android.text.TextUtils.TruncateAt.MIDDLE
                 row.addView(t, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-                row.addView(pill("↑", Ui.BG, Ui.PRIMARY) { move(i, -1) }, lp(l = 6))
-                row.addView(pill("↓", Ui.BG, Ui.PRIMARY) { move(i, 1) }, lp(l = 6))
-                row.addView(pill("✕", Ui.BG, Ui.RED) { uris.removeAt(i); names.removeAt(i); render() }, lp(l = 6))
+                row.addView(pill("↑", Ui.KEY_OP, Ui.PRIMARY) { move(i, -1) }, lp(l = 6))
+                row.addView(pill("↓", Ui.KEY_OP, Ui.PRIMARY) { move(i, 1) }, lp(l = 6))
+                row.addView(pill("✕", Ui.KEY_OP, Ui.RED) { uris.removeAt(i); names.removeAt(i); render() }, lp(l = 6))
                 body.addView(row, lp(b = 6))
             }
             body.addView(chipRow(tr("প্রতি ছবি কতক্ষণ থাকবে"), listOf(tr("০.৩ সে.") to 300, tr("০.৫ সে.") to 500, tr("১ সে.") to 1000, tr("২ সে.") to 2000), delayMs) { delayMs = it })
         } else {
-            body.addView(pill(tr("ভিডিও বাছুন")) {
+            val pc = card(10)
+            val fr = android.widget.FrameLayout(this)
+            val iv = android.widget.ImageView(this)
+            iv.scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
+            iv.background = bg(Ui.PREVIEW, 10)
+            iv.setImageBitmap(vidThumb)
+            fr.addView(iv, android.widget.FrameLayout.LayoutParams(-1, dp(170)))
+            val play = label("▶", 16f, Ui.PRIMARY, true)
+            play.gravity = android.view.Gravity.CENTER
+            play.background = bg(Ui.CARD, 22, Ui.mix(Ui.PRIMARY, Ui.CARD, 0.5f), 1)
+            fr.addView(play, android.widget.FrameLayout.LayoutParams(dp(44), dp(44), android.view.Gravity.CENTER))
+            pc.addView(fr)
+            val nr = LinearLayout(this)
+            nr.gravity = android.view.Gravity.CENTER_VERTICAL
+            val nv = label(if (video == null) tr("ভিডিও বাছুন") else videoName, 14f, Ui.TEXT, true)
+            nv.maxLines = 1
+            nv.ellipsize = android.text.TextUtils.TruncateAt.MIDDLE
+            nr.addView(nv, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            if (vidDur > 0) nr.addView(label(clock(vidDur), 12f, Ui.MUTED))
+            nr.addView(label(if (video == null) tr("বাছুন") else tr("বদলান"), 13f, Ui.PRIMARY, true).also { it.setPadding(dp(12), dp(6), dp(2), dp(6)) })
+            nr.setOnClickListener {
                 val i = Intent(Intent.ACTION_OPEN_DOCUMENT)
                 i.addCategory(Intent.CATEGORY_OPENABLE)
                 i.type = "video/*"
                 startActivityForResult(i, 102)
-            }, lp(b = 8))
-            body.addView(label(if (video == null) tr("কোনো ভিডিও বাছা হয়নি") else videoName, 13f, Ui.MUTED))
-            body.addView(chipRow(tr("প্রতি সেকেন্ডে ফ্রেম"), listOf(tr("৫") to 5, tr("৮") to 8, tr("১০") to 10), fps) { fps = it })
+            }
+            pc.addView(nr, lp(t = 10))
+            body.addView(pc, lp(b = 4))
+            body.addView(chipRow(tr("প্রতি সেকেন্ডে ফ্রেম"), listOf(tr("৫ FPS") to 5, tr("৮ FPS") to 8, tr("১০ FPS") to 10), fps) { fps = it })
             body.addView(chipRow(tr("কত সেকেন্ডের GIF"), listOf(tr("৩") to 3, tr("৫") to 5, tr("১০") to 10), seconds) { seconds = it })
-            body.addView(label(tr("ভিডিওর কত সেকেন্ড থেকে শুরু"), 12f, Ui.MUTED, true), lp(t = 8, b = 4))
+            body.addView(sectionLabel(tr("ট্রিম টাইমলাইন"), 10))
             val keep = if (::startF.isInitialized) startF.text.toString() else "0"
             startF = EditText(this)
             startF.inputType = InputType.TYPE_CLASS_NUMBER
             startF.setText(keep)
-            startF.setTextColor(Ui.TEXT)
-            body.addView(startF)
+            val tl = Timeline()
+            startF.onChange { tl.invalidate() }
+            body.addView(tl, lp(height = dp(36), b = 8))
+            body.addView(fieldBox(tr("ভিডিওর কত সেকেন্ড থেকে শুরু"), startF))
         }
+        estimate()
     }
 
     private fun move(i: Int, d: Int) {
@@ -175,7 +235,28 @@ class GifMakerActivity : GuardedActivity() {
             102 -> {
                 video = data.data
                 videoName = if (video != null) Img.name(this, video!!) else ""
+                vidDur = 0L; vidW = 0; vidH = 0; vidThumb = null
                 render()
+                val u = video
+                if (u != null) Thread {
+                    var d = 0L; var vw = 0; var vh = 0; var bm: Bitmap? = null
+                    try {
+                        val m = MediaMetadataRetriever()
+                        m.setDataSource(this, u)
+                        d = m.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
+                        vw = m.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toIntOrNull() ?: 0
+                        vh = m.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toIntOrNull() ?: 0
+                        val rot = m.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)?.toIntOrNull() ?: 0
+                        if (rot == 90 || rot == 270) { val t = vw; vw = vh; vh = t }
+                        bm = m.getFrameAtTime(0)
+                        m.release()
+                    } catch (e: Throwable) { }
+                    runOnUiThread {
+                        if (video != u) return@runOnUiThread
+                        vidDur = d; vidW = vw; vidH = vh; vidThumb = bm
+                        render()
+                    }
+                }.start()
             }
             103 -> data.data?.let { make(it) }
         }

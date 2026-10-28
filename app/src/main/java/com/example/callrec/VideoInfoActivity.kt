@@ -23,41 +23,61 @@ class VideoInfoActivity : GuardedActivity() {
         val scroll = ScrollView(this)
         val box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
-        box.setPadding(dp(14), dp(14), dp(14), dp(24))
+        box.setPadding(dp(16), dp(10), dp(16), dp(20))
         scroll.addView(box)
 
-        val c = card(14)
-        c.addView(pill(tr("ভিডিও বাছুন")) {
-            val i = Intent(Intent.ACTION_OPEN_DOCUMENT)
-            i.addCategory(Intent.CATEGORY_OPENABLE)
-            i.type = "video/*"
-            startActivityForResult(i, 93)
-        }, lp(b = 10))
+        val c = card(12)
+        val top = LinearLayout(this)
+        top.gravity = android.view.Gravity.CENTER_VERTICAL
         thumb = ImageView(this)
-        thumb.scaleType = ImageView.ScaleType.FIT_CENTER
-        thumb.setBackgroundColor(Ui.PREVIEW)
-        c.addView(thumb, lp(height = 200))
-        box.addView(c, lp(b = 12))
+        thumb.scaleType = ImageView.ScaleType.CENTER_CROP
+        thumb.background = bg(Ui.PREVIEW, 10)
+        top.addView(thumb, lp(width = dp(88), height = dp(100), r = 14))
+        val mid = LinearLayout(this)
+        mid.orientation = LinearLayout.VERTICAL
+        nameV = label(tr("ভিডিও বাছুন"), 15f, Ui.TEXT, true)
+        nameV.maxLines = 2
+        nameV.ellipsize = android.text.TextUtils.TruncateAt.MIDDLE
+        typeV = label(tr("কোনো ভিডিও বাছা হয়নি"), 12f, Ui.MUTED)
+        sizeV = label("", 20f, Ui.TEXT, true)
+        mid.addView(nameV)
+        mid.addView(typeV, lp(t = 2))
+        mid.addView(sizeV, lp(t = 6))
+        top.addView(mid, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        c.addView(top)
+        c.setOnClickListener { pickVideo() }
+        box.addView(c, lp(b = 6))
 
-        val r = card(14)
+        box.addView(sectionLabel(tr("টেকনিক্যাল তথ্য")))
+        val r = card(8)
         rows = LinearLayout(this)
         rows.orientation = LinearLayout.VERTICAL
         rows.addView(label(tr("কোনো ভিডিও বাছা হয়নি"), 13f, Ui.MUTED))
         r.addView(rows, lp())
         box.addView(r, lp())
+        box.addView(label(tr("ডিভাইসভেদে সব তথ্য পাওয়া যায় না; না পেলে \"পাওয়া যায়নি\" লেখা হয়।"), 11f, Ui.MUTED), lp(t = 8, l = 2))
 
-        setScreen(tr("ভিডিও মেটাডেটা"), scroll)
+        val w = LinearLayout(this)
+        w.orientation = LinearLayout.HORIZONTAL
+        w.addView(primaryButton(tr("ভিডিও বাছুন")) { pickVideo() }, lp(width = 0, height = dp(48), r = 4).also { it.weight = 1f })
+        w.addView(primaryButton(tr("মেটাডেটা কপি")) { if (copyAll.isNotEmpty()) copyText(copyAll) }, lp(width = 0, height = dp(48), l = 4).also { it.weight = 1f })
+        setScreen(tr("ভিডিও মেটাডেটা"), scroll, null, true, bottomBar(w))
     }
 
-    private fun row(k: String, v: String) {
-        val r = LinearLayout(this)
-        r.orientation = LinearLayout.HORIZONTAL
-        r.addView(label(k, 13f, Ui.MUTED), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        val t = label(v, 14f, Ui.TEXT, true)
-        t.gravity = android.view.Gravity.END
-        t.setTextIsSelectable(true)
-        r.addView(t, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.4f))
-        rows.addView(r, lp(b = 8))
+    private lateinit var nameV: TextView
+    private lateinit var typeV: TextView
+    private lateinit var sizeV: TextView
+    private var copyAll = ""
+
+    private fun pickVideo() {
+        val i = Intent(Intent.ACTION_OPEN_DOCUMENT)
+        i.addCategory(Intent.CATEGORY_OPENABLE)
+        i.type = "video/*"
+        startActivityForResult(i, 93)
+    }
+
+    private fun row(k: String, v: String, last: Boolean) {
+        rows.addView(kvRow(k, v, last))
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -84,14 +104,11 @@ class VideoInfoActivity : GuardedActivity() {
                 if (rot == 90 || rot == 270) { val t = w; w = h; h = t }
                 if (w != null && h != null) list.add(tr("রেজোলিউশন") to bn(w) + " × " + bn(h))
                 if (rot != 0) list.add(tr("ঘোরানো") to bn(rot.toString()) + "°")
-                g(MediaMetadataRetriever.METADATA_KEY_CAPTURE_FRAMERATE)?.toFloatOrNull()?.let {
-                    list.add(tr("ফ্রেম রেট") to bn(String.format(Locale.US, "%.1f", it)) + " fps")
-                }
-                g(MediaMetadataRetriever.METADATA_KEY_BITRATE)?.toLongOrNull()?.let {
-                    list.add(tr("বিটরেট") to bn(String.format(Locale.US, "%.2f", it / 1000000.0)) + " Mbps")
-                }
+                val none = tr("পাওয়া যায়নি")
+                list.add(tr("ফ্রেম রেট") to (g(MediaMetadataRetriever.METADATA_KEY_CAPTURE_FRAMERATE)?.toFloatOrNull()?.let { bn(String.format(Locale.US, "%.1f", it)) + " fps" } ?: none))
+                list.add(tr("বিটরেট") to (g(MediaMetadataRetriever.METADATA_KEY_BITRATE)?.toLongOrNull()?.let { bn(String.format(Locale.US, "%.2f", it / 1000000.0)) + " Mbps" } ?: none))
                 list.add(tr("অডিও আছে") to (if (g(MediaMetadataRetriever.METADATA_KEY_HAS_AUDIO) == "yes") tr("হ্যাঁ") else tr("না")))
-                g(MediaMetadataRetriever.METADATA_KEY_DATE)?.let { list.add(tr("তারিখ") to it) }
+                list.add(tr("তৈরির তারিখ") to (g(MediaMetadataRetriever.METADATA_KEY_DATE) ?: none))
                 g(MediaMetadataRetriever.METADATA_KEY_LOCATION)?.let { list.add(tr("অবস্থান") to it) }
                 frame = m.getFrameAtTime(0)
             } catch (e: Throwable) {
@@ -106,7 +123,12 @@ class VideoInfoActivity : GuardedActivity() {
                     Toast.makeText(this, tr("ভিডিও খোলা যায়নি"), Toast.LENGTH_LONG).show()
                 } else {
                     thumb.setImageBitmap(frame)
-                    for (p in list) row(p.first, p.second)
+                    nameV.text = list[0].second
+                    sizeV.text = list[1].second
+                    typeV.text = list.firstOrNull { it.first == tr("ধরন") }?.second ?: ""
+                    val rest = list.drop(2).filter { it.first != tr("ধরন") }
+                    for ((i, p) in rest.withIndex()) row(p.first, p.second, i == rest.size - 1)
+                    copyAll = list.joinToString("\n") { it.first + ": " + it.second }
                 }
             }
         }.start()

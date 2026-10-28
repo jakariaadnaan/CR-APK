@@ -42,55 +42,92 @@ abstract class AudioConvertBase(private val video: Boolean) : GuardedActivity() 
         val scroll = ScrollView(this)
         val box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
-        box.setPadding(dp(14), dp(14), dp(14), dp(24))
+        box.setPadding(dp(16), dp(10), dp(16), dp(20))
         scroll.addView(box)
 
         val c = card(14)
+        thumb = android.widget.ImageView(this)
+        thumb.scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
+        thumb.background = bg(Ui.PREVIEW, 10)
+        thumb.visibility = android.view.View.GONE
+        c.addView(thumb, lp(height = dp(170), b = 10))
         val row = LinearLayout(this)
         row.orientation = LinearLayout.HORIZONTAL
         row.gravity = android.view.Gravity.CENTER_VERTICAL
-        row.addView(pill(if (video) tr("ভিডিও বাছুন") else tr("অডিও বাছুন")) {
+        row.addView(iconBox(if (video) R.drawable.ic_media else R.drawable.ic_volume, Ui.KEY_OP, Ui.PRIMARY, 44, 22, 22, 12))
+        val mid = LinearLayout(this)
+        mid.orientation = LinearLayout.VERTICAL
+        nameV = label(if (video) tr("ভিডিও বাছুন") else tr("অডিও বাছুন"), 15f, Ui.TEXT, true)
+        nameV.maxLines = 1
+        nameV.ellipsize = android.text.TextUtils.TruncateAt.MIDDLE
+        info = label(tr("কোনো ফাইল বাছা হয়নি"), 12f, Ui.MUTED)
+        mid.addView(nameV)
+        mid.addView(info, lp(t = 2))
+        row.addView(mid, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        row.addView(label(tr("বাছুন"), 13f, Ui.PRIMARY, true).also { it.setPadding(dp(10), dp(8), dp(2), dp(8)) })
+        row.setOnClickListener {
             val i = Intent(Intent.ACTION_OPEN_DOCUMENT)
             i.addCategory(Intent.CATEGORY_OPENABLE)
             i.type = if (video) "video/*" else "audio/*"
             startActivityForResult(i, 91)
-        }, lp(r = 12))
-        info = label(tr("কোনো ফাইল বাছা হয়নি"), 13f, Ui.MUTED)
-        row.addView(info, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        c.addView(row, lp())
-        box.addView(c, lp(b = 12))
+        }
+        c.addView(row)
+        box.addView(c, lp(b = 6))
 
-        val opt = card(14)
-        opt.addView(label(tr("আউটপুট ফরম্যাট"), 12f, Ui.MUTED, true))
+        box.addView(sectionLabel(if (video) tr("অডিও আউটপুট") else tr("আউটপুট ফরম্যাট")))
         fmtRow = LinearLayout(this)
         fmtRow.orientation = LinearLayout.HORIZONTAL
-        opt.addView(fmtRow, lp(t = 6, b = 8))
-        opt.addView(label(tr("M4A (AAC) ছোট ফাইল, প্রায় সব প্লেয়ারে চলে। WAV অসংকুচিত, ফাইল অনেক বড়। MP3 এই সংস্করণে নেই।"), 12f, Ui.MUTED))
-        box.addView(opt, lp(b = 12))
+        box.addView(fmtRow, lp(b = 10))
+        box.addView(label(tr("M4A (AAC) ছোট ফাইল, প্রায় সব প্লেয়ারে চলে। WAV অসংকুচিত, ফাইল অনেক বড়। MP3 এই সংস্করণে নেই।"), 12f, Ui.MUTED), lp(l = 2, b = 12))
 
-        val res = card(14)
-        status = label("", 14f, Ui.TEXT)
-        res.addView(status, lp(b = 10))
-        res.addView(pill(tr("কনভার্ট ও সংরক্ষণ")) { go() })
+        val est = resultBox(tr("আনুমানিক আউটপুট"), "—", "", 18f)
+        estV = est.getChildAt(1) as TextView
+        box.addView(est, lp(b = 10))
+
+        val res = LinearLayout(this)
+        res.orientation = LinearLayout.VERTICAL
+        status = label("", 14f, Ui.TEXT, true)
+        res.addView(status)
+        res.background = bg(Ui.CARD, Ui.cardR, Ui.LINE, 1)
+        res.setPadding(dp(14), dp(12), dp(14), dp(12))
+        res.visibility = android.view.View.GONE
+        status.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) {
+                res.visibility = if (s.isNullOrEmpty()) android.view.View.GONE else android.view.View.VISIBLE
+            }
+        })
         box.addView(res, lp())
 
-        setScreen(if (video) tr("ভিডিও → অডিও") else tr("অডিও কনভার্টার"), scroll)
+        val w = LinearLayout(this)
+        w.addView(primaryButton(if (video) tr("অডিও বের করুন") else tr("অডিও কনভার্ট করুন")) { go() }, lp(height = dp(48)))
+        setScreen(if (video) tr("ভিডিও → অডিও") else tr("অডিও কনভার্টার"), scroll, null, true, bottomBar(w))
         chips()
     }
 
-    private fun chip(text: String, on: Boolean, click: () -> Unit): TextView {
-        val c = label(text, 14f, if (on) Color.WHITE else Ui.PRIMARY, true)
-        c.gravity = android.view.Gravity.CENTER
-        c.background = bg(if (on) Ui.PRIMARY else Ui.CARD, 20, Ui.PRIMARY, 1)
-        c.setPadding(dp(16), dp(8), dp(16), dp(8))
-        c.setOnClickListener { click() }
-        return c
-    }
+    private lateinit var thumb: android.widget.ImageView
+    private lateinit var nameV: TextView
+    private lateinit var estV: TextView
+    private var durMs = 0L
 
     private fun chips() {
         fmtRow.removeAllViews()
-        fmtRow.addView(chip("M4A (AAC)", !wav) { wav = false; chips() }, lp(r = 8))
-        fmtRow.addView(chip("WAV", wav) { wav = true; chips() })
+        fmtRow.addView(choiceChip("M4A (AAC)", !wav) { wav = false; chips() }, lp(r = 8))
+        fmtRow.addView(choiceChip("WAV", wav) { wav = true; chips() })
+        estimate()
+    }
+
+    private fun estimate() {
+        if (src == null || durMs <= 0) { estV.text = if (src == null) tr("আগে ফাইল বাছুন") else "—"; return }
+        val secs = durMs / 1000.0
+        val bytes = if (wav) secs * 44100 * 2 * 2 else secs * 16000 // WAV: 44.1 kHz stereo 16-bit, AAC: about 128 kbps
+        estV.text = "~" + Img.human(bytes.toLong()) + " · " + (if (wav) "WAV" else "M4A")
+    }
+
+    private fun clock(ms: Long): String {
+        val s = ms / 1000
+        return bn(String.format("%02d:%02d", s / 60, s % 60))
     }
 
     private fun go() {
@@ -114,8 +151,29 @@ abstract class AudioConvertBase(private val video: Boolean) : GuardedActivity() 
         if (requestCode == 91) {
             src = u
             name = Img.name(this, u)
-            info.text = name + " · " + Img.human(Img.size(this, u))
+            nameV.text = name
+            info.text = Img.human(Img.size(this, u))
             status.text = ""
+            durMs = 0L
+            estimate()
+            Thread {
+                var d = 0L
+                var bm: android.graphics.Bitmap? = null
+                try {
+                    val r = android.media.MediaMetadataRetriever()
+                    r.setDataSource(this, u)
+                    d = r.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
+                    if (video) bm = r.getFrameAtTime(0)
+                    r.release()
+                } catch (e: Throwable) { }
+                runOnUiThread {
+                    if (src != u) return@runOnUiThread
+                    durMs = d
+                    if (d > 0) info.text = clock(d) + " · " + info.text
+                    if (bm != null) { thumb.setImageBitmap(bm); thumb.visibility = android.view.View.VISIBLE }
+                    estimate()
+                }
+            }.start()
         } else if (requestCode == 92) {
             run(u)
         }
