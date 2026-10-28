@@ -66,11 +66,6 @@ class UnicodeActivity : GuardedActivity() {
             }, lp(r = 8))
         }
         input.hint = if (decode) tr("যেমন: U+0985 U+09AE  বা  \\u0985  বা  &#2437;  বা  %E0%A6%85") else tr("এখানে লিখুন, যেমন: অমর")
-                update()
-            }
-            tabs.addView(chip, lp(r = 8))
-        }
-        input.hint = if (decode) tr("যেমন: U+0985 U+09AE  বা  \\u0985  বা  &#2437;  বা  %E0%A6%85") else tr("এখানে লিখুন, যেমন: অমর")
     }
 
     private fun hex(n: Int, width: Int): String = String.format(Locale.US, "%0" + width + "X", n)
