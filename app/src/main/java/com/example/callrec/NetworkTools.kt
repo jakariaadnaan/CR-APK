@@ -17,21 +17,17 @@ class IpActivity : OnlineBase() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         build(tr("আমার IP ও IP তথ্য"))
-        val c = card(14)
-        c.addView(label(tr("অন্য IP বা ডোমেইন (খালি রাখলে আপনার নিজের)"), 12f, Ui.MUTED, true))
         input = field(tr("যেমন: 8.8.8.8"))
         input.imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH
         input.setOnEditorActionListener { _, _, _ -> go(); true }
-        c.addView(input, lp(b = 8))
-        val row = LinearLayout(this)
-        row.orientation = LinearLayout.HORIZONTAL
-        row.addView(pill(tr("খুঁজুন")) { go() }, lp(r = 8))
-        row.addView(pill(tr("আমার IP"), Ui.BG, Ui.PRIMARY) { input.setText(""); go() })
-        c.addView(row, lp())
-        box.addView(c, lp(b = 12))
+        box.addView(fieldBox(tr("অন্য IP বা ডোমেইন (খালি রাখলে আপনার নিজের)"), input), lp(b = 12))
         out = LinearLayout(this)
         out.orientation = LinearLayout.VERTICAL
         box.addView(out, lp())
+        val w = LinearLayout(this)
+        w.addView(primaryButton(tr("খুঁজুন")) { go() }, LinearLayout.LayoutParams(0, dp(48), 1f).also { it.rightMargin = dp(8) })
+        w.addView(outlineButton(tr("আমার IP")) { input.setText(""); go() }, LinearLayout.LayoutParams(0, dp(48), 1f))
+        addBottomRow(w)
         go()
     }
 
@@ -46,9 +42,8 @@ class IpActivity : OnlineBase() {
                 if (!j.optBoolean("success", false)) {
                     out.addView(label(tr("তথ্য পাওয়া যায়নি: ") + j.optString("message"), 14f, Ui.MUTED))
                 } else {
+                    out.addView(resultBox(tr("আপনার IP"), j.optString("ip"), j.optString("type"), 26f).also { (it.getChildAt(1) as TextView).setTextIsSelectable(true) }, lp(b = 12))
                     val c = card(14)
-                    c.addView(label(j.optString("ip"), 22f, Ui.PRIMARY, true).also { it.setTextIsSelectable(true) }, lp(b = 10))
-                    kv(c, tr("ধরন"), j.optString("type"))
                     kv(c, tr("দেশ"), j.optString("flag").let { "" }.ifEmpty { j.optString("country") })
                     kv(c, tr("অঞ্চল"), j.optString("region"))
                     kv(c, tr("শহর"), j.optString("city"))
@@ -82,17 +77,14 @@ class WhoisActivity : OnlineBase() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         build(tr("WHOIS লুকআপ"))
-        val c = card(14)
-        c.addView(label(tr("ডোমেইন"), 12f, Ui.MUTED, true))
         input = field(tr("যেমন: example.com"))
         input.setOnEditorActionListener { _, _, _ -> go(); true }
-        c.addView(input, lp(b = 8))
-        c.addView(pill(tr("খুঁজুন")) { go() })
-        box.addView(c, lp(b = 12))
+        box.addView(fieldBox(tr("ডোমেইন"), input), lp(b = 12))
         out = LinearLayout(this)
         out.orientation = LinearLayout.VERTICAL
         box.addView(out, lp())
         box.addView(label(tr("মালিকের ব্যক্তিগত তথ্য সাধারণত গোপন থাকে। .bd ডোমেইনের তথ্য নাও আসতে পারে।"), 12f, Ui.MUTED), lp(l = 4, t = 8))
+        addBottom(primaryButton(tr("খুঁজুন")) { go() })
     }
 
     private fun clean(s: String): String =
@@ -121,8 +113,8 @@ class WhoisActivity : OnlineBase() {
     }
 
     private fun show(j: JSONObject, d: String) {
+        out.addView(resultBox(tr("ডোমেইন"), j.optString("ldhName", d).lowercase(), "", 22f), lp(b = 12))
         val c = card(14)
-        c.addView(label(j.optString("ldhName", d), 20f, Ui.PRIMARY, true), lp(b = 10))
         val ev = j.optJSONArray("events")
         if (ev != null) {
             for (i in 0 until ev.length()) {
@@ -182,15 +174,22 @@ class SpeedTestActivity : OnlineBase() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         build(tr("ইন্টারনেট স্পিড টেস্ট"))
-        val c = card(16)
-        pingV = big(c, tr("পিং"), "—")
-        downV = big(c, tr("ডাউনলোড"), "—")
-        upV = big(c, tr("আপলোড"), "—")
+        val dr = resultBox(tr("ডাউনলোড"), "—", "", 34f)
+        downV = dr.getChildAt(1) as TextView
+        box.addView(dr, lp(b = 12))
+        val tiles = LinearLayout(this)
+        val pt = statTile(tr("পিং"), "—")
+        val ut = statTile(tr("আপলোড"), "—")
+        pingV = pt.getChildAt(1) as TextView
+        upV = ut.getChildAt(1) as TextView
+        tiles.addView(pt, LinearLayout.LayoutParams(0, -2, 1f).also { it.rightMargin = dp(6) })
+        tiles.addView(ut, LinearLayout.LayoutParams(0, -2, 1f).also { it.leftMargin = dp(6) })
+        box.addView(tiles, lp(b = 12))
         status = label(tr("শুরু করতে বোতাম চাপুন"), 13f, Ui.MUTED)
-        c.addView(status, lp(t = 4, b = 12))
-        c.addView(pill(tr("টেস্ট শুরু করুন")) { start() })
-        box.addView(c, lp())
-        box.addView(label(tr("টেস্টে প্রায় ৩০ MB ডেটা খরচ হতে পারে। মোবাইল ডেটায় সতর্ক থাকুন।"), 12f, Ui.MUTED), lp(l = 4, t = 8))
+        status.gravity = android.view.Gravity.CENTER
+        box.addView(status, lp(t = 4, b = 8))
+        box.addView(label(tr("টেস্টে প্রায় ৩০ MB ডেটা খরচ হতে পারে। মোবাইল ডেটায় সতর্ক থাকুন।"), 12f, Ui.MUTED), lp(l = 4, t = 4))
+        addBottom(primaryButton(tr("টেস্ট শুরু করুন")) { start() })
     }
 
     override fun onDestroy() {

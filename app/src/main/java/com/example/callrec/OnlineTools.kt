@@ -66,6 +66,11 @@ abstract class OnlineBase : GuardedActivity() {
         setScreen(screenTitle, scrollRef, null, true, bottomBar(w))
     }
 
+    protected fun addBottomRow(w: LinearLayout) {
+        (scrollRef.parent as? android.view.ViewGroup)?.removeView(scrollRef)
+        setScreen(screenTitle, scrollRef, null, true, bottomBar(w))
+    }
+
     protected fun field(hint: String, type: Int = InputType.TYPE_CLASS_TEXT): EditText {
         val e = EditText(this)
         e.hint = hint

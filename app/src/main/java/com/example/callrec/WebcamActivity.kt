@@ -32,26 +32,28 @@ class WebcamActivity : GuardedActivity(), SurfaceHolder.Callback {
         val scroll = ScrollView(this)
         val box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
-        box.setPadding(dp(14), dp(14), dp(14), dp(24))
+        box.setPadding(dp(16), dp(10), dp(16), dp(20))
         scroll.addView(box)
 
+        box.addView(captionLabel(tr("ক্যামেরা প্রিভিউ")))
         val c = card(10)
         surface = SurfaceView(this)
         surface.holder.addCallback(this)
         c.addView(surface, lp(height = 340))
         box.addView(c, lp(b = 12))
 
+        val fr = resultBox(tr("ফ্রেম রেট (সত্যিকারের)"), "—", "", 30f)
+        fpsV = fr.getChildAt(1) as TextView
+        box.addView(fr, lp(b = 12))
         val r = card(14)
-        fpsV = label("—", 24f, Ui.PRIMARY, true)
-        r.addView(label(tr("ফ্রেম রেট (সত্যিকারের)"), 12f, Ui.MUTED, true))
-        r.addView(fpsV, lp(b = 6))
         infoV = label("", 13f, Ui.TEXT)
-        r.addView(infoV, lp(b = 10))
-        switchBtn = pill(tr("ক্যামেরা বদলান")) { switchCamera() }
-        r.addView(switchBtn)
+        r.addView(infoV)
         box.addView(r, lp())
 
-        setScreen(tr("ওয়েবক্যাম টেস্টার"), scroll)
+        val bar = LinearLayout(this)
+        switchBtn = primaryButton(tr("ক্যামেরা বদলান")) { switchCamera() }
+        bar.addView(switchBtn, lp(height = dp(48)))
+        setScreen(tr("ওয়েবক্যাম টেস্টার"), scroll, null, true, bottomBar(bar))
     }
 
     override fun surfaceCreated(h: SurfaceHolder) { surfaceReady = true; start() }
@@ -112,8 +114,8 @@ class WebcamActivity : GuardedActivity(), SurfaceHolder.Callback {
             val pw = p.previewSize.width
             val ph = p.previewSize.height
             val lp = surface.layoutParams
-            lp.height = (resources.displayMetrics.widthPixels - dp(48)) * Math.max(pw, ph) / Math.min(pw, ph)
-            if (orient % 180 != 0) lp.height = (resources.displayMetrics.widthPixels - dp(48)) * Math.min(pw, ph) / Math.max(pw, ph)
+            lp.height = (resources.displayMetrics.widthPixels - dp(52)) * Math.max(pw, ph) / Math.min(pw, ph)
+            if (orient % 180 != 0) lp.height = (resources.displayMetrics.widthPixels - dp(52)) * Math.min(pw, ph) / Math.max(pw, ph)
             surface.layoutParams = lp
             c.setPreviewDisplay(surface.holder)
             frames = 0
