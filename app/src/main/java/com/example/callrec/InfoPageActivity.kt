@@ -223,7 +223,7 @@ class InfoPageActivity : GuardedActivity() {
         c.addView(body(tr("যোগাযোগের ব্যবস্থা শীঘ্রই আসছে")), lp(t = 10))
         c.addView(body(tr("সমস্যা জানানোর সময় অ্যাপের সংস্করণ ও ফোনের মডেল সাথে রাখুন।"), Ui.MUTED), lp(t = 6))
         c.addView(pill(tr("তথ্য কপি করুন")) {
-            copyText("Amar Khata v" + ver + " · " + android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL + " · Android " + android.os.Build.VERSION.RELEASE)
+            copyText("Memoredia v" + ver + " · " + android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL + " · Android " + android.os.Build.VERSION.RELEASE)
         }, lp(t = 12))
         box.addView(c, lp(b = 10))
     }
@@ -249,7 +249,7 @@ class InfoPageActivity : GuardedActivity() {
             override fun getOutline(v: android.view.View, o: android.graphics.Outline) { o.setRoundRect(0, 0, v.width, v.height, v.width * 0.24f) }
         }
         c.addView(iv, lp(width = dp(76), height = dp(76)))
-        val name = label(tr("আমার খাতা"), 22f, Ui.TEXT, true)
+        val name = label(tr("Memoredia"), 22f, Ui.TEXT, true)
         name.gravity = Gravity.CENTER
         c.addView(name, lp(t = 12))
         val v = label(tr("সংস্করণ: ") + bn(ver), 13f, Ui.MUTED)
@@ -306,7 +306,7 @@ class InfoPageActivity : GuardedActivity() {
         hp.setOnClickListener { startActivity(android.content.Intent(this, InfoPageActivity::class.java).putExtra("page", "help")) }
         box.addView(groupCard(listOf(pr, hp)), lp())
 
-        val foot = label(tr("© ২০২৬ আমার খাতা"), 12f, Ui.MUTED)
+        val foot = label(tr("© ২০২৬ Memoredia"), 12f, Ui.MUTED)
         foot.gravity = Gravity.CENTER
         box.addView(foot, lp(t = 16))
     }

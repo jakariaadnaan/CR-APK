@@ -66,7 +66,7 @@ object Dict3 {
         "অ্যাপ সম্পর্কে" to "About the app",
         "সংস্করণ ও জমানো ডেটা" to "Version and stored data",
         "ব্যাকআপে খরচের খাতা, বাকির খাতা, করণীয় ও নোট থাকে। ফাইল সেভ করার সময় তালিকা থেকে “Drive” বেছে নিলে সরাসরি Google Drive-এ জমা হবে। ফাইলটি সাধারণ লেখা হিসেবে থাকে, তাই নিরাপদ জায়গায় রাখুন।" to "A backup contains the expense book, debt book, to-dos and notes. When saving the file, choose \"Drive\" in the list to store it directly in Google Drive. The file is plain text, so keep it somewhere safe.",
-        "আমার খাতা · সংস্করণ " to "My Khata · version ",
+        "Memoredia · সংস্করণ " to "Memoredia · version ",
         "ভুল পিন" to "Wrong PIN",
         "নতুন পিন (৪ থেকে ৮ সংখ্যা)" to "New PIN (4 to 8 digits)",
         "আবার লিখুন" to "Enter again",

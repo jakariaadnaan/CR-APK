@@ -11,7 +11,7 @@ object DictBn {
     private fun pairs(): Array<Pair<String, String>> = arrayOf(
         "About" to "অ্যাপ সম্পর্কে",
         "Accent Color" to "অ্যাকসেন্ট রঙ",
-        "Amar Khata — ledger, debts, notes and many handy tools in one app." to "আমার খাতা — খরচের খাতা, বাকি, নোট আর আরও অনেক দরকারি টুল এক অ্যাপে।",
+        "Memoredia — ledger, debts, notes and many handy tools in one app." to "Memoredia — খরচের খাতা, বাকি, নোট আর আরও অনেক দরকারি টুল এক অ্যাপে।",
         "Animations" to "অ্যানিমেশন",
         "App Icon" to "অ্যাপ আইকন",
         "App Lock" to "অ্যাপ লক",

@@ -25,7 +25,7 @@ object NetUtil {
         val c = URL(url).openConnection() as HttpURLConnection
         c.connectTimeout = 10000
         c.readTimeout = 15000
-        c.setRequestProperty("User-Agent", "AmarKhata/1.0")
+        c.setRequestProperty("User-Agent", "Memoredia/1.0")
         c.setRequestProperty("Accept", "application/json")
         try {
             val code = c.responseCode

@@ -95,7 +95,7 @@ class LockActivity : Activity() {
                 override fun getOutline(v: android.view.View, o: android.graphics.Outline) { o.setRoundRect(0, 0, v.width, v.height, v.width * 0.24f) }
             }
             root.addView(iv, lp(width = dp(68), height = dp(68), t = 20))
-            val title = label(tr("আমার খাতা"), 20f, Color.WHITE, true)
+            val title = label(tr("Memoredia"), 20f, Color.WHITE, true)
             title.gravity = Gravity.CENTER
             root.addView(title, lp(t = 12))
         }
@@ -208,7 +208,7 @@ class LockActivity : Activity() {
             if (Lock.question(this) != null) askRecovery() else
             AlertDialog.Builder(this)
                 .setTitle(tr("ভুলে গেলে কী করবেন"))
-                .setMessage(tr("কোনো নিরাপত্তা-প্রশ্ন সেট করা নেই, তাই লক ফিরিয়ে আনা যাবে না। ফোনের Settings > Apps > আমার খাতা > Storage থেকে ডেটা মুছে নতুন করে শুরু করতে হবে। আগে ব্যাকআপ নেওয়া থাকলে তা ফিরিয়ে আনা যাবে।"))
+                .setMessage(tr("কোনো নিরাপত্তা-প্রশ্ন সেট করা নেই, তাই লক ফিরিয়ে আনা যাবে না। ফোনের Settings > Apps > Memoredia > Storage থেকে ডেটা মুছে নতুন করে শুরু করতে হবে। আগে ব্যাকআপ নেওয়া থাকলে তা ফিরিয়ে আনা যাবে।"))
                 .setPositiveButton(tr("ঠিক আছে"), null)
                 .show()
         }

@@ -143,7 +143,7 @@ class NotifSettingsActivity : GuardedActivity() {
         nm.createNotificationChannel(NotificationChannel("test", tl("Test"), NotificationManager.IMPORTANCE_HIGH))
         val n = Notification.Builder(this, "test")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle(tr("আমার খাতা"))
+            .setContentTitle(tr("Memoredia"))
             .setContentText(tl("This is a test notification. Reminders will look like this."))
             .setAutoCancel(true)
             .build()

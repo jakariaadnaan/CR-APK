@@ -206,7 +206,7 @@ object Dict1 {
         "GIF বানানো যায়নি" to "Could not make the GIF",
         "টুল দেখানো বা লুকানো" to "Show or hide tools",
         "বন্ধ করা টুল হোম, সার্চ ও তালিকায় দেখাবে না। ডেটা মুছবে না।" to "Turned-off tools will not show on home, search or lists. No data is deleted.",
-        "আমার খাতা" to "My Khata",
+        "Memoredia" to "Memoredia",
         "সব দরকারি টুল এক জায়গায়" to "All your useful tools in one place",
         "টুল খুঁজুন, যেমন: PDF, QR, ছবি" to "Search tools, e.g. PDF, QR, image",
         "ফলাফল (" to "Results (\"",

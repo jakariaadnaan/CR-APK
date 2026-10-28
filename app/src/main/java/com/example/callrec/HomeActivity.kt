@@ -65,7 +65,7 @@ class HomeActivity : GuardedActivity() {
         top.addView(logo, lp(width = dp(46), height = dp(46), r = 12))
         val titles = LinearLayout(this)
         titles.orientation = LinearLayout.VERTICAL
-        titles.addView(label(tr("আমার খাতা"), 22f, Ui.TEXT, true))
+        titles.addView(label(tr("Memoredia"), 22f, Ui.TEXT, true))
         titles.addView(label(tr("সব দরকারি টুল এক জায়গায়"), 13f, Ui.MUTED), lp(t = 1))
         top.addView(titles, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         val sBtn = LinearLayout(this)

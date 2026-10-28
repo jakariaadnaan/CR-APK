@@ -267,7 +267,7 @@ class SettingsActivity : GuardedActivity() {
             rowOf(R.drawable.ic_share, tl("Share App"), "") {
                 val i = Intent(Intent.ACTION_SEND)
                 i.type = "text/plain"
-                i.putExtra(Intent.EXTRA_TEXT, tl("Amar Khata — ledger, debts, notes and many handy tools in one app."))
+                i.putExtra(Intent.EXTRA_TEXT, tl("Memoredia — ledger, debts, notes and many handy tools in one app."))
                 startActivity(Intent.createChooser(i, tl("Share App")))
             },
             rowOf(R.drawable.ic_info, tl("About"), "", extra = value("v$ver")) {
