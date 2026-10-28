@@ -119,7 +119,7 @@
         <activity android:name=".UpscaleActivity" android:exported="false" />
         <activity android:name=".TransparentActivity" android:exported="false" />
         <activity android:name=".PdfEditorActivity" android:exported="false" />
-        <provider android:name=".ShareProvider" android:authorities="com.example.callrec.share" android:exported="false" android:grantUriPermissions="true" />
+        <provider android:name=".ShareProvider" android:authorities="com.memoredia.app.share" android:exported="false" android:grantUriPermissions="true" />
         <activity android:name=".AudioConvertActivity" android:exported="false" />
         <activity android:name=".VideoToAudioActivity" android:exported="false" />
         <activity android:name=".VideoInfoActivity" android:exported="false" />

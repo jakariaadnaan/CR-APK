@@ -1,0 +1,244 @@
+package com.memoredia.app
+
+import android.app.Activity
+import android.app.AlertDialog
+import android.app.DatePickerDialog
+import android.content.DialogInterface
+import android.graphics.Paint
+import android.text.InputType
+import android.view.Gravity
+import android.view.View
+import android.view.WindowManager
+import android.widget.CheckBox
+import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.Toast
+import java.util.Calendar
+
+/** করণীয়: day-to-day tasks with tick-off, an urgent flag and an optional due date. */
+class TodoActivity : GuardedActivity() {
+
+    private lateinit var box: LinearLayout
+
+    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+        super.onCreate(savedInstanceState)
+        val scroll = ScrollView(this)
+        box = LinearLayout(this)
+        box.orientation = LinearLayout.VERTICAL
+        box.setPadding(dp(16), dp(10), dp(16), dp(24))
+        scroll.addView(box)
+        setScreen(tr("করণীয়"), scroll)
+        render()
+    }
+
+    private fun render() {
+        box.removeAllViews()
+        val today = todayStart()
+        val all = TodoStore.all(this)
+        val done = all.count { it.done }
+
+        val total = all.size
+        val prog = resultBox(tr("আজকের অগ্রগতি"), bn(done.toString()) + tr(" / ") + bn(total.toString()) + tr(" সম্পন্ন"), "", 22f)
+        val bar = LinearLayout(this)
+        bar.weightSum = 100f
+        bar.background = bg(Ui.mix(Ui.PRIMARY, Ui.CARD, 0.75f), 4)
+        val fill = View(this)
+        fill.background = bg(Ui.PRIMARY, 4)
+        bar.addView(fill, LinearLayout.LayoutParams(0, dp(6), if (total == 0) 0f else done * 100f / total))
+        bar.addView(View(this), LinearLayout.LayoutParams(0, dp(6), if (total == 0) 100f else (total - done) * 100f / total))
+        prog.addView(bar, lp(t = 10, height = dp(6)))
+        box.addView(prog, lp(b = 6))
+
+        val hdr = LinearLayout(this)
+        hdr.gravity = Gravity.CENTER_VERTICAL
+        hdr.addView(sectionLabel(tr("করণীয় কাজ"), 10).also { it.layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).also { q -> q.topMargin = dp(10); q.bottomMargin = dp(8) } })
+        if (done > 0) {
+            val clr = label(tr("সম্পন্নগুলো মুছুন"), 12f, Ui.MUTED, true)
+            clr.setPadding(dp(8), dp(8), dp(2), dp(8))
+            clr.setOnClickListener {
+                AlertDialog.Builder(this)
+                    .setMessage(tr("সব সম্পন্ন কাজ তালিকা থেকে মুছে ফেলবেন?"))
+                    .setPositiveButton(tr("মুছুন")) { _, _ ->
+                        TodoStore.clearDone(this)
+                        render()
+                    }
+                    .setNegativeButton(tr("না"), null)
+                    .show()
+            }
+            hdr.addView(clr)
+        }
+        box.addView(hdr)
+
+        val items = all.sortedWith(
+            compareBy<Todo> { it.done }
+                .thenByDescending { it.urgent }
+                .thenBy { if (it.due == 0L) Long.MAX_VALUE else it.due }
+                .thenByDescending { it.id }
+        )
+
+        val list = card(4)
+        for ((i, t) in items.withIndex()) {
+            val c = LinearLayout(this)
+            c.orientation = LinearLayout.HORIZONTAL
+            c.gravity = Gravity.CENTER_VERTICAL
+            c.setPadding(dp(10), dp(12), dp(10), dp(12))
+
+            val tick = label(if (t.done) "✓" else "", 14f, Ui.PRIMARY, true)
+            tick.gravity = Gravity.CENTER
+            tick.background = if (t.done) bg(Ui.KEY_OP, 6, Ui.PRIMARY, 1) else bg(Ui.CARD, 6, Ui.GREY, 1)
+            tick.setOnClickListener {
+                if (!t.done) Usage.add(this, "todo", "")
+                TodoStore.upsert(this, t.copy(done = !t.done))
+                render()
+            }
+            c.addView(tick, lp(width = dp(24), height = dp(24), r = 12))
+
+            val mid = LinearLayout(this)
+            mid.orientation = LinearLayout.VERTICAL
+            val title = label(t.title, 15f, if (t.done) Ui.MUTED else Ui.TEXT, !t.done)
+            if (t.done) title.paintFlags = title.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
+            mid.addView(title)
+            if (t.due != 0L) {
+                val late = !t.done && t.due < today
+                val dueTxt = dateText(t.due) + if (late) tr(" (দেরি হয়েছে)") else if (t.due == today) tr(" (আজ)") else ""
+                mid.addView(label(dueTxt, 12f, if (late) Ui.RED else Ui.MUTED))
+            }
+            if (t.remind != 0L && !t.done) {
+                mid.addView(label("⏰ " + remindText(t.remind), 12f, if (t.remind < System.currentTimeMillis()) Ui.MUTED else Ui.PRIMARY))
+            }
+            c.addView(mid, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+
+            if (t.urgent && !t.done) {
+                val u = View(this)
+                u.background = bg(Ui.PRIMARY, 4)
+                c.addView(u, lp(width = dp(8), height = dp(8)))
+            }
+
+            c.setOnClickListener { showEditor(t) }
+            list.addView(c)
+            list.addView(View(this).also { it.setBackgroundColor(Ui.LINE) }, lp(height = 1, l = 10, r = 10))
+        }
+        val add = LinearLayout(this)
+        add.gravity = Gravity.CENTER_VERTICAL
+        add.setPadding(dp(14), dp(14), dp(14), dp(14))
+        add.background = bg(Ui.CARD, 10, Ui.LINE, 1)
+        add.addView(label("+", 22f, Ui.PRIMARY, true), lp(width = dp(30), r = 6))
+        add.addView(label(tr("কাজ যোগ করুন…"), 14f, Ui.MUTED))
+        add.setOnClickListener { showEditor(null) }
+        if (items.isNotEmpty()) box.addView(list, lp(b = 10))
+        box.addView(add)
+    }
+
+    private fun remindText(ms: Long): String {
+        val c = Calendar.getInstance()
+        c.timeInMillis = ms
+        return dateText(ms) + ", " + bn(String.format(java.util.Locale.US, "%d:%02d", if (c.get(Calendar.HOUR) == 0) 12 else c.get(Calendar.HOUR), c.get(Calendar.MINUTE))) +
+            " " + (if (c.get(Calendar.AM_PM) == Calendar.AM) "AM" else "PM")
+    }
+
+    private fun showEditor(old: Todo?) {
+        var dueMs = old?.due ?: 0L
+        var remindMs = old?.remind ?: 0L
+
+        val form = LinearLayout(this)
+        form.orientation = LinearLayout.VERTICAL
+        form.setPadding(dp(20), dp(10), dp(20), 0)
+
+        val title = EditText(this)
+        title.hint = tr("কাজের নাম")
+        title.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+        title.setText(old?.title ?: "")
+        form.addView(title, lp())
+
+        val urgent = CheckBox(this)
+        urgent.text = tr("জরুরি কাজ")
+        urgent.isChecked = old?.urgent ?: false
+        form.addView(urgent, lp(t = 8))
+
+        fun dueLabel(): String = if (dueMs == 0L) tr("শেষ তারিখ: নেই") else tr("শেষ তারিখ: ") + dateText(dueMs)
+        val dueBtn = pill(dueLabel(), Ui.BG, Ui.PRIMARY) {}
+        dueBtn.setOnClickListener {
+            val c = Calendar.getInstance()
+            c.timeInMillis = if (dueMs == 0L) todayStart() else dueMs
+            val dpd = DatePickerDialog(
+                this,
+                DatePickerDialog.OnDateSetListener { _, y, m, d ->
+                    val n = Calendar.getInstance()
+                    n.clear()
+                    n.set(y, m, d)
+                    dueMs = n.timeInMillis
+                    dueBtn.text = dueLabel()
+                },
+                c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)
+            )
+            dpd.setButton(DialogInterface.BUTTON_NEUTRAL, tr("তারিখ বাদ দিন")) { _, _ ->
+                dueMs = 0L
+                dueBtn.text = dueLabel()
+            }
+            dpd.show()
+        }
+        form.addView(dueBtn, lp(t = 10, b = 4))
+
+        fun remindLabel(): String = if (remindMs == 0L) tr("রিমাইন্ডার: নেই") else tr("রিমাইন্ডার: ") + remindText(remindMs)
+        val remindBtn = pill(remindLabel(), Ui.BG, Ui.PRIMARY) {}
+        remindBtn.setOnClickListener {
+            val c = Calendar.getInstance()
+            if (remindMs != 0L) c.timeInMillis = remindMs
+            val dpd = DatePickerDialog(
+                this,
+                DatePickerDialog.OnDateSetListener { _, y, m, d ->
+                    android.app.TimePickerDialog(this, { _, hh, mm ->
+                        val n = Calendar.getInstance()
+                        n.clear()
+                        n.set(y, m, d, hh, mm)
+                        remindMs = n.timeInMillis
+                        remindBtn.text = remindLabel()
+                        if (android.os.Build.VERSION.SDK_INT >= 33 &&
+                            checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED
+                        ) requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 9)
+                    }, c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE), false).show()
+                },
+                c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)
+            )
+            dpd.setButton(DialogInterface.BUTTON_NEUTRAL, tr("রিমাইন্ডার বাদ দিন")) { _, _ ->
+                remindMs = 0L
+                remindBtn.text = remindLabel()
+            }
+            dpd.show()
+        }
+        form.addView(remindBtn, lp(t = 8, b = 4))
+
+        val builder = AlertDialog.Builder(this)
+            .setTitle(if (old == null) tr("নতুন কাজ") else tr("কাজ সম্পাদনা"))
+            .setView(form)
+            .setPositiveButton(tr("সংরক্ষণ"), null)
+            .setNegativeButton(tr("বাতিল"), null)
+        if (old != null) builder.setNeutralButton(tr("মুছুন"), null)
+        val dlg = builder.create()
+        dlg.setOnShowListener {
+            dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val txt = title.text.toString().trim()
+                if (txt.isEmpty()) {
+                    Toast.makeText(this, tr("কাজের নাম লিখুন"), Toast.LENGTH_SHORT).show()
+                } else {
+                    TodoStore.upsert(
+                        this,
+                        Todo(old?.id ?: System.currentTimeMillis(), txt, old?.done ?: false, urgent.isChecked, dueMs, remindMs)
+                    )
+                    dlg.dismiss()
+                    render()
+                }
+            }
+            if (old != null) {
+                dlg.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
+                    TodoStore.delete(this, old.id)
+                    dlg.dismiss()
+                    render()
+                }
+            }
+        }
+        if (old == null) dlg.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+        dlg.show()
+    }
+}

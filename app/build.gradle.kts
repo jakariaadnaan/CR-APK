@@ -6,15 +6,15 @@ plugins {
 base.archivesName.set("Memoredia")
 
 android {
-    namespace = "com.example.callrec"
+    namespace = "com.memoredia.app"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.callrec"
+        applicationId = "com.memoredia.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 131
-        versionName = "1.31"
+        versionCode = 132
+        versionName = "1.32"
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
 
