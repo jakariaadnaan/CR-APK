@@ -4,6 +4,7 @@ import android.graphics.Color
 import android.os.Bundle
 import android.text.InputType
 import android.view.Gravity
+import android.view.View
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -16,6 +17,7 @@ import java.util.Locale
 class UnicodeActivity : GuardedActivity() {
 
     private var decode = false
+    private var copyAll = ""
 
     private lateinit var tabs: LinearLayout
     private lateinit var input: EditText
@@ -26,28 +28,29 @@ class UnicodeActivity : GuardedActivity() {
         val scroll = ScrollView(this)
         val box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
-        box.setPadding(dp(14), dp(14), dp(14), dp(24))
+        box.setPadding(dp(16), dp(10), dp(16), dp(20))
         scroll.addView(box)
 
         tabs = LinearLayout(this)
         tabs.orientation = LinearLayout.HORIZONTAL
         box.addView(tabs, lp(b = 12))
 
-        val inCard = card(14)
-        inCard.addView(label(tr("ইনপুট"), 12f, Ui.MUTED, true))
         input = EditText(this)
         input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
-        input.minLines = 3
+        input.minLines = 2
         input.gravity = Gravity.TOP or Gravity.START
         input.onChange { update() }
-        inCard.addView(input, lp(t = 4))
-        box.addView(inCard, lp(b = 12))
+        styleInput(input)
+        box.addView(captionLabel(tr("ইনপুট")))
+        box.addView(input, lp(b = 12))
 
         results = LinearLayout(this)
         results.orientation = LinearLayout.VERTICAL
         box.addView(results, lp())
 
-        setScreen(tr("ইউনিকোড কনভার্টার"), scroll)
+        val w = LinearLayout(this)
+        w.addView(primaryButton(tr("কোড পয়েন্ট কপি")) { if (copyAll.isNotEmpty()) copyText(copyAll) }, lp(height = dp(48)))
+        setScreen(tr("ইউনিকোড কনভার্টার"), scroll, null, true, bottomBar(w))
         buildTabs()
         update()
     }
@@ -56,15 +59,13 @@ class UnicodeActivity : GuardedActivity() {
         tabs.removeAllViews()
         val names = listOf(tr("টেক্সট → কোড"), tr("কোড → টেক্সট"))
         for (i in names.indices) {
-            val on = (i == 1) == decode
-            val chip = label(names[i], 14f, if (on) Color.WHITE else Ui.PRIMARY, true)
-            chip.gravity = Gravity.CENTER
-            chip.background = bg(if (on) Ui.PRIMARY else Ui.CARD, 20, Ui.PRIMARY, 1)
-            chip.setPadding(dp(18), dp(8), dp(18), dp(8))
-            chip.setOnClickListener {
+            tabs.addView(choiceChip(names[i], (i == 1) == decode) {
                 decode = i == 1
                 buildTabs()
-                input.hint = if (decode) tr("যেমন: U+0985 U+09AE  বা  \\u0985  বা  &#2437;  বা  %E0%A6%85") else tr("এখানে লিখুন, যেমন: অমর")
+                update()
+            }, lp(r = 8))
+        }
+        input.hint = if (decode) tr("যেমন: U+0985 U+09AE  বা  \\u0985  বা  &#2437;  বা  %E0%A6%85") else tr("এখানে লিখুন, যেমন: অমর")
                 update()
             }
             tabs.addView(chip, lp(r = 8))
@@ -77,9 +78,11 @@ class UnicodeActivity : GuardedActivity() {
     private fun update() {
         results.removeAllViews()
         val s = input.text.toString()
+        copyAll = ""
         if (s.isEmpty()) return
         if (decode) {
-            addResult(tr("টেক্সট"), decodeText(s))
+            copyAll = decodeText(s)
+            addResult(tr("টেক্সট"), copyAll)
             return
         }
         val cps = ArrayList<Int>()
@@ -89,8 +92,27 @@ class UnicodeActivity : GuardedActivity() {
             cps.add(cp)
             i += Character.charCount(cp)
         }
-        addResult(tr("কোড পয়েন্ট"), cps.joinToString(" ") { "U+" + hex(it, 4) })
-        addResult(tr("UTF-8 (হেক্স বাইট)"), s.toByteArray(Charsets.UTF_8).joinToString(" ") { hex(it.toInt() and 0xFF, 2) })
+        copyAll = cps.joinToString(" ") { "U+" + hex(it, 4) }
+        results.addView(sectionLabel(tr("কোড পয়েন্ট আউটপুট"), 0))
+        val list = card(8)
+        for ((k, cp) in cps.take(100).withIndex()) {
+            val r = LinearLayout(this)
+            r.gravity = Gravity.CENTER_VERTICAL
+            r.setPadding(dp(4), dp(8), dp(4), dp(8))
+            val g = label(String(Character.toChars(cp)), 18f, Ui.PRIMARY, true)
+            g.gravity = Gravity.CENTER
+            g.background = bg(Ui.KEY_OP, 8, Ui.mix(Ui.PRIMARY, Ui.CARD, 0.6f), 1)
+            r.addView(g, lp(width = dp(44), height = dp(40), r = 14))
+            r.addView(label("U+" + hex(cp, 4), 15f, Ui.TEXT, true), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            val c = label(tr("কপি"), 12f, Ui.MUTED)
+            c.setPadding(dp(10), dp(6), dp(4), dp(6))
+            c.setOnClickListener { copyText("U+" + hex(cp, 4)) }
+            r.addView(c)
+            list.addView(r)
+            if (k < Math.min(cps.size, 100) - 1) list.addView(View(this).also { it.setBackgroundColor(Ui.LINE) }, lp(height = 1))
+        }
+        results.addView(list, lp(b = 10))
+        results.addView(resultBox("UTF-8 " + tr("বাইট"), s.toByteArray(Charsets.UTF_8).joinToString(" ") { hex(it.toInt() and 0xFF, 2) }, "", 15f), lp(b = 10))
         addResult(tr("\\uXXXX (জাভা / জাভাস্ক্রিপ্ট)"), s.map { "\\u" + hex(it.code, 4) }.joinToString(""))
         addResult("HTML (&#...;)", cps.joinToString("") { "&#" + it + ";" })
         addResult(tr("URL এনকোড"), URLEncoder.encode(s, "UTF-8"))

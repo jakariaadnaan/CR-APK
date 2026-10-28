@@ -47,62 +47,135 @@ abstract class CodeGenBase(private val barcode: Boolean) : GuardedActivity() {
         val scroll = ScrollView(this)
         val box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
-        box.setPadding(dp(14), dp(14), dp(14), dp(24))
+        box.setPadding(dp(16), dp(10), dp(16), dp(20))
         scroll.addView(box)
 
-        val c = card(14)
-        c.addView(label(if (barcode) tr("বারকোডের লেখা বা সংখ্যা") else tr("লেখা বা লিংক"), 12f, Ui.MUTED, true))
+        typeRow = com.example.callrec.FlowLayout(this)
+        if (!barcode) box.addView(typeRow, lp(b = 10))
         input = EditText(this)
-        input.hint = if (barcode) tr("যেমন: 123456789012") else tr("যেমন: https://example.com")
+        input.hint = if (barcode) tr("যেমন: 8901234567890") else tr("যেমন: https://example.com")
         input.inputType = InputType.TYPE_CLASS_TEXT or (if (barcode) 0 else InputType.TYPE_TEXT_FLAG_MULTI_LINE)
-        input.setTextColor(Ui.TEXT)
         input.onChange { generate() }
-        c.addView(input, lp(t = 4, b = 8))
+        capV = captionLabel(if (barcode) tr("বারকোডের মান") else tr("বিষয়বস্তু"))
+        box.addView(capV)
+        styleInput(input)
+        box.addView(input, lp(b = 8))
+        pass = EditText(this)
+        pass.hint = tr("Wi-Fi পাসওয়ার্ড")
+        pass.inputType = InputType.TYPE_CLASS_TEXT
+        pass.onChange { generate() }
+        styleInput(pass)
+        pass.visibility = android.view.View.GONE
+        box.addView(pass, lp(b = 8))
         chipRow = com.example.callrec.FlowLayout(this)
-        c.addView(label(if (barcode) tr("বারকোডের ধরন") else tr("ত্রুটি সংশোধন (বেশি হলে নষ্ট QR-ও পড়া যায়)"), 12f, Ui.MUTED, true), lp(t = 4, b = 6))
-        c.addView(chipRow, lp())
-        hintV = label("", 12f, Ui.MUTED)
-        if (barcode) c.addView(hintV, lp(t = 6))
-        box.addView(c, lp(b = 12))
+        if (barcode) {
+            box.addView(chipRow, lp(b = 10))
+        }
 
         val r = card(14)
         r.gravity = Gravity.CENTER_HORIZONTAL
         image = ImageView(this)
         image.scaleType = ImageView.ScaleType.FIT_CENTER
         image.setBackgroundColor(Color.WHITE)
-        r.addView(image, lp(height = 260))
-        msg = label(tr("লেখা দিলেই কোড তৈরি হবে"), 13f, Ui.MUTED)
+        r.addView(image, lp(height = if (barcode) 170 else 220))
+        msg = label(tr("লেখা দিলেই কোড তৈরি হবে"), 12f, Ui.TEXT)
         msg.gravity = Gravity.CENTER
-        r.addView(msg, lp(t = 8, b = 10))
-        r.addView(pill(tr("PNG সংরক্ষণ")) { save() })
-        box.addView(r, lp())
+        r.addView(msg, lp(t = 8))
+        box.addView(r, lp(b = 10))
 
-        setScreen(if (barcode) tr("বারকোড তৈরি") else tr("QR কোড তৈরি"), scroll)
+        hintV = label("", 12f, Ui.MUTED)
+        if (barcode) {
+            val v = resultBox(tr("ফরম্যাট যাচাই"), "", "", 14f)
+            valV = v.getChildAt(1) as TextView
+            valNote = TextView(this)
+            valNote.setTextColor(Ui.MUTED)
+            valNote.textSize = 12f
+            v.addView(valNote, lp(t = 6))
+            box.addView(v, lp(b = 8))
+            box.addView(hintV, lp(l = 2))
+        } else {
+            box.addView(sectionLabel(tr("সাইজ"), 4))
+            sizeRow = com.example.callrec.FlowLayout(this)
+            box.addView(sizeRow, lp(b = 8))
+            box.addView(sectionLabel(tr("ত্রুটি সংশোধন (বেশি হলে নষ্ট QR-ও পড়া যায়)"), 4))
+            box.addView(chipRow, lp(b = 8))
+        }
+
+        val w = LinearLayout(this)
+        w.addView(primaryButton(if (barcode) tr("বারকোড এক্সপোর্ট") else tr("QR ডাউনলোড")) { save() }, lp(height = dp(48)))
+        setScreen(if (barcode) tr("বারকোড তৈরি") else tr("QR কোড তৈরি"), scroll, null, true, bottomBar(w))
         chips()
         generate()
+    }
+
+    private lateinit var typeRow: com.example.callrec.FlowLayout
+    private lateinit var sizeRow: com.example.callrec.FlowLayout
+    private lateinit var capV: TextView
+    private lateinit var pass: EditText
+    private lateinit var valV: TextView
+    private lateinit var valNote: TextView
+    private var qrType = 0
+    private var sizeIdx = 1
+
+    /** The text that goes into the QR code for the chosen content type. */
+    private fun payload(): String {
+        val t = input.text.toString().trim()
+        if (t.isEmpty()) return ""
+        return when (qrType) {
+            2 -> if (t.startsWith("mailto:")) t else "mailto:$t"
+            3 -> "WIFI:T:" + (if (pass.text.isEmpty()) "nopass" else "WPA") + ";S:" + t.replace(";", "\\;") + ";P:" + pass.text.toString().replace(";", "\\;") + ";;"
+            else -> input.text.toString()
+        }
     }
 
     private fun chips() {
         chipRow.removeAllViews()
         if (barcode) {
-            for (i in kinds.indices) chipRow.addView(chip(kinds[i].name, i == kind) { kind = i; chips(); generate() })
+            for (i in kinds.indices) chipRow.addView(choiceChip(kinds[i].name, i == kind) { kind = i; chips(); generate() })
             hintV.text = kinds[kind].hint
         } else {
-            for (i in levels.indices) chipRow.addView(chip(levels[i].first, i == level) { level = i; chips(); generate() })
+            for (i in levels.indices) chipRow.addView(choiceChip(levels[i].first, i == level) { level = i; chips(); generate() })
+            typeRow.removeAllViews()
+            val tn = listOf("URL", tr("লেখা"), tr("ইমেইল"), "Wi-Fi")
+            for (i in tn.indices) typeRow.addView(choiceChip(tn[i], i == qrType) {
+                qrType = i
+                input.hint = when (i) { 0 -> tr("যেমন: https://example.com"); 1 -> tr("যেকোনো লেখা"); 2 -> tr("যেমন: name@example.com"); else -> tr("নেটওয়ার্কের নাম (SSID)") }
+                capV.text = if (i == 3) tr("নেটওয়ার্কের নাম") else tr("বিষয়বস্তু")
+                pass.visibility = if (i == 3) android.view.View.VISIBLE else android.view.View.GONE
+                chips(); generate()
+            })
+            sizeRow.removeAllViews()
+            val sn = listOf(tr("ছোট"), tr("মাঝারি"), tr("বড়"))
+            for (i in sn.indices) sizeRow.addView(choiceChip(sn[i], i == sizeIdx) { sizeIdx = i; chips(); generate() })
         }
     }
 
-    private fun chip(text: String, on: Boolean, click: () -> Unit): TextView {
-        val c = label(text, 14f, if (on) Color.WHITE else Ui.PRIMARY, true)
-        c.gravity = Gravity.CENTER
-        c.background = bg(if (on) Ui.PRIMARY else Ui.CARD, 20, Ui.PRIMARY, 1)
-        c.setPadding(dp(16), dp(8), dp(16), dp(8))
-        c.setOnClickListener { click() }
-        return c
+    /** Length and checksum check for the numeric formats, shown above the export button. */
+    private fun validate(t: String): Pair<String, String> {
+        val f = kinds[kind].f
+        val digits = t.all { it.isDigit() }
+        fun ok(len: Int): Boolean {
+            if (t.length != len) return false
+            var sum = 0
+            for (i in 0 until len - 1) {
+                val d = t[len - 2 - i] - '0'
+                sum += if (i % 2 == 0) d * 3 else d
+            }
+            return (10 - sum % 10) % 10 == t[len - 1] - '0'
+        }
+        return when (f) {
+            BarcodeFormat.EAN_13 -> if (!digits) Pair(tr("অবৈধ"), tr("শুধু সংখ্যা চলবে")) else if (t.length == 12) Pair(tr("বৈধ"), tr("১২ সংখ্যা: চেকসাম নিজে যোগ হবে")) else if (ok(13)) Pair(tr("বৈধ"), tr("চেকসাম মিলেছে")) else Pair(tr("অবৈধ"), tr("১২ বা ১৩ সংখ্যা ও সঠিক চেকসাম দরকার"))
+            BarcodeFormat.EAN_8 -> if (!digits) Pair(tr("অবৈধ"), tr("শুধু সংখ্যা চলবে")) else if (t.length == 7) Pair(tr("বৈধ"), tr("৭ সংখ্যা: চেকসাম নিজে যোগ হবে")) else if (ok(8)) Pair(tr("বৈধ"), tr("চেকসাম মিলেছে")) else Pair(tr("অবৈধ"), tr("৭ বা ৮ সংখ্যা ও সঠিক চেকসাম দরকার"))
+            BarcodeFormat.UPC_A -> if (!digits) Pair(tr("অবৈধ"), tr("শুধু সংখ্যা চলবে")) else if (t.length == 11) Pair(tr("বৈধ"), tr("১১ সংখ্যা: চেকসাম নিজে যোগ হবে")) else if (ok(12)) Pair(tr("বৈধ"), tr("চেকসাম মিলেছে")) else Pair(tr("অবৈধ"), tr("১১ বা ১২ সংখ্যা ও সঠিক চেকসাম দরকার"))
+            else -> Pair(tr("বৈধ"), tr("এই ধরনে চেকসাম লাগে না"))
+        }
     }
 
     private fun generate() {
-        val text = asciiDigits(input.text.toString()).let { if (barcode) it else input.text.toString() }
+        val text = if (barcode) asciiDigits(input.text.toString()).trim() else payload()
+        if (barcode) {
+            if (text.isEmpty()) { valV.text = "—"; valNote.text = "" } else { val v = validate(text); valV.text = v.first; valNote.text = v.second }
+        }
         if (text.isEmpty()) {
             bmp = null
             image.setImageBitmap(null)
@@ -122,8 +195,9 @@ abstract class CodeGenBase(private val barcode: Boolean) : GuardedActivity() {
                 h = 360
             } else {
                 fmt = BarcodeFormat.QR_CODE
-                w = 800
-                h = 800
+                val sz = intArrayOf(500, 800, 1200)[sizeIdx]
+                w = sz
+                h = sz
                 hints[EncodeHintType.ERROR_CORRECTION] = levels[level].second
             }
             val m = MultiFormatWriter().encode(text, fmt, w, h, hints)

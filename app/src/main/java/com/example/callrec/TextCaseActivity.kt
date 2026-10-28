@@ -39,68 +39,67 @@ class TextCaseActivity : GuardedActivity() {
         val scroll = ScrollView(this)
         val box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
-        box.setPadding(dp(14), dp(14), dp(14), dp(24))
+        box.setPadding(dp(16), dp(10), dp(16), dp(20))
         scroll.addView(box)
 
-        val inCard = card(14)
-        inCard.addView(label(tr("আপনার লেখা"), 12f, Ui.MUTED, true))
         input = EditText(this)
         input.hint = tr("এখানে লিখুন বা পেস্ট করুন")
         input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
         input.minLines = 4
         input.gravity = Gravity.TOP or Gravity.START
         input.onChange { update() }
-        inCard.addView(input, lp(t = 4))
-        val row = LinearLayout(this)
-        row.orientation = LinearLayout.HORIZONTAL
-        row.addView(pill(tr("মুছুন"), Ui.BG, Ui.RED) { input.setText("") }, lp(r = 8))
-        inCard.addView(row, lp(t = 6))
-        box.addView(inCard, lp(b = 12))
+        box.addView(sectionLabel(tr("আপনার লেখা"), 0))
+        styleInput(input)
+        box.addView(input, lp(b = 4))
 
-        box.addView(label(tr("কী করতে চান"), 14f, Ui.MUTED, true), lp(l = 4, b = 8))
+        box.addView(captionLabel(tr("রূপান্তর")).also { it.layoutParams = lp(t = 12, b = 8, l = 2) })
         flow = FlowLayout(this)
         box.addView(flow, lp(b = 12))
 
-        val outCard = card(14)
-        outCard.addView(label(tr("ফলাফল"), 12f, Ui.MUTED, true))
-        output = label("", 16f, Ui.TEXT)
+        box.addView(sectionLabel(tr("ফলাফলের প্রিভিউ"), 2))
+        val res = resultBox(tr("ফলাফল"), "", "", 16f)
+        output = res.getChildAt(1) as TextView
         output.setTextIsSelectable(true)
-        outCard.addView(output, lp(t = 4, b = 10))
-        val btns = LinearLayout(this)
-        btns.orientation = LinearLayout.HORIZONTAL
-        btns.addView(pill(tr("কপি")) {
+        output.textSize = 15f
+        output.setTypeface(null, android.graphics.Typeface.NORMAL)
+        countV = TextView(this)
+        countV.setTextColor(Ui.MUTED)
+        countV.textSize = 11f
+        res.addView(countV, lp(t = 10))
+        box.addView(res, lp(b = 10))
+
+        box.addView(outlineButton(tr("ফলাফল কপি")) {
             if (output.text.isNotEmpty()) copyText(output.text.toString()) else Toast.makeText(this, tr("আগে কিছু লিখুন"), Toast.LENGTH_SHORT).show()
-        }, lp(r = 8))
-        btns.addView(pill(tr("ইনপুটে বসান"), Ui.BG, Ui.PRIMARY) {
-            input.setText(output.text)
-            input.setSelection(input.text.length)
-        })
-        outCard.addView(btns, lp())
-        box.addView(outCard, lp())
+        }, lp(height = dp(48)))
+        val clr = label(tr("ইনপুট মুছুন"), 13f, Ui.MUTED)
+        clr.gravity = Gravity.CENTER
+        clr.setPadding(0, dp(14), 0, dp(6))
+        clr.setOnClickListener { input.setText("") }
+        box.addView(clr)
+        box.addView(label(tr("আগের ফলাফলকে ইনপুটে বসাতে চাইলে নিচের লিংক:"), 11f, Ui.MUTED).also { it.gravity = Gravity.CENTER }, lp(t = 4))
+        val use = label(tr("ইনপুটে বসান"), 13f, Ui.PRIMARY, true)
+        use.gravity = Gravity.CENTER
+        use.setPadding(0, dp(8), 0, dp(8))
+        use.setOnClickListener { input.setText(output.text); input.setSelection(input.text.length) }
+        box.addView(use)
 
         setScreen(tr("টেক্সট কেস কনভার্টার"), scroll)
         buildChips()
         update()
     }
 
+    private lateinit var countV: TextView
+
     private fun buildChips() {
         flow.removeAllViews()
         for (i in modes.indices) {
-            val on = i == selected
-            val chip = label(modes[i].name, 14f, if (on) Color.WHITE else Ui.PRIMARY, true)
-            chip.background = bg(if (on) Ui.PRIMARY else Ui.CARD, 20, Ui.PRIMARY, 1)
-            chip.setPadding(dp(14), dp(9), dp(14), dp(9))
-            chip.setOnClickListener {
-                selected = i
-                buildChips()
-                update()
-            }
-            flow.addView(chip)
+            flow.addView(choiceChip(modes[i].name, i == selected) { selected = i; buildChips(); update() })
         }
     }
 
     private fun update() {
         output.text = modes[selected].f(input.text.toString())
+        countV.text = bn(output.text.length.toString()) + tr(" অক্ষর")
     }
 }
 

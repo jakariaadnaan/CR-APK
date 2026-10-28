@@ -48,41 +48,71 @@ class ScannerActivity : GuardedActivity(), SurfaceHolder.Callback {
         val scroll = ScrollView(this)
         val box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
-        box.setPadding(dp(14), dp(14), dp(14), dp(24))
+        box.setPadding(dp(16), dp(10), dp(16), dp(20))
         scroll.addView(box)
 
+        box.addView(captionLabel(tr("QR ও বারকোড স্ক্যানার")))
         val cc = card(10)
+        val fr = android.widget.FrameLayout(this)
         surface = SurfaceView(this)
         surface.holder.addCallback(this)
-        cc.addView(surface, lp(height = 340))
+        fr.addView(surface, android.widget.FrameLayout.LayoutParams(-1, dp(340)))
+        fr.addView(object : android.view.View(this) {
+            override fun onDraw(c: android.graphics.Canvas) {
+                val d = resources.displayMetrics.density
+                val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+                p.style = android.graphics.Paint.Style.STROKE
+                p.strokeWidth = 3 * d
+                p.strokeCap = android.graphics.Paint.Cap.ROUND
+                p.color = Ui.PRIMARY
+                val m = 30 * d
+                val l = 36 * d
+                val w = width.toFloat()
+                val h = height.toFloat()
+                for (sx in listOf(0, 1)) for (sy in listOf(0, 1)) {
+                    val x = if (sx == 0) m else w - m
+                    val y = if (sy == 0) m else h - m
+                    val dx = if (sx == 0) l else -l
+                    val dy = if (sy == 0) l else -l
+                    c.drawLine(x, y, x + dx, y, p)
+                    c.drawLine(x, y, x, y + dy, p)
+                }
+            }
+        }, android.widget.FrameLayout.LayoutParams(-1, -1))
+        cc.addView(fr)
         camNote = label(tr("ক্যামেরা চালু হচ্ছে…"), 12f, Ui.MUTED)
-        cc.addView(camNote, lp(t = 6))
+        camNote.gravity = android.view.Gravity.CENTER
+        cc.addView(camNote, lp(t = 8, b = 2))
         box.addView(cc, lp(b = 12))
 
-        val rc = card(14)
-        rc.addView(label(tr("ফলাফল"), 12f, Ui.MUTED, true))
-        typeV = label("", 12f, Ui.PRIMARY, true)
-        rc.addView(typeV, lp(t = 4))
-        resultV = label(tr("QR বা বারকোডের দিকে ক্যামেরা ধরুন"), 16f, Ui.TEXT)
+        val rc = resultBox(tr("ফলাফল"), tr("QR বা বারকোডের দিকে ক্যামেরা ধরুন"), " ", 16f)
+        resultV = rc.getChildAt(1) as TextView
         resultV.setTextIsSelectable(true)
-        rc.addView(resultV, lp(t = 2, b = 10))
+        resultV.textSize = 15f
+        typeV = rc.getChildAt(2) as TextView
         val row = LinearLayout(this)
         row.orientation = LinearLayout.HORIZONTAL
-        row.addView(pill(tr("কপি")) { if (lastText.isNotEmpty()) copyText(lastText) }, lp(r = 8))
-        openBtn = pill(tr("লিংক খুলুন"), Ui.BG, Ui.PRIMARY) { openLink() }
+        row.addView(pill(tr("কপি"), Ui.CARD, Ui.PRIMARY) { if (lastText.isNotEmpty()) copyText(lastText) }, lp(r = 8))
+        openBtn = pill(tr("লিংক খুলুন"), Ui.CARD, Ui.PRIMARY) { openLink() }
         openBtn.visibility = android.view.View.GONE
         row.addView(openBtn, lp(r = 8))
-        row.addView(pill(tr("আবার স্ক্যান"), Ui.BG, Ui.PRIMARY) { again() })
-        rc.addView(row, lp(b = 8))
-        rc.addView(pill(tr("ছবি থেকে পড়ুন"), Ui.BG, Ui.PRIMARY) {
+        rc.addView(row, lp(t = 10))
+        box.addView(rc, lp(b = 10))
+        val docs = label(tr("কাগজ বা ডকুমেন্ট স্ক্যান করতে চাইলে PDF Edit খুলুন ›"), 12f, Ui.PRIMARY, true)
+        docs.setPadding(dp(2), dp(6), dp(2), dp(6))
+        docs.setOnClickListener { startActivity(Intent(this, PdfEditorActivity::class.java)) }
+        box.addView(docs)
+
+        val w = LinearLayout(this)
+        w.orientation = LinearLayout.HORIZONTAL
+        w.addView(primaryButton(tr("আবার স্ক্যান")) { again() }, lp(width = 0, height = dp(48), r = 4).also { it.weight = 1f })
+        w.addView(primaryButton(tr("ছবি থেকে পড়ুন")) {
             val i = Intent(Intent.ACTION_OPEN_DOCUMENT)
             i.addCategory(Intent.CATEGORY_OPENABLE)
             i.type = "image/*"
             startActivityForResult(i, 96)
-        })
-        box.addView(rc, lp())
-
-        setScreen(tr("স্ক্যানার"), scroll)
+        }, lp(width = 0, height = dp(48), l = 4).also { it.weight = 1f })
+        setScreen(tr("স্ক্যানার"), scroll, null, true, bottomBar(w))
     }
 
     override fun surfaceCreated(h: SurfaceHolder) {
@@ -130,7 +160,7 @@ class ScannerActivity : GuardedActivity(), SurfaceHolder.Callback {
             pw = p.previewSize.width
             ph = p.previewSize.height
             val lp = surface.layoutParams
-            lp.height = (resources.displayMetrics.widthPixels - dp(48)) * pw / ph
+            lp.height = (resources.displayMetrics.widthPixels - dp(52)) * pw / ph
             surface.layoutParams = lp
             c.setPreviewDisplay(surface.holder)
             c.setPreviewCallback { data, _ -> onFrame(data) }

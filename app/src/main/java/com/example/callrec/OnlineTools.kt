@@ -241,25 +241,67 @@ class DictionaryActivity : OnlineBase() {
 
     private lateinit var input: EditText
     private lateinit var out: LinearLayout
+    private lateinit var savedBox: LinearLayout
+    private var curWord = ""
+    private val sp by lazy { getSharedPreferences("dict", MODE_PRIVATE) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         build(tr("অভিধান"))
-        val c = card(14)
-        input = field(tr("ইংরেজি শব্দ লিখুন, যেমন: book"))
+        val row = LinearLayout(this)
+        row.gravity = Gravity.CENTER_VERTICAL
+        input = field(tr("ইংরেজি শব্দ খুঁজুন, যেমন: book"))
         input.imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH
-        input.setOnEditorActionListener { _, _, _ -> search(); true }
-        c.addView(input, lp(b = 8))
-        c.addView(pill(tr("খুঁজুন")) { search() })
-        box.addView(c, lp(b = 12))
+        input.setOnEditorActionListener { _, _, _ -> search(input.text.toString()); true }
+        styleInput(input)
+        row.addView(input, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        val go = iconBox(R.drawable.ic_search, Ui.PRIMARY, android.graphics.Color.WHITE, 46, 22, 10, 0)
+        go.setOnClickListener { search(input.text.toString()) }
+        row.addView(go, lp(width = dp(46), height = dp(46), l = 8))
+        box.addView(row, lp(b = 12))
         out = LinearLayout(this)
         out.orientation = LinearLayout.VERTICAL
         box.addView(out, lp())
-        box.addView(label(tr("ইংরেজি শব্দের ইংরেজি অর্থ ও উদাহরণ দেখায়; বাংলা অর্থ নেই।"), 12f, Ui.MUTED), lp(l = 4, t = 8))
+        savedBox = LinearLayout(this)
+        savedBox.orientation = LinearLayout.VERTICAL
+        box.addView(savedBox, lp(t = 6))
+        box.addView(label(tr("ইংরেজি শব্দের ইংরেজি অর্থ ও উদাহরণ দেখায়; বাংলা অর্থ নেই। তথ্য dictionaryapi.dev থেকে আসে।"), 11f, Ui.MUTED), lp(l = 4, t = 8))
+        addBottom(primaryButton(tr("শব্দ সংরক্ষণ")) { saveWord() })
+        drawSaved()
     }
 
-    private fun search() {
-        val w = input.text.toString().trim().lowercase()
+    private fun saved(): List<String> = sp.getString("saved", "")!!.split("\n").filter { it.isNotEmpty() }
+
+    private fun saveWord() {
+        if (curWord.isEmpty()) { android.widget.Toast.makeText(this, tr("আগে একটি শব্দ খুঁজুন"), android.widget.Toast.LENGTH_SHORT).show(); return }
+        val l = saved().toMutableList()
+        if (!l.contains(curWord)) l.add(0, curWord)
+        sp.edit().putString("saved", l.take(100).joinToString("\n")).apply()
+        android.widget.Toast.makeText(this, tr("সংরক্ষিত হয়েছে"), android.widget.Toast.LENGTH_SHORT).show()
+        drawSaved()
+    }
+
+    private fun drawSaved() {
+        savedBox.removeAllViews()
+        val l = saved()
+        if (l.isEmpty()) return
+        savedBox.addView(sectionLabel(tr("সংরক্ষিত শব্দ")))
+        val f = FlowLayout(this)
+        for (w in l) {
+            val c = choiceChip(w, false) { input.setText(w); search(w) }
+            c.setOnLongClickListener {
+                sp.edit().putString("saved", saved().filter { it != w }.joinToString("\n")).apply()
+                drawSaved()
+                true
+            }
+            f.addView(c)
+        }
+        savedBox.addView(f)
+        savedBox.addView(label(tr("শব্দ মুছতে চেপে ধরে রাখুন"), 11f, Ui.MUTED), lp(t = 6, l = 2))
+    }
+
+    private fun search(word: String) {
+        val w = word.trim().lowercase()
         if (w.isEmpty()) return
         out.removeAllViews()
         out.addView(label(tr("খোঁজা হচ্ছে…"), 13f, Ui.MUTED))
@@ -278,34 +320,40 @@ class DictionaryActivity : OnlineBase() {
 
     private fun show(arr: JSONArray) {
         val first = arr.getJSONObject(0)
-        val head = card(14)
-        head.addView(label(first.optString("word"), 22f, Ui.TEXT, true))
+        curWord = first.optString("word")
+        out.addView(label(curWord, 30f, Ui.TEXT, true), lp(l = 2))
         val ph = first.optString("phonetic")
-        if (ph.isNotEmpty()) head.addView(label(ph, 14f, Ui.PRIMARY))
-        out.addView(head, lp(b = 10))
+        val firstPos = arr.getJSONObject(0).optJSONArray("meanings")?.getJSONObject(0)?.optString("partOfSpeech") ?: ""
+        out.addView(label((if (ph.isNotEmpty()) ph + "   " else "") + firstPos, 13f, Ui.MUTED), lp(l = 2, t = 2, b = 12))
+        val syns = LinkedHashSet<String>()
         for (i in 0 until arr.length()) {
             val meanings = arr.getJSONObject(i).optJSONArray("meanings") ?: continue
             for (k in 0 until meanings.length()) {
                 val m = meanings.getJSONObject(k)
                 val c = card(14)
-                c.addView(label(m.optString("partOfSpeech"), 13f, Ui.PRIMARY, true))
+                c.addView(captionLabel(tr("সংজ্ঞা") + " · " + m.optString("partOfSpeech")).also { it.setTextColor(Ui.PRIMARY) })
                 val defs = m.optJSONArray("definitions")
                 if (defs != null) {
                     for (d in 0 until Math.min(3, defs.length())) {
                         val o = defs.getJSONObject(d)
                         c.addView(label(bn((d + 1).toString()) + ". " + o.optString("definition"), 14f, Ui.TEXT), lp(t = 6))
                         val ex = o.optString("example")
-                        if (ex.isNotEmpty()) c.addView(label("“" + ex + "”", 13f, Ui.MUTED), lp(t = 2, l = 14))
+                        if (ex.isNotEmpty()) {
+                            c.addView(captionLabel(tr("উদাহরণ")).also { it.layoutParams = lp(t = 6, b = 2, l = 14) })
+                            c.addView(label("“" + ex + "”", 13f, Ui.TEXT), lp(l = 14))
+                        }
                     }
                 }
                 val syn = m.optJSONArray("synonyms")
-                if (syn != null && syn.length() > 0) {
-                    val l = ArrayList<String>()
-                    for (s in 0 until Math.min(6, syn.length())) l.add(syn.getString(s))
-                    c.addView(label(tr("সমার্থক: ") + l.joinToString(", "), 13f, Ui.MUTED), lp(t = 8))
-                }
+                if (syn != null) for (x in 0 until syn.length()) syns.add(syn.getString(x))
                 out.addView(c, lp(b = 10))
             }
+        }
+        if (syns.isNotEmpty()) {
+            out.addView(sectionLabel(tr("সম্পর্কিত শব্দ"), 4))
+            val f = FlowLayout(this)
+            for (w in syns.take(10)) f.addView(choiceChip(w, false) { input.setText(w); search(w) })
+            out.addView(f, lp(b = 6))
         }
     }
 }
