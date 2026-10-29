@@ -235,11 +235,7 @@ class InfoPageActivity : GuardedActivity() {
     private fun about() {
         val ver = try { packageManager.getPackageInfo(packageName, 0).versionName ?: "" } catch (e: Exception) { "" }
         val prefs = getSharedPreferences("settings", MODE_PRIVATE)
-        val iconRes = when (prefs.getString("appIcon", "IconA")) {
-            "IconB" -> R.mipmap.ic_launcher_b
-            "IconC" -> R.mipmap.ic_launcher_c
-            else -> R.mipmap.ic_launcher_a
-        }
+        val iconRes = AppIcon.res(this)
         val c = card(20)
         c.gravity = Gravity.CENTER_HORIZONTAL
         val iv = android.widget.ImageView(this)

@@ -20,6 +20,7 @@ class HomeActivity : GuardedActivity() {
     @Suppress("DEPRECATION")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AppIcon.sync(this)
         val sp = getSharedPreferences("settings", MODE_PRIVATE)
         if (!sp.getBoolean("onboarded", false)) {
             if (Lock.enabled(this)) {
@@ -51,11 +52,7 @@ class HomeActivity : GuardedActivity() {
         top.orientation = LinearLayout.HORIZONTAL
         top.gravity = Gravity.CENTER_VERTICAL
         val spIcon = getSharedPreferences("settings", MODE_PRIVATE)
-        val iconRes = when (spIcon.getString("appIcon", "IconA")) {
-            "IconB" -> R.mipmap.ic_launcher_b
-            "IconC" -> R.mipmap.ic_launcher_c
-            else -> R.mipmap.ic_launcher_a
-        }
+        val iconRes = AppIcon.res(this)
         val logo = android.widget.ImageView(this)
         logo.setImageResource(iconRes)
         logo.clipToOutline = true

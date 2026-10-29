@@ -83,11 +83,7 @@ class LockActivity : Activity() {
             root.addView(date, lp(t = 2))
         } else {
             val sp = getSharedPreferences("settings", MODE_PRIVATE)
-            val iconRes = when (sp.getString("appIcon", "IconA")) {
-                "IconB" -> R.mipmap.ic_launcher_b
-                "IconC" -> R.mipmap.ic_launcher_c
-                else -> R.mipmap.ic_launcher_a
-            }
+            val iconRes = AppIcon.res(this)
             val iv = android.widget.ImageView(this)
             iv.setImageResource(iconRes)
             iv.clipToOutline = true

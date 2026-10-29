@@ -37,6 +37,7 @@ class AppearanceActivity : GuardedActivity() {
     }
 
     private fun changed() {
+        AppIcon.sync(this)
         Ui.stamp++
         recreate()
     }
@@ -126,44 +127,6 @@ class AppearanceActivity : GuardedActivity() {
             .setNegativeButton(tl("Cancel"), null).show()
     }
 
-    private fun iconTile(res: Int, alias: String, on: Boolean): View {
-        val f = FrameLayout(this)
-        val frame = LinearLayout(this)
-        frame.gravity = Gravity.CENTER
-        frame.setPadding(dp(8), dp(8), dp(8), dp(8))
-        frame.background = if (on) bg(Ui.KEY_OP, 18, Ui.PRIMARY, 2) else bg(Ui.CARD, 18, Ui.LINE, 1)
-        val iv = ImageView(this)
-        iv.setImageResource(res)
-        iv.clipToOutline = true
-        iv.outlineProvider = object : android.view.ViewOutlineProvider() {
-            override fun getOutline(v: View, o: Outline) { o.setRoundRect(0, 0, v.width, v.height, v.width * 0.24f) }
-        }
-        frame.addView(iv, LinearLayout.LayoutParams(dp(60), dp(60)))
-        f.addView(frame, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-        if (on) {
-            val lpb = FrameLayout.LayoutParams(dp(22), dp(22))
-            lpb.gravity = Gravity.BOTTOM or Gravity.END
-            f.addView(check(), lpb)
-        }
-        f.setOnClickListener {
-            it.tapFx()
-            if (!on) {
-                val pm = packageManager
-                for (a in listOf("IconA", "IconB", "IconC")) {
-                    pm.setComponentEnabledSetting(
-                        ComponentName(this, "com.memoredia.app.$a"),
-                        if (a == alias) PackageManager.COMPONENT_ENABLED_STATE_ENABLED else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                        PackageManager.DONT_KILL_APP
-                    )
-                }
-                prefs.edit().putString("appIcon", alias).apply()
-                Toast.makeText(this, tl("Icon changed. The home screen may take a few seconds to update."), Toast.LENGTH_LONG).show()
-                render()
-            }
-        }
-        return f
-    }
-
     private fun toggleRow(icon: Int, title: String, sub: String, key: String, def: Boolean): LinearLayout {
         val on = prefs.getBoolean(key, def)
         val r = listRow(icon, title, sub, Ui.TEXT, styledSwitch(on), false)
@@ -225,16 +188,6 @@ class AppearanceActivity : GuardedActivity() {
         line.addView(accentDot(null, cur == Ui.ACCENTS.size) { customAccent() }, LinearLayout.LayoutParams(0, dp(46), 1f))
         arow.addView(line)
         box.addView(arow, lp())
-
-        // App Icon
-        section(tl("App Icon"))
-        val ic = prefs.getString("appIcon", "IconA") ?: "IconA"
-        val irow = LinearLayout(this)
-        irow.orientation = LinearLayout.HORIZONTAL
-        irow.addView(iconTile(R.mipmap.ic_launcher_a, "IconA", ic == "IconA"), lp(width = ViewGroup.LayoutParams.WRAP_CONTENT, r = 12))
-        irow.addView(iconTile(R.mipmap.ic_launcher_b, "IconB", ic == "IconB"), lp(width = ViewGroup.LayoutParams.WRAP_CONTENT, r = 12))
-        irow.addView(iconTile(R.mipmap.ic_launcher_c, "IconC", ic == "IconC"), lp(width = ViewGroup.LayoutParams.WRAP_CONTENT))
-        box.addView(irow, lp())
 
         // Font Size
         section(tl("Font Size"))

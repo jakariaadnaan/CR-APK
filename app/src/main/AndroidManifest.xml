@@ -16,7 +16,7 @@
     <application
         android:name=".App"
         android:allowBackup="false"
-        android:icon="@mipmap/ic_launcher_a"
+        android:icon="@mipmap/ic_launcher_0"
         android:label="@string/app_name"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
 
@@ -25,10 +25,10 @@
             android:exported="true" />
 
         <activity-alias
-            android:name=".IconA"
+            android:name=".Icon0"
             android:enabled="true"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_a"
+            android:icon="@mipmap/ic_launcher_0"
             android:targetActivity=".HomeActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -36,10 +36,10 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".IconB"
+            android:name=".Icon1"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_b"
+            android:icon="@mipmap/ic_launcher_1"
             android:targetActivity=".HomeActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -47,10 +47,43 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".IconC"
+            android:name=".Icon2"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_c"
+            android:icon="@mipmap/ic_launcher_2"
+            android:targetActivity=".HomeActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icon3"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_3"
+            android:targetActivity=".HomeActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icon4"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_4"
+            android:targetActivity=".HomeActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icon5"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_5"
             android:targetActivity=".HomeActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

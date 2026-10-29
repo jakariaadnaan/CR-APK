@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="launcher_bg_a">#2D5BE3</color>
-    <color name="launcher_bg_b">#14171C</color>
-    <color name="launcher_bg_c">#FFFFFF</color>
+    <color name="launcher_bg_0">#2D5BE3</color>
+    <color name="launcher_bg_1">#1E8E5A</color>
+    <color name="launcher_bg_2">#7A45D6</color>
+    <color name="launcher_bg_3">#E0701A</color>
+    <color name="launcher_bg_4">#D23B3B</color>
+    <color name="launcher_bg_5">#0E8A94</color>
 </resources>
