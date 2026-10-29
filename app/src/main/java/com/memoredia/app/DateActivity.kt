@@ -99,7 +99,7 @@ class DateActivity : GuardedActivity() {
 
     private fun banglaText(d: LocalDate): String {
         val b = BanglaCal.fromGregorian(d)
-        return bn(b.day.toString()) + " " + BanglaCal.MONTHS[b.month] + " " + bn(b.year.toString()) + tr(" বঙ্গাব্দ")
+        return bn(b.day.toString()) + " " + tr(BanglaCal.MONTHS[b.month]) + " " + bn(b.year.toString()) + tr(" বঙ্গাব্দ")
     }
 
     private fun buildConverter(col: LinearLayout) {
@@ -172,7 +172,7 @@ class DateActivity : GuardedActivity() {
         day.inputType = InputType.TYPE_CLASS_NUMBER
         day.setText(today.day.toString())
         val month = Spinner(this)
-        month.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, BanglaCal.MONTHS)
+        month.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, BanglaCal.MONTHS.map { tr(it) })
         month.setSelection(today.month)
         val year = EditText(this)
         year.hint = tr("সাল")

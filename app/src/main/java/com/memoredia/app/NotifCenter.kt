@@ -32,8 +32,8 @@ object NotifCenter {
                     val lim = BudgetStore.get(c, cat)
                     if (lim <= 0) continue
                     val sp = spent[cat] ?: 0.0
-                    if (sp >= lim) out.add(Alert(RED, R.drawable.ic_wallet, tr("বাজেট পার হয়েছে"), cat + ": " + taka(sp) + " / " + taka(lim), { c -> android.content.Intent(c, BudgetActivity::class.java) }))
-                    else if (sp >= lim * 0.8) out.add(Alert(AMBER, R.drawable.ic_wallet, tr("বাজেটের সীমা কাছে"), cat + ": " + taka(sp) + " / " + taka(lim), { c -> android.content.Intent(c, BudgetActivity::class.java) }))
+                    if (sp >= lim) out.add(Alert(RED, R.drawable.ic_wallet, tr("বাজেট পার হয়েছে"), tr(cat) + ": " + taka(sp) + " / " + taka(lim), { c -> android.content.Intent(c, BudgetActivity::class.java) }))
+                    else if (sp >= lim * 0.8) out.add(Alert(AMBER, R.drawable.ic_wallet, tr("বাজেটের সীমা কাছে"), tr(cat) + ": " + taka(sp) + " / " + taka(lim), { c -> android.content.Intent(c, BudgetActivity::class.java) }))
                 }
             }
             // Debts whose reminder day has come or passed

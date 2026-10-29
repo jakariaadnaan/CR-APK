@@ -14,11 +14,12 @@ object Lang {
         for (p in Dict5.pairs()) m[p.first] = p.second
         for (p in Dict6.pairs()) m[p.first] = p.second
         for (p in Dict7.pairs()) m[p.first] = p.second
+        for (p in Dict8.pairs()) m[p.first] = p.second
         m
     }
 
     fun load(ctx: Context) {
-        en = ctx.getSharedPreferences("settings", Context.MODE_PRIVATE).getString("lang", "bn") == "en"
+        en = ctx.getSharedPreferences("settings", Context.MODE_PRIVATE).getString("lang", "en") == "en"
     }
 
     fun set(ctx: Context, english: Boolean) {

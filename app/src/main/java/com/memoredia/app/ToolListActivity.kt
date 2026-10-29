@@ -74,7 +74,7 @@ class ToolListActivity : GuardedActivity() {
             if (list.isEmpty()) continue
             any = true
             if (catId == "all") {
-                box.addView(label(c.name + " (" + bn(list.size.toString()) + ")", 14f, Ui.MUTED, true), lp(l = 6, t = 6, b = 8))
+                box.addView(label(tr(c.name) + " (" + bn(list.size.toString()) + ")", 14f, Ui.MUTED, true), lp(l = 6, t = 6, b = 8))
             }
             box.addView(groupCard(list.map { toolRow(it) { render() } }), lp(b = 10))
         }

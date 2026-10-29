@@ -48,7 +48,7 @@ object Ui {
         val night = (ctx.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
             android.content.res.Configuration.UI_MODE_NIGHT_YES
         dark = theme == 2 || (theme == 0 && night)
-        bangla = p.getBoolean("digitsBn", true)
+        bangla = p.getBoolean("digitsBn", false)
         if (dark) {
             PRIMARY = Color.parseColor("#5B84F2"); BG = Color.parseColor("#0F1115"); CARD = Color.parseColor("#1A1D23")
             TEXT = Color.parseColor("#ECEFF3"); MUTED = Color.parseColor("#9AA1AB"); LINE = Color.parseColor("#2A2E36")
