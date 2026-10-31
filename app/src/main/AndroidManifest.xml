@@ -156,6 +156,7 @@
         <activity android:name=".AudioConvertActivity" android:exported="false" />
         <activity android:name=".VideoToAudioActivity" android:exported="false" />
         <activity android:name=".VideoInfoActivity" android:exported="false" />
+        <activity android:name=".SubtitleActivity" android:exported="false" />
         <activity android:name=".QrGenActivity" android:exported="false" />
         <activity android:name=".BarcodeGenActivity" android:exported="false" />
         <activity android:name=".ScannerActivity" android:exported="false" />

@@ -19,6 +19,7 @@ object Modes {
         Group("অডিও কনভার্টার", listOf("অডিও" to AudioConvertActivity::class.java, "ভিডিও থেকে অডিও" to VideoToAudioActivity::class.java)),
         Group("টেক্সট টুলস", listOf("কেস বদল" to TextCaseActivity::class.java, "শব্দ গণনা" to CounterActivity::class.java, "ইউনিকোড" to UnicodeActivity::class.java)),
         Group("QR ও বারকোড", listOf("QR তৈরি" to QrGenActivity::class.java, "বারকোড তৈরি" to BarcodeGenActivity::class.java, "স্ক্যান" to ScannerActivity::class.java)),
+        Group("ভিডিও টুলস", listOf("মেটাডেটা" to VideoInfoActivity::class.java, "সাবটাইটেল" to SubtitleActivity::class.java)),
         Group("IP ও WHOIS", listOf("আমার IP" to IpActivity::class.java, "WHOIS" to WhoisActivity::class.java))
     )
 

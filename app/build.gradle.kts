@@ -13,8 +13,8 @@ android {
         applicationId = "com.memoredia.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 134
-        versionName = "1.34"
+        versionCode = 135
+        versionName = "1.35"
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
 

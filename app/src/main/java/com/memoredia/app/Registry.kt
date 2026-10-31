@@ -60,7 +60,7 @@ object Registry {
         // অডিও ও ভিডিও
         Tool("aconv", "অডিও কনভার্টার", "অডিও বা ভিডিও থেকে WAV, M4A", "media", AudioConvertActivity::class.java, false, "audio converter mp3 wav video to audio extract ভিডিও অডিও"),
         Tool("gif", "GIF মেকার", "ছবি বা ভিডিও থেকে GIF", "media", GifMakerActivity::class.java, false, "gif maker"),
-        Tool("vmeta", "ভিডিও মেটাডেটা", "ভিডিওর খুঁটিনাটি তথ্য", "media", VideoInfoActivity::class.java, false, "video metadata viewer info"),
+        Tool("vmeta", "ভিডিও মেটাডেটা", "ভিডিওর তথ্য ও সাবটাইটেল", "media", VideoInfoActivity::class.java, false, "video metadata viewer info subtitle srt caption সাবটাইটেল"),
         Tool("rec", "কল রেকর্ডিং", "টেস্ট স্ক্রিন", "media", MainActivity::class.java, keywords = "call recording record"),
         // টেক্সট ও ভাষা
         Tool("textcase", "টেক্সট টুলস", "কেস বদল, শব্দ গণনা, ইউনিকোড", "text", TextCaseActivity::class.java, keywords = "text case converter uppercase lowercase title word counter character count unicode utf-8 শব্দ অক্ষর গণনা"),
